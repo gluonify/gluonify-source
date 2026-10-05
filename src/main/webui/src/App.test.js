@@ -114,4 +114,10 @@ describe('gluonify-source UI', () => {
     localStorage.setItem('gluonify-source-lang', 'it')
     expect(detectLanguage()).toBe('it')
   })
+
+  it('stylesheet: long words in notes wrap instead of widening the page on a phone', async () => {
+    const { readFileSync } = await import('node:fs')
+    const css = readFileSync('src/style.css', 'utf8')
+    expect(css).toMatch(/\.notes li > div\s*\{[^}]*min-width: 0[^}]*overflow-wrap: anywhere/)
+  })
 })

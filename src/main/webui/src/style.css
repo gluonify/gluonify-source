@@ -19,6 +19,10 @@ button.danger { background: transparent; color: var(--danger); border-color: var
 .notes { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
 .notes li { display: flex; justify-content: space-between; gap: 12px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
 .notes p { margin: 4px 0 0; white-space: pre-wrap; }
+/* a long word (title, note, compound noun in de) wraps instead of pushing the page wider than a phone */
+.notes li > div { min-width: 0; overflow-wrap: anywhere; }
+.notes li > button { flex: none; align-self: flex-start; }
+.grid dd, .error { min-width: 0; overflow-wrap: anywhere; }
 .error { background: color-mix(in srgb, var(--danger) 12%, transparent); border: 1px solid var(--danger); border-radius: 10px; padding: 10px 14px; }
 .grid { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
 .grid dt { color: var(--muted); } .grid dd { margin: 0; }
