@@ -87,6 +87,11 @@ public class GraphNoteStore implements NoteStore {
         return out;
     }
 
+    /** Runs a parameterised statement (used by other graph-backed components, e.g. the webhook ledger); fails with IllegalStateException carrying Gdown's message. */
+    public JsonNode run(String statement, Map<String, Object> parameters) {
+        return query(statement, parameters);
+    }
+
     private JsonNode query(String statement, Map<String, Object> parameters) {
         try {
             Map<String, Object> body = new LinkedHashMap<>();

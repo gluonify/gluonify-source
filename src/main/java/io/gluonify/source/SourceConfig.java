@@ -34,7 +34,7 @@ public interface SourceConfig {
 
         Optional<String> user();
 
-        /** Comes from the vault (key GRAPH_PASSWORD of the "app" namespace -> variable APP_GRAPH_PASSWORD). Never in the repository. */
+        /** Comes from the vault (key GRAPH_PASSWORD of the <uuid>.app space obtained with "vault": true -> variable APP_GRAPH_PASSWORD; no prefix with a literal vaultNamespace). Never in the repository. */
         Optional<String> password();
     }
 

@@ -170,7 +170,7 @@ Un'applicazione su Gluonify è **isolata**: un proprio account, una propria rete
 
 | Servizio | Cosa offre | Come lo usa l'applicazione | In questo repository |
 |---|---|---|---|
-| **Top** (vault) | configurazione e segreti per applicazione | le chiavi dello spazio `app` della vostra applicazione arrivano come `APP_<CHIAVE>`; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
+| **Top** (vault) | configurazione e segreti per applicazione | con `"vault": true`, le chiavi dello spazio `<uuid>.app` proprio della vostra applicazione arrivano come `APP_<CHIAVE>`; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
 | **Charm** (identità) | token JWT di breve durata | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` verifica i token | [§6](#6-autenticazione-i-token-di-charm) |
 | **Gdown** (database a grafo) | database replicato (Raft), Cypher via HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; un account locale di Gdown | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
 | **File distribuiti** | `/distributed/std`: durevole, condiviso da tutte le repliche, 2 copie | `"distributed": ["std"]` alla distribuzione | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
@@ -182,7 +182,7 @@ Un'applicazione su Gluonify è **isolata**: un proprio account, una propria rete
 ### Configurazione e segreti (Top)
 
 - Un valore **non segreto**: in `"env"` della distribuzione (`deploy/appspec.json`): `"SOURCE_STORE": "files"`. Viene memorizzato nello stato del cluster.
-- Un valore **segreto** (password, chiave d'API): nel **vault** (Top, spazio `<uuid>.app` della vostra applicazione). La chiave `GRAPH_PASSWORD` arriva come variabile `APP_GRAPH_PASSWORD` e si legge `${app.graph.password}`. Dichiaratela con `"vaultNamespace"` alla distribuzione. **Mai** nel repository: il builder rifiuta una password in chiaro (regola R-SECRET), e `ConformityTest` ve lo segnala prima.
+- Un valore **segreto** (password, chiave d'API): nel **vault** (Top, spazio `<uuid>.app` della vostra applicazione). La chiave `GRAPH_PASSWORD` arriva come variabile `APP_GRAPH_PASSWORD` e si legge `${app.graph.password}`. Richiedete quello spazio con `"vault": true` nella specifica dell'applicazione: solo lo spazio `<uuid>.app`, assegnato dal piano di controllo, aggiunge il prefisso `APP_`. Con un `"vaultNamespace"` letterale (per esempio `"gluonify-source"`, l'unica opzione del builder), le chiavi arrivano **senza prefisso**, come nominate nel vault (`GRAPH_PASSWORD` resta `GRAPH_PASSWORD`): nominatele secondo le proprietà lette (per esempio `SOURCE_GRAPH_PASSWORD`). **Mai** nel repository: il builder rifiuta una password in chiaro (regola R-SECRET), e `ConformityTest` ve lo segnala prima.
 - **Registrare un valore non riavvia nulla**: dopo aver modificato più chiavi, scatenate **una** ridistribuzione (`POST /apps/<nome>/redeploy`); le repliche si riavviano una alla volta, senza interruzioni se ne avete due o più.
 - Variabili che la piattaforma aggiunge **sempre**: `QUARKUS_HTTP_PORT` e `QUARKUS_HTTP_HOST`, `ENV_NAME` (l'ambiente: SBX, QUA, PRD…), `ENV_NODE` (numero della replica: 1, 2…), `GLUONIFY_SELF_URL` (indirizzo di questa istanza). Sono lette e mostrate da [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, mai un segreto).
 
@@ -213,7 +213,7 @@ Distribuite con `"distributed": ["std"]`: `/distributed/std` compare, condiviso 
 Photon riceve i messaggi dei vostri partner (verifica la loro firma HMAC, converte XML, SOAP o form in JSON) poi li **consegna** al vostro servizio. Contratto di consegna:
 
 - **un codice 2XX conferma**; qualsiasi altro codice (o un guasto) fa **riprovare** secondo la policy del webhook (`retry`), poi li mette in coda morta;
-- quindi **rispondete in fretta** ed siate **idempotenti**: «almeno una volta» significa che uno stesso messaggio può arrivare due volte. L'header `X-Gluonify-Event-Id` è la chiave di deduplicazione; `X-Gluonify-Delivery-Attempt` conta i tentativi; `X-Gluonify-Webhook-Id` nomina il webhook;
+- quindi **rispondete in fretta** ed siate **idempotenti**: «almeno una volta» significa che uno stesso messaggio può arrivare due volte. L'header `X-Gluonify-Event-Id` è la chiave di deduplicazione; `X-Gluonify-Delivery-Attempt` conta i tentativi; `X-Gluonify-Webhook-Id` nomina il webhook; La memoria **non** è condivisa tra repliche: qui gli identificatori sono conservati nello storage scelto da `source.store` (memoria, un file per evento creato con `CREATE_NEW` in `/distributed/std/events`, oppure un nodo protetto da un vincolo di unicità in Gdown), così una sola replica accetta un evento.
 - Photon **non** invia un token Charm: proteggete il punto d'ingresso con una chiave che mettete nella destinazione del webhook (`"headers": {"X-Api-Key": "…"}`, vedere [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) e nel vault (`WEBHOOK_KEY`). **Senza chiave configurata, il ricevitore è chiuso** (404).
 
 [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) mostra il tutto (chiave confrontata in tempo costante, deduplicazione, JSON illeggibile → 400); sostituite il corpo di `receive` con la vostra elaborazione.
@@ -258,7 +258,7 @@ curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-
   -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"vaultNamespace":"gluonify-source"}'
 ```
 
-Il builder clona, controlla la conformità, compila in nativo, pubblica l'eseguibile e lo distribuisce. Seguitelo: `GET /v1/builds/<id>` e `/logs`. (Un push Git può anche avviare il build tramite un webhook: `POST /v1/webhooks/git`.)
+Il builder clona, controlla la conformità, compila in nativo, pubblica l'eseguibile e lo distribuisce. Seguitelo: `GET /v1/builds/<id>` e `/logs`. (Un push Git può anche avviare il build tramite un webhook: `POST /v1/webhooks/git`.) Nota: il builder conosce solo `vaultNamespace`, quindi con esso le chiavi del vault arrivano senza prefisso.
 
 **B. Pubblicate voi stessi l'eseguibile**, poi distribuite:
 
@@ -279,7 +279,8 @@ L'applicazione è quindi su `https://gluonify-source.<zone>` (certificato automa
 | `uses` | servizi raggiungibili: `SERVICE_<APP>_URL` fornita, rete aperta (`id` = Charm, `graphdb` = Gdown) |
 | `distributed` | `["std"]` per `/distributed/std` |
 | `env` | variabili **non segrete**; `${NOM}` e `${NOM:-défaut}` vengono risolte |
-| `vaultNamespace` | lo spazio del vault le cui chiavi arrivano come `APP_<CHIAVE>` |
+| `vault` | `true`: il piano di controllo assegna all'applicazione il proprio spazio del vault `<uuid>.app`, le cui chiavi arrivano come `APP_<CHIAVE>` |
+| `vaultNamespace` | alternativa: uno spazio del vault esistente, per nome; le sue chiavi arrivano **senza prefisso** (niente `APP_`) |
 | `internal` | `true`: nessuna rotta pubblica (servizio interno) |
 
 Aggiornare: stesso `PUT` (o nuovo build); le repliche vengono sostituite **una alla volta**. Riavviare senza modifiche: `POST /apps/<nome>/redeploy`. Log: `GET /apps/<nome>/logs`. Metriche: `/q/metrics`.

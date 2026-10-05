@@ -13,7 +13,6 @@ import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import tools.jackson.databind.JsonNode;
@@ -35,12 +34,13 @@ import tools.jackson.databind.ObjectMapper;
 @Tag(name = "Webhooks")
 public class WebhookResource {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final int MAX_REMEMBERED = 10_000;
 
     @Inject
     SourceConfig config;
 
-    private final ConcurrentHashMap<String, Boolean> seen = new ConcurrentHashMap<>();
+    @Inject
+    EventLedger ledger; // shared by all replicas (memory / distributed files / Gdown, according to source.store)
+
     private final java.util.concurrent.atomic.AtomicLong accepted = new java.util.concurrent.atomic.AtomicLong(), duplicates = new java.util.concurrent.atomic.AtomicLong();
 
     @POST
@@ -60,8 +60,7 @@ public class WebhookResource {
             // an unreadable body will not fix itself by replaying: 4XX (Photon will replay it according to its policy, then dead-letter it)
             return Response.status(400).entity(Map.of("error", "JSON illisible")).build();
         }
-        if (seen.size() > MAX_REMEMBERED) seen.clear(); // bounded memory (a real service keeps these identifiers in its database)
-        if (seen.putIfAbsent(eventId, Boolean.TRUE) != null) {
+        if (!ledger.firstSeen(eventId)) { // atomic across replicas
             duplicates.incrementAndGet();
             return Response.ok(Map.of("status", "duplicate", "eventId", eventId)).build(); // already processed: we still acknowledge (2XX), without redoing the work
         }

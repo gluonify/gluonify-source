@@ -4,7 +4,7 @@ This repository is the **starting point** for a Quarkus 4 service that runs on G
 
 ## Commands
 - `mvn quarkus:dev`: development (hot reload, UI at http://localhost:8080, **no token needed**: the "dev" identity exists only in this profile).
-- `mvn test`: 30 Java tests (REST, stores, webhooks, platform, conformity). The UI is tested separately: `cd src/main/webui && npm test`.
+- `mvn test`: 34 Java tests (REST, stores, webhooks, platform, conformity). The UI is tested separately: `cd src/main/webui && npm test`.
 - Native (what Gluonify runs): `docker build --target out --output type=local,dest=dist -f Dockerfile.build .` -> `dist/gluonify-source`.
 - Rename the project: `python3 scripts/rename.py <groupId> <artifactId> [<package>]`, then `mvn test`.
 - Java 25, Quarkus 4.0.0.Beta1, Jackson 3 (`tools.jackson.databind`, not `com.fasterxml`), GraalVM native (NIK 25).
@@ -16,7 +16,8 @@ This repository is the **starting point** for a Quarkus 4 service that runs on G
 ## Known pitfalls (do not fall into them again)
 - **Native**: no `HttpClient` and no `SecureRandom`/`Random` in a `static` field (state frozen at build time): create it on first use. Read third-party JSON as a tree (`JsonNode`) rather than into undeclared classes. A type (de)serialized by Jackson outside a REST signature must carry `@RegisterForReflection`.
 - **`/distributed/std`**: never rewrite a file or rename a directory that was just written; write NEW files under their final name. A directory listing can lag by ~3 s behind another replica.
-- **Photon webhooks**: a 2XX status acknowledges, anything else causes a replay; be idempotent on `X-Gluonify-Event-Id`.
+- **Photon webhooks**: a 2XX status acknowledges, anything else causes a replay; be idempotent on `X-Gluonify-Event-Id`, across ALL replicas (`EventLedger`: never an in-memory map alone; files = `CREATE_NEW` of a new file, graph = uniqueness constraint).
+- **Vault**: the `APP_` prefix exists only in the `<uuid>.app` space obtained with `"vault": true` in the app spec; with a literal `vaultNamespace` keys arrive unprefixed.
 - **Security**: `DevAuthentication` exists only in the `dev` profile (`@IfBuildProfile`). Do not extend it to production. Roles come from the Charm token (`source:read`, `source:write`).
 - Code comments are in **English** in this repository; the README exists in five languages (English by default) and this file is English only. Keep commit messages plain.
 

@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        Zustellungen von Photon empfangen
   security/DevAuthentication.java   Entwicklungsidentität (nur Profil dev)
 src/main/webui/                 die Vue-3-Oberfläche (Vite + vitest), von Quinoa gebaut
-src/test/java/…                 30 Java-Tests; src/main/webui/src/App.test.js: 3 Oberflächentests
+src/test/java/…                 34 Java-Tests; src/main/webui/src/App.test.js: 3 Oberflächentests
 deploy/                         Beispiele: AppSpec, Domain, Photon-Webhook, Gdown-Datenbank
 scripts/rename.py               benennt das Projekt um
 ```
@@ -170,7 +170,7 @@ Eine Anwendung auf Gluonify ist **isoliert**: eigenes Konto, eigenes Netzwerk, e
 
 | Dienst | Was er bietet | Wie die Anwendung ihn nutzt | In diesem Repository |
 |---|---|---|---|
-| **Top** (Tresor) | Konfiguration und Geheimnisse pro Anwendung | die Schlüssel des Namensraums `app` Ihrer Anwendung kommen als `APP_<SCHLÜSSEL>` an; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
+| **Top** (Tresor) | Konfiguration und Geheimnisse pro Anwendung | mit `"vault": true` kommen die Schlüssel des eigenen Namensraums `<uuid>.app` Ihrer Anwendung als `APP_<SCHLÜSSEL>` an; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
 | **Charm** (Identität) | kurzlebige JWT-Tokens | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` prüft die Tokens | [§6](#6-authentifizierung-die-tokens-von-charm) |
 | **Gdown** (Graphdatenbank) | replizierte Datenbank (Raft), Cypher über HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; ein lokales Gdown-Konto | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
 | **Verteilte Dateien** | `/distributed/std`: dauerhaft, von allen Replikaten geteilt, 2 Kopien | `"distributed": ["std"]` beim Deployment | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
@@ -182,7 +182,7 @@ Eine Anwendung auf Gluonify ist **isoliert**: eigenes Konto, eigenes Netzwerk, e
 ### Konfiguration und Geheimnisse (Top)
 
 - Ein **nicht geheimer** Wert: in `"env"` des Deployments (`deploy/appspec.json`): `"SOURCE_STORE": "files"`. Er wird im Zustand des Clusters gespeichert.
-- Ein **geheimer** Wert (Passwort, API-Schlüssel): im **Tresor** (Top, Namensraum `<uuid>.app` Ihrer Anwendung). Der Schlüssel `GRAPH_PASSWORD` kommt als Variable `APP_GRAPH_PASSWORD` an und wird mit `${app.graph.password}` gelesen. Deklarieren Sie ihn beim Deployment mit `"vaultNamespace"`. **Niemals** im Repository: Der Builder lehnt ein Klartext-Passwort ab (Regel R-SECRET), und `ConformityTest` sagt es Ihnen vorher.
+- Ein **geheimer** Wert (Passwort, API-Schlüssel): im **Tresor** (Top, Namensraum `<uuid>.app` Ihrer Anwendung). Der Schlüssel `GRAPH_PASSWORD` kommt als Variable `APP_GRAPH_PASSWORD` an und wird mit `${app.graph.password}` gelesen. Fordern Sie diesen Namensraum mit `"vault": true` in der Anwendungsspezifikation an: Nur dieser von der Steuerungsebene zugewiesene Namensraum `<uuid>.app` fügt das Präfix `APP_` hinzu. Mit einem literalen `"vaultNamespace"` (zum Beispiel `"gluonify-source"`, die einzige Option des Builders) kommen die Schlüssel **ohne Präfix** an, so wie sie im Tresor heißen (`GRAPH_PASSWORD` bleibt `GRAPH_PASSWORD`): Benennen Sie sie nach den gelesenen Eigenschaften (zum Beispiel `SOURCE_GRAPH_PASSWORD`). **Niemals** im Repository: Der Builder lehnt ein Klartext-Passwort ab (Regel R-SECRET), und `ConformityTest` sagt es Ihnen vorher.
 - **Einen Wert zu speichern startet nichts neu**: Lösen Sie nach der Änderung mehrerer Schlüssel **ein** Redeployment aus (`POST /apps/<name>/redeploy`); die Replikate starten nacheinander neu, ohne Unterbrechung, wenn Sie zwei oder mehr haben.
 - Variablen, die die Plattform **immer** hinzufügt: `QUARKUS_HTTP_PORT` und `QUARKUS_HTTP_HOST`, `ENV_NAME` (die Umgebung: SBX, QUA, PRD …), `ENV_NODE` (Rang des Replikats: 1, 2 …), `GLUONIFY_SELF_URL` (Adresse dieser Instanz). Sie werden von [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) gelesen und angezeigt (`GET /api/platform`, niemals ein Geheimnis).
 
@@ -213,7 +213,7 @@ Deployen Sie mit `"distributed": ["std"]`: `/distributed/std` erscheint, von all
 Photon empfängt die Nachrichten Ihrer Partner (prüft deren HMAC-Signatur, wandelt XML, SOAP oder Formular in JSON um) und **liefert** sie dann an Ihren Dienst. Zustellungsvertrag:
 
 - **ein 2XX-Code bestätigt**; jeder andere Code (oder ein Ausfall) führt zur **Wiederholung** gemäß der Webhook-Richtlinie (`retry`) und danach zur Dead-Letter-Queue;
-- also **antworten Sie schnell** und seien Sie **idempotent**: »mindestens einmal« bedeutet, dass dieselbe Nachricht zweimal ankommen kann. Der Header `X-Gluonify-Event-Id` ist der Schlüssel zur Deduplizierung; `X-Gluonify-Delivery-Attempt` zählt die Versuche; `X-Gluonify-Webhook-Id` benennt den Webhook;
+- also **antworten Sie schnell** und seien Sie **idempotent**: »mindestens einmal« bedeutet, dass dieselbe Nachricht zweimal ankommen kann. Der Header `X-Gluonify-Event-Id` ist der Schlüssel zur Deduplizierung; `X-Gluonify-Delivery-Attempt` zählt die Versuche; `X-Gluonify-Webhook-Id` benennt den Webhook; Der Speicher wird **nicht** zwischen Replikaten geteilt: Hier werden die Kennungen im über `source.store` gewählten Speicher abgelegt (Arbeitsspeicher, eine Datei pro Ereignis, mit `CREATE_NEW` in `/distributed/std/events` angelegt, oder ein durch eine Eindeutigkeitsbedingung geschützter Knoten in Gdown), sodass genau ein Replikat ein Ereignis annimmt.
 - Photon sendet **kein** Charm-Token: Schützen Sie den Einstiegspunkt mit einem Schlüssel, den Sie in das Ziel des Webhooks (`"headers": {"X-Api-Key": "…"}`, siehe [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) und in den Tresor (`WEBHOOK_KEY`) legen. **Ohne konfigurierten Schlüssel ist der Empfänger geschlossen** (404).
 
 [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) zeigt das Ganze (Schlüssel in konstanter Zeit verglichen, Deduplizierung, unlesbares JSON → 400); ersetzen Sie den Rumpf von `receive` durch Ihre Verarbeitung.
@@ -258,7 +258,7 @@ curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-
   -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"vaultNamespace":"gluonify-source"}'
 ```
 
-Der Builder klont, prüft die Konformität, kompiliert nativ, veröffentlicht die ausführbare Datei und deployt sie. Verfolgen Sie ihn: `GET /v1/builds/<id>` und `/logs`. (Ein Git-Push kann den Build auch per Webhook auslösen: `POST /v1/webhooks/git`.)
+Der Builder klont, prüft die Konformität, kompiliert nativ, veröffentlicht die ausführbare Datei und deployt sie. Verfolgen Sie ihn: `GET /v1/builds/<id>` und `/logs`. (Ein Git-Push kann den Build auch per Webhook auslösen: `POST /v1/webhooks/git`.) Hinweis: Der Builder kennt nur `vaultNamespace`, daher kommen die Tresor-Schlüssel damit ohne Präfix an.
 
 **B. Sie veröffentlichen die ausführbare Datei** selbst und deployen dann:
 
@@ -279,7 +279,8 @@ Die Anwendung ist dann unter `https://gluonify-source.<zone>` erreichbar (automa
 | `uses` | erreichbare Dienste: `SERVICE_<APP>_URL` bereitgestellt, Netzwerk geöffnet (`id` = Charm, `graphdb` = Gdown) |
 | `distributed` | `["std"]` für `/distributed/std` |
 | `env` | **nicht geheime** Variablen; `${NAME}` und `${NAME:-standard}` werden aufgelöst |
-| `vaultNamespace` | der Tresor-Namensraum, dessen Schlüssel als `APP_<SCHLÜSSEL>` ankommen |
+| `vault` | `true`: Die Steuerungsebene weist der Anwendung ihren eigenen Tresor-Namensraum `<uuid>.app` zu, dessen Schlüssel als `APP_<SCHLÜSSEL>` ankommen |
+| `vaultNamespace` | Alternative: ein bestehender Tresor-Namensraum per Name; seine Schlüssel kommen **ohne Präfix** an (kein `APP_`) |
 | `internal` | `true`: keine öffentliche Route (interner Dienst) |
 
 Aktualisieren: dasselbe `PUT` (oder ein neuer Build); die Replikate werden **nacheinander** ersetzt. Neu starten ohne Änderung: `POST /apps/<name>/redeploy`. Logs: `GET /apps/<name>/logs`. Metriken: `/q/metrics`.
@@ -287,7 +288,7 @@ Aktualisieren: dasselbe `PUT` (oder ein neuer Build); die Replikate werden **nac
 ## 10. Testen
 
 ```bash
-mvn test                                 # 30 Java-Tests
+mvn test                                 # 34 Java-Tests
 cd src/main/webui && npm install && npm test   # 3 Oberflächentests
 ```
 
