@@ -38,3 +38,4 @@ This repository is the **starting point** for a Quarkus 4 service that runs on G
 
 ## Where to change what
 `NotesResource` = the model of a REST resource; `NoteStore` + `NoteStores` = where to plug in a store; `SourceConfig` + `application.properties` = configuration; `WebhookResource` = receiving Photon; `PlatformResource` = platform variables and calling another service; `src/main/webui` = the Vue UI (Quinoa).
+- **Multilingual Vue JS interfaces.** Every Vue JS interface is multilingual: no hard-coded text in components, translations live in language files (English by default, then fr, es, it, de like the websites), with a language selector whose choice is remembered. Test fixtures and example data are in English.
