@@ -230,7 +230,7 @@ Déclarez-la dans `"uses"` : la plateforme fournit `SERVICE_<APP>_URL` **et ouvr
 ## 8. Construire
 
 ```bash
-mvn test                       # tests Java (44)
+mvn test                       # tests Java (34)
 mvn package                    # JVM : target/quarkus-app/ ; construit aussi l'interface (Quinoa)
 ```
 
