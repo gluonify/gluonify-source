@@ -8,7 +8,7 @@ import es from './i18n/es.js'
 import it_ from './i18n/it.js'
 import de from './i18n/de.js'
 
-// UI tests ("mvn test" runs them through Quinoa): fetch is replaced, no server is needed.
+// UI tests ("mvn package" runs them through Quinoa): fetch is replaced, no server is needed.
 function mockApi(routes) {
   globalThis.fetch = vi.fn(async (path, init = {}) => {
     const key = (init.method || 'GET') + ' ' + path
