@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        Zustellungen von Photon empfangen
   security/DevAuthentication.java   Entwicklungsidentität (nur Profil dev)
 src/main/webui/                 die Vue-3-Oberfläche (Vite + vitest), von Quinoa gebaut
-src/test/java/…                 34 Java-Tests; src/main/webui/src/App.test.js: 3 Oberflächentests
+src/test/java/…                 34 Java-Tests; src/main/webui/src/App.test.js: 15 Oberflächentests
 deploy/                         Beispiele: AppSpec, Domain, Photon-Webhook, Gdown-Datenbank
 scripts/rename.py               benennt das Projekt um
 ```
@@ -128,6 +128,7 @@ Lesen Sie [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesRes
 - **Die API aufrufen**: relative Adressen (`fetch('/api/notes')`), siehe [`src/api.js`](src/main/webui/src/api.js). Das Charm-Token wird vom Benutzer eingefügt und für den Tab aufbewahrt (`sessionStorage`).
 - **Die Routen der Oberfläche**: `quarkus.quinoa.enable-spa-routing=true` liefert für eine unbekannte Adresse `index.html` zurück (nützlich mit vue-router). Aber **eine unbekannte API-Adresse darf nicht die Oberfläche zurückgeben**: `quarkus.quinoa.ignored-path-prefixes=/api,/hooks,/q` (bereits gesetzt). Wenn Sie ein API-Präfix hinzufügen, tragen Sie es hier ein.
 - **Bauen**: `mvn package` führt `npm install` und dann `npm run build` aus; `dist/` wird in die ausführbare Datei eingebettet. Ohne Oberfläche: `-Dquarkus.quinoa=false`.
+- **Sprachen (i18n)**: Die Oberfläche gibt es auf Englisch (Standard), Französisch, Spanisch, Italienisch und Deutsch. In den Komponenten steht kein Text: Jeder Text ist ein Schlüssel in [`src/i18n/`](src/main/webui/src/i18n) (`en.js`, `fr.js`, `es.js`, `it.js`, `de.js`), gelesen mit `t('Schlüssel', { Parameter })` (ein kleines Hilfsmittel in `index.js`, ohne Abhängigkeit). Die Sprachauswahl in der Kopfzeile merkt sich die Wahl (`localStorage`); ohne Wahl wird die Browsersprache verwendet, wenn sie eine der fünf ist, sonst Englisch; `<html lang>` folgt. Um eine Sprache hinzuzufügen: Kopieren Sie `en.js` nach `<Code>.js` und übersetzen Sie die Werte (gleiche Schlüssel), importieren Sie die Datei dann in `index.js` (`MESSAGES` und `LANGUAGES`). Vom API zurückgegebene Fehlermeldungen werden unverändert angezeigt; die zu den Codes 401 und 403 sind übersetzt.
 - **Die Oberfläche testen**: `cd src/main/webui && npm install && npm test` (vitest + jsdom, simuliertes `fetch`: siehe `App.test.js`). Mit `quarkus.quinoa.run-tests=true` startet `mvn package` sie ebenfalls.
 - **Caching**: Die Dateien in `dist/assets` tragen einen Fingerabdruck im Namen (unveränderlich); `index.html` wird mit `Cache-Control: no-cache` ausgeliefert (Einstellung `ui-entry`).
 
@@ -289,17 +290,18 @@ Aktualisieren: dasselbe `PUT` (oder ein neuer Build); die Replikate werden **nac
 
 ```bash
 mvn test                                 # 34 Java-Tests
-cd src/main/webui && npm install && npm test   # 3 Oberflächentests
+cd src/main/webui && npm install && npm test   # 15 Oberflächentests
 ```
 
-| Test | Was er prüft |
-|---|---|
-| `NotesResourceTest` | 401 ohne Token, 403 ohne die passende Rolle, vollständiger Lebenszyklus, Validierung 400, OpenAPI, Gesundheit, Metriken |
-| `FileNoteStoreTest` | neue Dateien nie umbenannt, Reihenfolge, zwei Replikate im selben Ordner, unlesbare Dateien ignoriert, Kennungen nie Pfade |
-| `GraphNoteStoreTest` | gegen ein gefälschtes Gdown: Pfad, Authentifizierung, **parametrisierte** Anweisung, Lesen der Zeilen, Fehlschlag |
-| `WebhookResourceTest` / `WebhookClosedTest` | Schlüssel, Bestätigung, **Idempotenz**, Ablehnungen; ohne Schlüssel geschlossen |
-| `PlatformResourceTest` | Plattformvariablen gelesen, **kein Geheimnis zurückgegeben**, Dienst-zu-Dienst-Aufruf auf deklarierte Dienste beschränkt |
-| `ConformityTest` | die Normen des Builders, bei Ihnen |
+| Test | Anzahl | Was er prüft |
+|---|---|---|
+| `NotesResourceTest` | 7 | 401 ohne Token, 403 ohne die passende Rolle, vollständiger Lebenszyklus, Validierung 400, OpenAPI, Gesundheit, Metriken |
+| `FileNoteStoreTest` | 6 | neue Dateien nie umbenannt, Reihenfolge, zwei Replikate im selben Ordner, unlesbare Dateien ignoriert, Kennungen nie Pfade |
+| `GraphNoteStoreTest` | 4 | gegen ein gefälschtes Gdown: Pfad, Authentifizierung, **parametrisierte** Anweisung, Lesen der Zeilen, Fehlschlag |
+| `WebhookResourceTest` / `WebhookClosedTest` | 4 + 1 | Schlüssel, Bestätigung, **Idempotenz**, Ablehnungen; ohne Schlüssel geschlossen |
+| `PlatformResourceTest` | 4 | Plattformvariablen gelesen, **kein Geheimnis zurückgegeben**, Dienst-zu-Dienst-Aufruf auf deklarierte Dienste beschränkt |
+| `ConformityTest` | 4 | die Normen des Builders, bei Ihnen |
+| `EventLedgerTest` | 4 | Idempotenz-Register: genau ein Gewinner pro Ereignis (Speicher, Dateien mit zwei Replikaten, Eindeutigkeitsbedingung des Graphen, Graph-Fehler außer einem Duplikat weitergegeben) |
 
 Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNoteStoreTest` (ohne Quarkus zu starten: schnell).
 

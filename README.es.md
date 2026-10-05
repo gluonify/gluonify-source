@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        recibir las entregas de Photon
   security/DevAuthentication.java   identidad de desarrollo (solo perfil dev)
 src/main/webui/                 la interfaz Vue 3 (Vite + vitest), construida por Quinoa
-src/test/java/…                 34 pruebas Java; src/main/webui/src/App.test.js: 3 pruebas de interfaz
+src/test/java/…                 34 pruebas Java; src/main/webui/src/App.test.js: 15 pruebas de interfaz
 deploy/                         ejemplos: AppSpec, dominio, webhook de Photon, base Gdown
 scripts/rename.py               renombra el proyecto
 ```
@@ -128,6 +128,7 @@ Lea [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResource.
 - **Llamar a la API**: direcciones relativas (`fetch('/api/notes')`), véase [`src/api.js`](src/main/webui/src/api.js). El token de Charm lo pega el usuario y se conserva durante la pestaña (`sessionStorage`).
 - **Las rutas de la interfaz**: `quarkus.quinoa.enable-spa-routing=true` devuelve `index.html` para una dirección desconocida (útil con vue-router). Pero **una dirección de API desconocida no debe devolver la interfaz**: `quarkus.quinoa.ignored-path-prefixes=/api,/hooks,/q` (ya configurado). Si añade un prefijo de API, añádalo aquí.
 - **Construir**: `mvn package` ejecuta `npm install` y luego `npm run build`; `dist/` se incluye en el ejecutable. Sin interfaz: `-Dquarkus.quinoa=false`.
+- **Idiomas (i18n)**: la interfaz está disponible en inglés (por defecto), francés, español, italiano y alemán. Ningún texto está escrito en los componentes: cada texto es una clave de [`src/i18n/`](src/main/webui/src/i18n) (`en.js`, `fr.js`, `es.js`, `it.js`, `de.js`) que se lee con `t('clave', { parámetro })` (una pequeña utilidad en `index.js`, sin dependencias). El selector de la cabecera recuerda la elección (`localStorage`); sin elección se usa el idioma del navegador si es uno de los cinco y, si no, el inglés; `<html lang>` se ajusta. Para añadir un idioma: copie `en.js` como `<código>.js` y traduzca los valores (mismas claves); después impórtelo en `index.js` (`MESSAGES` y `LANGUAGES`). Los mensajes de error devueltos por la API se muestran tal como llegan; los de los códigos 401 y 403 están traducidos.
 - **Probar la interfaz**: `cd src/main/webui && npm install && npm test` (vitest + jsdom, `fetch` simulado: véase `App.test.js`). Con `quarkus.quinoa.run-tests=true`, `mvn package` también las ejecuta.
 - **Caché**: los archivos de `dist/assets` llevan una huella en su nombre (inmutables); `index.html` se sirve con `Cache-Control: no-cache` (ajuste `ui-entry`).
 
@@ -289,17 +290,18 @@ Actualizar: el mismo `PUT` (o un nuevo build); las réplicas se sustituyen **una
 
 ```bash
 mvn test                                 # 34 pruebas Java
-cd src/main/webui && npm install && npm test   # 3 pruebas de interfaz
+cd src/main/webui && npm install && npm test   # 15 pruebas de interfaz
 ```
 
-| Prueba | Qué verifica |
-|---|---|
-| `NotesResourceTest` | 401 sin token, 403 sin el rol adecuado, ciclo de vida completo, validación 400, OpenAPI, salud, métricas |
-| `FileNoteStoreTest` | archivos nuevos nunca renombrados, orden, dos réplicas sobre la misma carpeta, archivos ilegibles ignorados, identificadores que nunca son rutas |
-| `GraphNoteStoreTest` | contra un Gdown falso: ruta, autenticación, instrucción **parametrizada**, lectura de las filas, fallo |
-| `WebhookResourceTest` / `WebhookClosedTest` | clave, confirmación, **idempotencia**, rechazos; cerrado sin clave |
-| `PlatformResourceTest` | variables de la plataforma leídas, **ningún secreto devuelto**, llamada de servicio a servicio limitada a los servicios declarados |
-| `ConformityTest` | las normas del builder, en su máquina |
+| Prueba | Pruebas | Qué verifica |
+|---|---|---|
+| `NotesResourceTest` | 7 | 401 sin token, 403 sin el rol adecuado, ciclo de vida completo, validación 400, OpenAPI, salud, métricas |
+| `FileNoteStoreTest` | 6 | archivos nuevos nunca renombrados, orden, dos réplicas sobre la misma carpeta, archivos ilegibles ignorados, identificadores que nunca son rutas |
+| `GraphNoteStoreTest` | 4 | contra un Gdown falso: ruta, autenticación, instrucción **parametrizada**, lectura de las filas, fallo |
+| `WebhookResourceTest` / `WebhookClosedTest` | 4 + 1 | clave, confirmación, **idempotencia**, rechazos; cerrado sin clave |
+| `PlatformResourceTest` | 4 | variables de la plataforma leídas, **ningún secreto devuelto**, llamada de servicio a servicio limitada a los servicios declarados |
+| `ConformityTest` | 4 | las normas del builder, en su máquina |
+| `EventLedgerTest` | 4 | registros de idempotencia: un único ganador por evento (memoria, archivos con dos réplicas, restricción de unicidad del grafo, error del grafo distinto de un duplicado propagado) |
 
 Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento, de `FileNoteStoreTest` (sin arrancar Quarkus: rápida).
 

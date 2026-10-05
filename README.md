@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        receiving Photon deliveries
   security/DevAuthentication.java   development identity (dev profile only)
 src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
-src/test/java/…                 34 Java tests; src/main/webui/src/App.test.js: 3 interface tests
+src/test/java/…                 34 Java tests; src/main/webui/src/App.test.js: 15 interface tests
 deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
 scripts/rename.py               renames the project
 ```
@@ -128,6 +128,7 @@ Read [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResource
 - **Call the API**: relative addresses (`fetch('/api/notes')`), see [`src/api.js`](src/main/webui/src/api.js). The Charm token is pasted by the user and kept for the tab (`sessionStorage`).
 - **Interface routes**: `quarkus.quinoa.enable-spa-routing=true` returns `index.html` for an unknown address (useful with vue-router). But **an unknown API address must not return the interface**: `quarkus.quinoa.ignored-path-prefixes=/api,/hooks,/q` (already set). If you add an API prefix, add it here.
 - **Build**: `mvn package` runs `npm install` then `npm run build`; `dist/` is embedded in the executable. Without the interface: `-Dquarkus.quinoa=false`.
+- **Languages (i18n)**: the interface is available in English (default), French, Spanish, Italian and German. No text is written in the components: every text is a key in [`src/i18n/`](src/main/webui/src/i18n) (`en.js`, `fr.js`, `es.js`, `it.js`, `de.js`) read through `t('key', { param })` (a tiny helper in `index.js`, no dependency). The selector in the header remembers the choice (`localStorage`); without a choice, the browser language is used if it is one of the five, otherwise English; `<html lang>` follows. To add a language: copy `en.js` to `<code>.js` and translate the values (same keys), then import it in `index.js` (`MESSAGES` and `LANGUAGES`). Error messages returned by the API are displayed as received; the 401 and 403 messages are translated.
 - **Test the interface**: `cd src/main/webui && npm install && npm test` (vitest + jsdom, mocked `fetch`: see `App.test.js`). With `quarkus.quinoa.run-tests=true`, `mvn package` runs them too.
 - **Caching**: files in `dist/assets` have a hash in their name (immutable); `index.html` is served with `Cache-Control: no-cache` (`ui-entry` setting).
 
@@ -289,17 +290,18 @@ To update: same `PUT` (or a new build); replicas are replaced **one by one**. To
 
 ```bash
 mvn test                                 # 34 Java tests
-cd src/main/webui && npm install && npm test   # 3 interface tests
+cd src/main/webui && npm install && npm test   # 15 interface tests
 ```
 
-| Test | What it checks |
-|---|---|
-| `NotesResourceTest` | 401 without a token, 403 without the right role, full lifecycle, 400 validation, OpenAPI, health, metrics |
-| `FileNoteStoreTest` | new files never renamed, ordering, two replicas on the same folder, unreadable files ignored, identifiers never paths |
-| `GraphNoteStoreTest` | against a fake Gdown: path, authentication, **parameterized** statement, row reading, failure |
-| `WebhookResourceTest` / `WebhookClosedTest` | key, acknowledgment, **idempotence**, rejections; closed without a key |
-| `PlatformResourceTest` | platform variables read, **no secret returned**, service-to-service call limited to declared services |
-| `ConformityTest` | the builder's standards, on your side |
+| Test | Tests | What it checks |
+|---|---|---|
+| `NotesResourceTest` | 7 | 401 without a token, 403 without the right role, full lifecycle, 400 validation, OpenAPI, health, metrics |
+| `FileNoteStoreTest` | 6 | new files never renamed, ordering, two replicas on the same folder, unreadable files ignored, identifiers never paths |
+| `GraphNoteStoreTest` | 4 | against a fake Gdown: path, authentication, **parameterized** statement, row reading, failure |
+| `WebhookResourceTest` / `WebhookClosedTest` | 4 + 1 | key, acknowledgment, **idempotence**, rejections; closed without a key |
+| `PlatformResourceTest` | 4 | platform variables read, **no secret returned**, service-to-service call limited to declared services |
+| `ConformityTest` | 4 | the builder's standards, on your side |
+| `EventLedgerTest` | 4 | idempotence ledgers: exactly one winner per event (memory, files with two replicas, graph uniqueness constraint, graph error other than a duplicate propagated) |
 
 An API test is copied from `NotesResourceTest`; a storage test from `FileNoteStoreTest` (without starting Quarkus: fast).
 
