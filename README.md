@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        receiving Photon deliveries
   security/DevAuthentication.java   development identity (dev profile only)
 src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
-src/test/java/…                 44 Java tests; src/main/webui/src/App.test.js: 3 interface tests
+src/test/java/…                 34 Java tests; src/main/webui/src/App.test.js: 3 interface tests
 deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
 scripts/rename.py               renames the project
 ```
@@ -288,7 +288,7 @@ To update: same `PUT` (or a new build); replicas are replaced **one by one**. To
 ## 10. Testing
 
 ```bash
-mvn test                                 # 44 Java tests
+mvn test                                 # 34 Java tests
 cd src/main/webui && npm install && npm test   # 3 interface tests
 ```
 
