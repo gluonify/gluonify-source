@@ -1,24 +1,24 @@
-# CLAUDE.md : consignes pour un assistant IA qui travaille sur ce projet
+# CLAUDE.md: guidance for an AI assistant working on this project
 
-Ce dépôt est le **point de départ** d'un service Quarkus 4 qui tourne sur Gluonify. Lisez d'abord `README.md` : il explique tout, étape par étape. Ce fichier résume ce qu'il ne faut pas casser.
+This repository is the **starting point** for a Quarkus 4 service that runs on Gluonify. Read `README.md` first: it explains everything, step by step (also available as `README.fr.md`, `README.es.md`, `README.it.md`, `README.de.md`). This file summarizes what you must not break.
 
-## Commandes
-- `mvn quarkus:dev` : développement (rechargement à chaud, interface sur http://localhost:8080, **aucun jeton nécessaire** : l'identité « dev » existe seulement dans ce profil).
-- `mvn test` : 30 tests Java (REST, stockages, webhooks, plateforme, conformité). L'interface se teste à part : `cd src/main/webui && npm test`.
-- Natif (ce que Gluonify exécute) : `docker build --target out --output type=local,dest=dist -f Dockerfile.build .` -> `dist/gluonify-source`.
-- Renommer le projet : `python3 scripts/rename.py <groupId> <artifactId> [<paquet>]`, puis `mvn test`.
-- Java 25, Quarkus 4.0.0.Beta1, Jackson 3 (`tools.jackson.databind`, pas `com.fasterxml`), GraalVM natif (NIK 25).
+## Commands
+- `mvn quarkus:dev`: development (hot reload, UI at http://localhost:8080, **no token needed**: the "dev" identity exists only in this profile).
+- `mvn test`: 30 Java tests (REST, stores, webhooks, platform, conformity). The UI is tested separately: `cd src/main/webui && npm test`.
+- Native (what Gluonify runs): `docker build --target out --output type=local,dest=dist -f Dockerfile.build .` -> `dist/gluonify-source`.
+- Rename the project: `python3 scripts/rename.py <groupId> <artifactId> [<package>]`, then `mvn test`.
+- Java 25, Quarkus 4.0.0.Beta1, Jackson 3 (`tools.jackson.databind`, not `com.fasterxml`), GraalVM native (NIK 25).
 
-## Règles de la plateforme (le builder de Gluonify les contrôle ; `ConformityTest` les vérifie chez vous)
-- `quarkus-smallrye-health` obligatoire (R-SANTE). Aucun secret en clair dans `application.properties` : `${VARIABLE}` ou `${app.clé}` (R-SECRET). Pas de `.env`, `*.pem`, `*.p12`, `*.jks` (R-FICHIER-SENSIBLE). Pas de `quarkus-container-image-*` (R-IMAGE). `quarkus.http.host` jamais en boucle locale (R-ECOUTE). Compilation native non désactivée (R-NATIF).
-- **Toute la configuration vient de l'environnement** (variables fournies par la plateforme ou son coffre). Ne jamais écrire d'adresse de service, de port, de mot de passe en dur.
+## Platform rules (Gluonify's builder enforces them; `ConformityTest` checks them on your side)
+- `quarkus-smallrye-health` is mandatory (R-SANTE). No plaintext secret in `application.properties`: use `${VARIABLE}` or `${app.key}` (R-SECRET). No `.env`, `*.pem`, `*.p12`, `*.jks` (R-FICHIER-SENSIBLE). No `quarkus-container-image-*` (R-IMAGE). `quarkus.http.host` never on loopback (R-ECOUTE). Native compilation never disabled (R-NATIF).
+- **All configuration comes from the environment** (variables provided by the platform or its vault). Never hard-code a service address, a port or a password.
 
-## Pièges connus (n'y retombez pas)
-- **Natif** : pas de `HttpClient` ni de `SecureRandom`/`Random` dans un champ `static` (état figé à la compilation) : créer à la première utilisation. Lire le JSON de tiers en arbre (`JsonNode`) plutôt que dans des classes non déclarées. Un type (dé)sérialisé par Jackson hors d'une signature REST doit porter `@RegisterForReflection`.
-- **`/distributed/std`** : ne jamais réécrire un fichier ni renommer un dossier qui vient d'être écrit ; écrire de NOUVEAUX fichiers sous leur nom définitif. La liste d'un dossier peut avoir ~3 s de retard sur une autre réplique.
-- **Webhooks de Photon** : un code 2XX acquitte, le reste fait rejouer ; soyez idempotent sur `X-Gluonify-Event-Id`.
-- **Sécurité** : `DevAuthentication` n'existe qu'en profil `dev` (`@IfBuildProfile`). Ne l'étendez pas à la production. Les rôles viennent du jeton Charm (`source:read`, `source:write`).
-- Documentation et commentaires en **français** dans ce dépôt, messages de commit sobres.
+## Known pitfalls (do not fall into them again)
+- **Native**: no `HttpClient` and no `SecureRandom`/`Random` in a `static` field (state frozen at build time): create it on first use. Read third-party JSON as a tree (`JsonNode`) rather than into undeclared classes. A type (de)serialized by Jackson outside a REST signature must carry `@RegisterForReflection`.
+- **`/distributed/std`**: never rewrite a file or rename a directory that was just written; write NEW files under their final name. A directory listing can lag by ~3 s behind another replica.
+- **Photon webhooks**: a 2XX status acknowledges, anything else causes a replay; be idempotent on `X-Gluonify-Event-Id`.
+- **Security**: `DevAuthentication` exists only in the `dev` profile (`@IfBuildProfile`). Do not extend it to production. Roles come from the Charm token (`source:read`, `source:write`).
+- Code comments are in **French** in this repository; the README exists in five languages (English by default) and this file is English only. Keep commit messages plain.
 
-## Où modifier quoi
-`NotesResource` = le modèle d'une ressource REST ; `NoteStore` + `NoteStores` = où brancher un stockage ; `SourceConfig` + `application.properties` = la configuration ; `WebhookResource` = recevoir Photon ; `PlatformResource` = variables de la plateforme et appel d'un autre service ; `src/main/webui` = l'interface Vue (Quinoa).
+## Where to change what
+`NotesResource` = the model of a REST resource; `NoteStore` + `NoteStores` = where to plug in a store; `SourceConfig` + `application.properties` = configuration; `WebhookResource` = receiving Photon; `PlatformResource` = platform variables and calling another service; `src/main/webui` = the Vue UI (Quinoa).
