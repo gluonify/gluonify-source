@@ -1,0 +1,8 @@
+target/
+node_modules/
+src/main/webui/dist/
+src/main/webui/node_modules/
+*.log
+.idea/
+.vscode/
+dist/

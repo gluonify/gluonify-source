@@ -1,0 +1,17 @@
+# Exécutable natif glibc de gluonify-source (architecture de l'hôte Docker : arm64 sur Apple Silicon, amd64 sur un serveur x86_64), dynamique sur glibc 2.34 ou plus (Debian 12/13, Ubuntu 22.04+).
+# C'est ce que Gluonify exécute : un fichier unique, sans JVM. Usage :
+#   docker build --target out --output type=local,dest=dist -f Dockerfile.build .      ->  dist/gluonify-source
+# Projet AUTONOME : aucun contexte supplémentaire (contrairement aux composants internes de Gluonify, qui reçoivent le POM parent de gluonify-plasma).
+# L'interface Vue (Quinoa) est construite avec le Node du système (celui que Quinoa téléchargerait est lié à glibc, pas à cette image) et embarquée dans l'exécutable.
+FROM bellsoft/liberica-native-image-kit-container:jdk-25-nik-25-glibc AS build
+RUN apk add --no-cache maven zlib-dev nodejs npm
+WORKDIR /src
+COPY pom.xml .
+COPY src src
+# Build croisé sous émulation (qemu, ex. x86_64 sur Apple Silicon) : jspawnhelper échoue (code 127), il faut lancer les processus par vfork :
+#   --build-arg MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=VFORK
+ARG MAVEN_OPTS=
+ENV MAVEN_OPTS=${MAVEN_OPTS}
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests -Pnative -Dquarkus.quinoa.package-manager-install=false package
+FROM scratch AS out
+COPY --from=build /src/target/*-runner /gluonify-source

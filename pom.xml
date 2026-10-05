@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Projet AUTONOME : aucun POM parent de Gluonify, rien à installer avant. Renommez groupId/artifactId (voir README, « Renommer le projet »). -->
+  <groupId>io.gluonify.source</groupId>
+  <artifactId>gluonify-source</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>gluonify-source (application exemple pour Gluonify)</name>
+  <description>Service Quarkus 4 de départ : REST, interface Quinoa, authentification Charm, données (fichiers distribués ou Gdown), webhooks Photon.</description>
+
+  <properties>
+    <maven.compiler.release>25</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <quarkus.platform.version>4.0.0.Beta1</quarkus.platform.version>
+    <quinoa.version>2.9.2</quinoa.version>
+    <surefire.version>3.5.2</surefire.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- REST + JSON (Jackson 3) -->
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-rest-jackson</artifactId></dependency>
+    <!-- Validation des corps de requête (@NotBlank, @Size…) -->
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-hibernate-validator</artifactId></dependency>
+    <!-- Santé : OBLIGATOIRE pour Gluonify (règle R-SANTE du builder) : le trafic n'arrive que si /q/health/ready répond 200 -->
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-smallrye-health</artifactId></dependency>
+    <!-- Authentification : jetons de gluonify-charm (OpenID Connect, mode « service ») -->
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-oidc</artifactId></dependency>
+    <!-- Contrat OpenAPI (/q/openapi) et Swagger UI (/q/swagger-ui) -->
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-smallrye-openapi</artifactId></dependency>
+    <!-- Mesures Prometheus (/q/metrics) : la plateforme les relève -->
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-micrometer-registry-prometheus</artifactId></dependency>
+    <!-- Interface web : Quinoa construit et sert le projet Vue de src/main/webui -->
+    <dependency><groupId>io.quarkiverse.quinoa</groupId><artifactId>quarkus-quinoa</artifactId><version>${quinoa.version}</version></dependency>
+
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-junit</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-test-security</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><scope>test</scope></dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-maven-plugin</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <extensions>true</extensions>
+        <executions><execution><goals><goal>build</goal></goals></execution></executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration><parameters>true</parameters></configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.version}</version>
+        <configuration>
+          <systemPropertyVariables>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <maven.home>${maven.home}</maven.home>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <!-- activé par -Dnative (ce que fait gluonify-bup : mvn package -Dnative) -->
+      <id>native</id>
+      <activation><property><name>native</name></property></activation>
+      <properties>
+        <quarkus.native.enabled>true</quarkus.native.enabled>
+        <!-- -march=compatibility : l'exécutable tourne sur tout CPU x86-64 / arm64 (sinon GraalVM 25 vise x86-64-v3, AVX2).
+             SystemTicker : Netty ne doit pas figer à la compilation l'horloge de la machine de build, sinon ses délais expirent aussitôt ailleurs. -->
+        <quarkus.native.additional-build-args>-march=compatibility,--initialize-at-run-time=io.netty.util.concurrent.SystemTicker</quarkus.native.additional-build-args>
+      </properties>
+    </profile>
+  </profiles>
+</project>

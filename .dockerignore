@@ -1,0 +1,5 @@
+# le contexte du build natif ne doit contenir que les sources : les dossiers générés (interface construite, dépendances npm, classes Maven) gêneraient Quinoa
+**/node_modules
+**/dist
+target
+.git

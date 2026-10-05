@@ -1,0 +1,13 @@
+{
+  "artifacts": { "arm64": "https://VOTRE-DEPOT/gluonify-source#sha256=EMPREINTE-SHA256" },
+  "replicas": 2,
+  "memoryMb": 128,
+  "uses": ["id", "graphdb"],
+  "distributed": ["std"],
+  "env": {
+    "SOURCE_STORE": "files",
+    "OIDC_ISSUER": "https://id.VOTRE-ZONE/realms/gluonify",
+    "OIDC_AUDIENCE": "gluonify-source"
+  },
+  "vaultNamespace": "gluonify-source"
+}

@@ -1,0 +1,7 @@
+{
+  "routes": [{ "path": "/", "app": "gluonify-source" }],
+  "policy": {
+    "auth": { "audience": "gluonify-source" },
+    "limits": [{ "window": "minute", "max": 120 }]
+  }
+}
