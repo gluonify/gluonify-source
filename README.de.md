@@ -65,7 +65,7 @@ Dockerfile.build                baut die native ausführbare Datei in Docker
 src/main/resources/
   application.properties        die GESAMTE Konfiguration, Zeile für Zeile kommentiert
 src/main/java/io/gluonify/source/
-  SourceConfig.java             die Konfiguration der Anwendung (Präfix « source. »)
+  SourceConfig.java             die Konfiguration der Anwendung (Präfix »source.«)
   notes/
     Note.java, NewNote.java     das Modell (Records) und der (validierte) Body zum Anlegen
     NotesResource.java          ← DAS MODELL EINER REST-RESSOURCE (zum Kopieren)
@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        Zustellungen von Photon empfangen
   security/DevAuthentication.java   Entwicklungsidentität (nur Profil dev)
 src/main/webui/                 die Vue-3-Oberfläche (Vite + vitest), von Quinoa gebaut
-src/test/java/…                 34 Java-Tests; src/main/webui/src/App.test.js: 3 Oberflächentests
+src/test/java/…                 44 Java-Tests; src/main/webui/src/App.test.js: 3 Oberflächentests
 deploy/                         Beispiele: AppSpec, Domain, Photon-Webhook, Gdown-Datenbank
 scripts/rename.py               benennt das Projekt um
 ```
@@ -138,7 +138,7 @@ Eine andere Technologie (React, Svelte …): Ersetzen Sie den Inhalt von `src/ma
 Die API ist **ohne Token geschlossen**. Sie erwartet ein Bearer-Token (JWT), ausgestellt von **gluonify-charm**, dem Identitätsanbieter von Gluonify (OpenID Connect, ES256):
 
 ```
-Authorization: Bearer <jeton>
+Authorization: Bearer <token>
 ```
 
 Der Dienst **erzeugt** nie ein Token: Er **prüft** welche (Modus `quarkus.oidc.application-type=service`). Was er kontrolliert:
@@ -160,7 +160,7 @@ curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $ID_ADMIN_TOKEN
 curl -s https://gluonify-source.<zone>/api/notes -H "Authorization: Bearer eyJ…"
 ```
 
-Ein abweichender Audience-Wert (`"audience": "autre"`) ergibt **401**; ein gültiges Token ohne die passende Rolle ergibt **403**.
+Ein abweichender Audience-Wert (`"audience": "other"`) ergibt **401**; ein gültiges Token ohne die passende Rolle ergibt **403**.
 
 **Lokal** stellt das Profil `dev` die Identität »dev« bereit (siehe [`DevAuthentication`](src/main/java/io/gluonify/source/security/DevAuthentication.java)); **in den Tests** `@TestSecurity`. Niemals eine solche Identität in der Produktion: Sie wird nur im Profil `dev` kompiliert.
 
@@ -174,7 +174,7 @@ Eine Anwendung auf Gluonify ist **isoliert**: eigenes Konto, eigenes Netzwerk, e
 | **Charm** (Identität) | kurzlebige JWT-Tokens | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` prüft die Tokens | [§6](#6-authentifizierung-die-tokens-von-charm) |
 | **Gdown** (Graphdatenbank) | replizierte Datenbank (Raft), Cypher über HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; ein lokales Gdown-Konto | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
 | **Verteilte Dateien** | `/distributed/std`: dauerhaft, von allen Replikaten geteilt, 2 Kopien | `"distributed": ["std"]` beim Deployment | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
-| **Andere Anwendungen** | Dienst-zu-Dienst-Aufruf | `"uses": ["autre"]` → `SERVICE_AUTRE_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
+| **Andere Anwendungen** | Dienst-zu-Dienst-Aufruf | `"uses": ["other"]` → `SERVICE_OTHER_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
 | **Photon** (API-Gateway) | signierte Webhooks, Umwandlung XML / SOAP / Formular → JSON, Wiederholung | Photon liefert an `…/hooks/events`; Ihr Dienst bestätigt mit 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
 | **Field** | statische Sites (ZIP), auf Ihrer Domain ausgeliefert | nichts zu programmieren: Eine Site wird als ZIP hochgeladen | — |
 | **Higgs** (Orchestrator) | Domains, automatische HTTPS-Zertifikate, Routen, Richtlinien (Token, Limits, CORS, Adressen) | `PUT /domains/<name>` | `deploy/domain.json` |
@@ -213,10 +213,10 @@ Deployen Sie mit `"distributed": ["std"]`: `/distributed/std` erscheint, von all
 Photon empfängt die Nachrichten Ihrer Partner (prüft deren HMAC-Signatur, wandelt XML, SOAP oder Formular in JSON um) und **liefert** sie dann an Ihren Dienst. Zustellungsvertrag:
 
 - **ein 2XX-Code bestätigt**; jeder andere Code (oder ein Ausfall) führt zur **Wiederholung** gemäß der Webhook-Richtlinie (`retry`) und danach zur Dead-Letter-Queue;
-- also **antworten Sie schnell** und seien Sie **idempotent**: »mindestens einmal« bedeutet, dass dieselbe Nachricht zweimal ankommen kann. Der Header `X-Gluonify-Event-Id` ist der Schlüssel zur Deduplizierung; `X-Gluonify-Delivery-Attempt` zählt die Versuche; `X-Gluonify-Webhook-Id` benennt den Webhook; Der Speicher wird **nicht** zwischen Replikaten geteilt: Hier werden die Kennungen im über `source.store` gewählten Speicher abgelegt (Arbeitsspeicher, eine Datei pro Ereignis, mit `CREATE_NEW` in `/distributed/std/events` angelegt, oder ein durch eine Eindeutigkeitsbedingung geschützter Knoten in Gdown), sodass genau ein Replikat ein Ereignis annimmt.
+- also **antworten Sie schnell** und seien Sie **idempotent**: »mindestens einmal« bedeutet, dass dieselbe Nachricht zweimal ankommen kann. Der Header `X-Gluonify-Event-Id` ist der Schlüssel zur Deduplizierung; `X-Gluonify-Delivery-Attempt` zählt die Versuche; `X-Gluonify-Webhook-Id` benennt den Webhook. Der Arbeitsspeicher wird **nicht** zwischen Replikaten geteilt: Hier werden die Kennungen im über `source.store` gewählten Speicher abgelegt (Arbeitsspeicher, eine Datei pro Ereignis, mit `CREATE_NEW` in `/distributed/std/events` angelegt, oder ein durch eine Eindeutigkeitsbedingung geschützter Knoten in Gdown), sodass genau ein Replikat ein Ereignis annimmt.
 - Photon sendet **kein** Charm-Token: Schützen Sie den Einstiegspunkt mit einem Schlüssel, den Sie in das Ziel des Webhooks (`"headers": {"X-Api-Key": "…"}`, siehe [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) und in den Tresor (`WEBHOOK_KEY`) legen. **Ohne konfigurierten Schlüssel ist der Empfänger geschlossen** (404).
 
-[`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) zeigt das Ganze (Schlüssel in konstanter Zeit verglichen, Deduplizierung, unlesbares JSON → 400); ersetzen Sie den Rumpf von `receive` durch Ihre Verarbeitung.
+[`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) zeigt das Ganze (Schlüssel in konstanter Zeit verglichen, Deduplizierung, unlesbares JSON → 400); ersetzen Sie den Body von `receive` durch Ihre Verarbeitung.
 
 ### Eine andere Anwendung aufrufen
 
@@ -230,7 +230,7 @@ Deklarieren Sie sie in `"uses"`: Die Plattform stellt `SERVICE_<APP>_URL` bereit
 ## 8. Bauen
 
 ```bash
-mvn test                       # Java-Tests (30)
+mvn test                       # Java-Tests (44)
 mvn package                    # JVM: target/quarkus-app/; baut auch die Oberfläche (Quinoa)
 ```
 
@@ -241,7 +241,7 @@ docker build --target out --output type=local,dest=dist -f Dockerfile.build .
 ./dist/gluonify-source         # läuft auf diesem Linux, Port 8080
 ```
 
-Die Datei `dist/gluonify-source` ist eine **glibc**-Linux-Programmdatei der Architektur Ihres Dockers (arm64 auf Apple Silicon, amd64 auf x86_64). Für die andere Architektur: `docker build --platform linux/amd64 …` (langsam: Emulation; siehe die Kommentare in `Dockerfile.build`).
+Die Datei `dist/gluonify-source` ist eine ausführbare **glibc**-Linux-Datei der Architektur Ihrer Docker-Installation (arm64 auf Apple Silicon, amd64 auf x86_64). Für die andere Architektur: `docker build --platform linux/amd64 …` (langsam: Emulation; siehe die Kommentare in `Dockerfile.build`).
 
 Ohne Docker: `mvn package -Dnative` setzt eine installierte GraalVM (NIK 25) voraus.
 
@@ -278,7 +278,7 @@ Die Anwendung ist dann unter `https://gluonify-source.<zone>` erreichbar (automa
 | `memoryMb` | Speicherobergrenze pro Instanz (eine native Anwendung kommt mit 64 bis 128 MB aus) |
 | `uses` | erreichbare Dienste: `SERVICE_<APP>_URL` bereitgestellt, Netzwerk geöffnet (`id` = Charm, `graphdb` = Gdown) |
 | `distributed` | `["std"]` für `/distributed/std` |
-| `env` | **nicht geheime** Variablen; `${NAME}` und `${NAME:-standard}` werden aufgelöst |
+| `env` | **nicht geheime** Variablen; `${NAME}` und `${NAME:-default}` werden aufgelöst |
 | `vault` | `true`: Die Steuerungsebene weist der Anwendung ihren eigenen Tresor-Namensraum `<uuid>.app` zu, dessen Schlüssel als `APP_<SCHLÜSSEL>` ankommen |
 | `vaultNamespace` | Alternative: ein bestehender Tresor-Namensraum per Name; seine Schlüssel kommen **ohne Präfix** an (kein `APP_`) |
 | `internal` | `true`: keine öffentliche Route (interner Dienst) |
@@ -288,7 +288,7 @@ Aktualisieren: dasselbe `PUT` (oder ein neuer Build); die Replikate werden **nac
 ## 10. Testen
 
 ```bash
-mvn test                                 # 34 Java-Tests
+mvn test                                 # 44 Java-Tests
 cd src/main/webui && npm install && npm test   # 3 Oberflächentests
 ```
 
@@ -321,7 +321,7 @@ Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNot
 | 401 in der Produktion | kein Token, abgelaufenes Token oder **Audience** abweichend von `OIDC_AUDIENCE`; oder `OIDC_ISSUER` stimmt nicht mit dem `iss` des Tokens überein |
 | 403 | gültiges Token, aber ohne die Rolle (`source:read` / `source:write`) |
 | Die Anwendung erhält keinen Verkehr | `/q/health/ready` antwortet nicht mit 200 (Speicher nicht erreichbar?): `GET /apps/<name>` zeigt die bereiten Instanzen |
-| `store=graph`: »source.graph.url ist leer« | die Anwendung ist nicht mit `"uses": ["graphdb"]` deployt |
+| `store=graph`: »source.graph.url is empty« | die Anwendung ist nicht mit `"uses": ["graphdb"]` deployt |
 | Gdown: 401 oder »Unsupported property value type« | falsches Konto; oder eine als Eigenschaft gespeicherte **Map** (siehe §7) |
 | Eine angelegte Notiz erscheint nicht sofort (Dateien) | Listen-Cache von ~3 s zwischen Replikaten: aktualisieren |
 | Der Build des Repositorys wird abgelehnt | eine Regel `R-…`: die Meldung nennt sie; `mvn test` (`ConformityTest`) zeigt sie bei Ihnen |

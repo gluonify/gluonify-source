@@ -65,7 +65,7 @@ Dockerfile.build                construye el ejecutable nativo en Docker
 src/main/resources/
   application.properties        TODA la configuración, comentada línea por línea
 src/main/java/io/gluonify/source/
-  SourceConfig.java             la configuración de la aplicación (prefijo « source. »)
+  SourceConfig.java             la configuración de la aplicación (prefijo «source.»)
   notes/
     Note.java, NewNote.java     el modelo (records) y el cuerpo de creación (validado)
     NotesResource.java          ← EL MODELO DE UN RECURSO REST (para copiar)
@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        recibir las entregas de Photon
   security/DevAuthentication.java   identidad de desarrollo (solo perfil dev)
 src/main/webui/                 la interfaz Vue 3 (Vite + vitest), construida por Quinoa
-src/test/java/…                 30 pruebas Java; src/main/webui/src/App.test.js: 3 pruebas de interfaz
+src/test/java/…                 44 pruebas Java; src/main/webui/src/App.test.js: 3 pruebas de interfaz
 deploy/                         ejemplos: AppSpec, dominio, webhook de Photon, base Gdown
 scripts/rename.py               renombra el proyecto
 ```
@@ -160,7 +160,7 @@ curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $ID_ADMIN_TOKEN
 curl -s https://gluonify-source.<zone>/api/notes -H "Authorization: Bearer eyJ…"
 ```
 
-Un valor de audiencia distinto (`"audience": "autre"`) da **401**; un token válido sin el rol adecuado da **403**.
+Un valor de audiencia distinto (`"audience": "other"`) da **401**; un token válido sin el rol adecuado da **403**.
 
 **En local**, el perfil `dev` proporciona la identidad «dev» (véase [`DevAuthentication`](src/main/java/io/gluonify/source/security/DevAuthentication.java)); **en las pruebas**, `@TestSecurity`. Nunca una identidad de este tipo en producción: solo se compila en el perfil `dev`.
 
@@ -174,7 +174,7 @@ Una aplicación en Gluonify está **aislada**: su propia cuenta, su propia red, 
 | **Charm** (identidad) | tokens JWT de corta duración | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` verifica los tokens | [§6](#6-autenticación-los-tokens-de-charm) |
 | **Gdown** (base de grafos) | base replicada (Raft), Cypher por HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; una cuenta local de Gdown | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
 | **Archivos distribuidos** | `/distributed/std`: duradero, compartido por todas las réplicas, 2 copias | `"distributed": ["std"]` en el despliegue | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
-| **Otras aplicaciones** | llamada de servicio a servicio | `"uses": ["autre"]` → `SERVICE_AUTRE_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
+| **Otras aplicaciones** | llamada de servicio a servicio | `"uses": ["other"]` → `SERVICE_OTHER_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
 | **Photon** (pasarela de API) | webhooks firmados, conversión XML / SOAP / formulario → JSON, reenvío | Photon entrega en `…/hooks/events`; su servicio confirma con 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
 | **Field** | sitios estáticos (ZIP) servidos en su dominio | nada que programar: un sitio se sube en ZIP | — |
 | **Higgs** (orquestador) | dominios, certificados HTTPS automáticos, rutas, políticas (token, límites, CORS, direcciones) | `PUT /domains/<nombre>` | `deploy/domain.json` |
@@ -182,8 +182,8 @@ Una aplicación en Gluonify está **aislada**: su propia cuenta, su propia red, 
 ### Configuración y secretos (Top)
 
 - Un valor **no secreto**: en `"env"` del despliegue (`deploy/appspec.json`): `"SOURCE_STORE": "files"`. Se almacena en el estado del clúster.
-- Un valor **secreto** (contraseña, clave de API): en la **caja fuerte** (Top, espacio `<uuid>.app` de su aplicación). La clave `GRAPH_PASSWORD` llega como variable `APP_GRAPH_PASSWORD` y se lee `${app.graph.password}`. Solicite ese espacio con `"vault": true` en la especificación de la aplicación: solo ese espacio `<uuid>.app`, asignado por el plano de control, añade el prefijo `APP_`. Con un `"vaultNamespace"` literal (por ejemplo `"gluonify-source"`, la única opción del builder), las claves llegan **sin prefijo**, tal como se nombran en la caja fuerte (`GRAPH_PASSWORD` sigue siendo `GRAPH_PASSWORD`): nómbrelas según las propiedades leídas (por ejemplo `SOURCE_GRAPH_PASSWORD`). **Nunca** en el repositorio: el builder rechaza una contraseña en claro (regla R-SECRET), y `ConformityTest` se lo avisa antes.
-- **Guardar un valor no reinicia nada**: tras modificar varias claves, desencadene **un** redespliegue (`POST /apps/<nombre>/redeploy`); las réplicas se reinician una a una, sin corte si tiene dos o más.
+- Un valor **secreto** (contraseña, clave de API): en la **caja fuerte** (Top, espacio `<uuid>.app` de su aplicación). La clave `GRAPH_PASSWORD` llega como variable `APP_GRAPH_PASSWORD` y se lee `${app.graph.password}`. Solicite ese espacio con `"vault": true` en la especificación de la aplicación: solo ese espacio `<uuid>.app`, asignado por el plano de control, añade el prefijo `APP_`. Con un `"vaultNamespace"` literal (por ejemplo `"gluonify-source"`, la única opción del builder), las claves llegan **sin prefijo**, tal como se nombran en la caja fuerte (`GRAPH_PASSWORD` sigue siendo `GRAPH_PASSWORD`): nómbrelas según las propiedades leídas (por ejemplo `SOURCE_GRAPH_PASSWORD`). **Nunca** en el repositorio: el builder rechaza una contraseña en claro (regla R-SECRET), y `ConformityTest` se lo indica antes.
+- **Guardar un valor no reinicia nada**: tras modificar varias claves, lance **un** redespliegue (`POST /apps/<nombre>/redeploy`); las réplicas se reinician una a una, sin corte si tiene dos o más.
 - Variables que la plataforma añade **siempre**: `QUARKUS_HTTP_PORT` y `QUARKUS_HTTP_HOST`, `ENV_NAME` (el entorno: SBX, QUA, PRD…), `ENV_NODE` (número de la réplica: 1, 2…), `GLUONIFY_SELF_URL` (dirección de esta instancia). Las lee y muestra [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, nunca un secreto).
 
 ### Salud: `/q/health/ready` y `/q/health/live`
@@ -213,7 +213,7 @@ Despliegue con `"distributed": ["std"]`: aparece `/distributed/std`, compartido 
 Photon recibe los mensajes de sus socios (verifica su firma HMAC, convierte XML, SOAP o formulario en JSON) y luego los **entrega** a su servicio. Contrato de entrega:
 
 - **un código 2XX confirma**; cualquier otro código (o una caída) provoca el **reenvío** según la política del webhook (`retry`), y luego pasa a la cola de mensajes fallidos;
-- por tanto **responda rápido** y sea **idempotente**: «al menos una vez» significa que un mismo mensaje puede llegar dos veces. La cabecera `X-Gluonify-Event-Id` es la clave de deduplicación; `X-Gluonify-Delivery-Attempt` cuenta los intentos; `X-Gluonify-Webhook-Id` nombra el webhook; La memoria **no** se comparte entre réplicas: aquí los identificadores se guardan en el almacenamiento elegido por `source.store` (memoria, un archivo por evento creado con `CREATE_NEW` en `/distributed/std/events`, o un nodo protegido por una restricción de unicidad en Gdown), de modo que una sola réplica acepta un evento.
+- por tanto **responda rápido** y sea **idempotente**: «al menos una vez» significa que un mismo mensaje puede llegar dos veces. La cabecera `X-Gluonify-Event-Id` es la clave de deduplicación; `X-Gluonify-Delivery-Attempt` cuenta los intentos; `X-Gluonify-Webhook-Id` nombra el webhook. La memoria **no** se comparte entre réplicas: aquí los identificadores se guardan en el almacenamiento elegido por `source.store` (memoria, un archivo por evento creado con `CREATE_NEW` en `/distributed/std/events`, o un nodo protegido por una restricción de unicidad en Gdown), de modo que una sola réplica acepta un evento.
 - Photon **no** envía un token de Charm: proteja el punto de entrada con una clave que ponga en el destino del webhook (`"headers": {"X-Api-Key": "…"}`, véase [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) y en la caja fuerte (`WEBHOOK_KEY`). **Sin clave configurada, el receptor está cerrado** (404).
 
 [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) lo muestra todo (clave comparada en tiempo constante, deduplicación, JSON ilegible → 400); sustituya el cuerpo de `receive` por su propio tratamiento.
@@ -230,7 +230,7 @@ Declárela en `"uses"`: la plataforma proporciona `SERVICE_<APP>_URL` **y abre l
 ## 8. Construir
 
 ```bash
-mvn test                       # pruebas Java (30)
+mvn test                       # pruebas Java (44)
 mvn package                    # JVM: target/quarkus-app/; construye también la interfaz (Quinoa)
 ```
 
@@ -278,7 +278,7 @@ La aplicación queda entonces en `https://gluonify-source.<zone>` (certificado a
 | `memoryMb` | límite de memoria por instancia (un nativo cabe en 64 a 128 MB) |
 | `uses` | servicios alcanzables: `SERVICE_<APP>_URL` proporcionada, red abierta (`id` = Charm, `graphdb` = Gdown) |
 | `distributed` | `["std"]` para `/distributed/std` |
-| `env` | variables **no secretas**; `${NOM}` y `${NOM:-défaut}` se resuelven |
+| `env` | variables **no secretas**; `${NAME}` y `${NAME:-default}` se resuelven |
 | `vault` | `true`: el plano de control asigna a la aplicación su propio espacio de caja fuerte `<uuid>.app`, cuyas claves llegan como `APP_<CLAVE>` |
 | `vaultNamespace` | alternativa: un espacio de caja fuerte existente, por su nombre; sus claves llegan **sin prefijo** (sin `APP_`) |
 | `internal` | `true`: ninguna ruta pública (servicio interno) |
@@ -288,7 +288,7 @@ Actualizar: el mismo `PUT` (o un nuevo build); las réplicas se sustituyen **una
 ## 10. Probar
 
 ```bash
-mvn test                                 # 30 pruebas Java
+mvn test                                 # 44 pruebas Java
 cd src/main/webui && npm install && npm test   # 3 pruebas de interfaz
 ```
 
@@ -321,8 +321,8 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 | 401 en producción | sin token, token caducado, o **audiencia** distinta de `OIDC_AUDIENCE`; o `OIDC_ISSUER` no coincide con el `iss` del token |
 | 403 | token válido pero sin el rol (`source:read` / `source:write`) |
 | La aplicación no recibe tráfico | `/q/health/ready` no responde 200 (¿almacenamiento inaccesible?): `GET /apps/<nombre>` muestra las instancias listas |
-| `store=graph`: « source.graph.url est vide » | la aplicación no está desplegada con `"uses": ["graphdb"]` |
-| Gdown: 401 o « Unsupported property value type » | cuenta incorrecta; o un **mapa** almacenado como propiedad (véase §7) |
+| `store=graph`: «source.graph.url is empty» | la aplicación no está desplegada con `"uses": ["graphdb"]` |
+| Gdown: 401 o «Unsupported property value type» | cuenta incorrecta; o un **mapa** almacenado como propiedad (véase §7) |
 | Una nota creada no aparece enseguida (archivos) | caché de lista de ~3 s entre réplicas: refrescar |
 | Se rechaza el build del repositorio | una regla `R-…`: el mensaje la nombra; `mvn test` (`ConformityTest`) la muestra en su máquina |
 | `mvn package` no encuentra Node | acceso a la red para descargarlo, o `-Dquarkus.quinoa=false` para construir sin la interfaz |

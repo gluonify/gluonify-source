@@ -80,7 +80,7 @@ src/main/java/io/gluonify/source/
     WebhookResource.java        recevoir les livraisons de Photon
   security/DevAuthentication.java   identité de développement (profil dev seulement)
 src/main/webui/                 l'interface Vue 3 (Vite + vitest), construite par Quinoa
-src/test/java/…                 30 tests Java ; src/main/webui/src/App.test.js : 3 tests d'interface
+src/test/java/…                 44 tests Java ; src/main/webui/src/App.test.js : 3 tests d'interface
 deploy/                         exemples : AppSpec, domaine, webhook Photon, base Gdown
 scripts/rename.py               renomme le projet
 ```
@@ -114,7 +114,7 @@ Lisez [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResourc
        public Response create(@Valid NewOrder in) { … return Response.created(uri).entity(order).build(); }
    }
    ```
-3. **La documentation** : `@Operation(summary = "…")` et `@Tag(name = "…")` (microprofile-openapi) : elles apparaissent dans `/q/swagger-ui`. Le contrat est regénéré à chaque démarrage.
+3. **La documentation** : `@Operation(summary = "…")` et `@Tag(name = "…")` (microprofile-openapi) : elles apparaissent dans `/q/swagger-ui`. Le contrat est régénéré à chaque démarrage.
 4. **Les tests** : copiez [`NotesResourceTest`](src/test/java/io/gluonify/source/NotesResourceTest.java). `@TestSecurity(user = "ada", roles = {"shop:write"})` fixe l'identité d'un test ; sans annotation, c'est un appel sans jeton (attendu : 401).
 5. **Les codes HTTP** : 201 + `Location` à la création, 204 sans corps, 400 pour un corps invalide (Hibernate Validator), 401 sans jeton, 403 sans le bon rôle, 404 pour un identifiant inconnu. Les erreurs renvoient `{"error": "…"}`.
 
@@ -213,7 +213,7 @@ Déployez avec `"distributed": ["std"]` : `/distributed/std` apparaît, partagé
 Photon reçoit les messages de vos partenaires (vérifie leur signature HMAC, convertit XML, SOAP ou formulaire en JSON) puis les **livre** à votre service. Contrat de livraison :
 
 - **un code 2XX acquitte** ; tout autre code (ou une panne) fait **rejouer** selon la politique du webhook (`retry`), puis met en file morte ;
-- donc **répondez vite** et soyez **idempotent** : « au moins une fois » signifie qu'un même message peut arriver deux fois. L'en-tête `X-Gluonify-Event-Id` est la clé de déduplication ; `X-Gluonify-Delivery-Attempt` compte les essais ; `X-Gluonify-Webhook-Id` nomme le webhook ; La mémoire n'est **pas** partagée entre réplicas : ici les identifiants sont conservés dans le stockage choisi par `source.store` (mémoire, un fichier par événement créé avec `CREATE_NEW` dans `/distributed/std/events`, ou un nœud protégé par une contrainte d'unicité dans Gdown), si bien qu'une seule réplique accepte un événement.
+- donc **répondez vite** et soyez **idempotent** : « au moins une fois » signifie qu'un même message peut arriver deux fois. L'en-tête `X-Gluonify-Event-Id` est la clé de déduplication ; `X-Gluonify-Delivery-Attempt` compte les essais ; `X-Gluonify-Webhook-Id` nomme le webhook. La mémoire n'est **pas** partagée entre réplicas : ici les identifiants sont conservés dans le stockage choisi par `source.store` (mémoire, un fichier par événement créé avec `CREATE_NEW` dans `/distributed/std/events`, ou un nœud protégé par une contrainte d'unicité dans Gdown), si bien qu'une seule réplique accepte un événement.
 - Photon n'envoie **pas** de jeton Charm : protégez le point d'entrée par une clé que vous mettez dans la cible du webhook (`"headers": {"X-Api-Key": "…"}`, voir [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) et dans le coffre (`WEBHOOK_KEY`). **Sans clé configurée, le récepteur est fermé** (404).
 
 [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) montre le tout (clé comparée en temps constant, déduplication, JSON illisible → 400) ; remplacez le corps de `receive` par votre traitement.
@@ -230,7 +230,7 @@ Déclarez-la dans `"uses"` : la plateforme fournit `SERVICE_<APP>_URL` **et ouvr
 ## 8. Construire
 
 ```bash
-mvn test                       # tests Java (30)
+mvn test                       # tests Java (44)
 mvn package                    # JVM : target/quarkus-app/ ; construit aussi l'interface (Quinoa)
 ```
 
@@ -288,7 +288,7 @@ Mettre à jour : même `PUT` (ou nouveau build) ; les répliques sont remplacée
 ## 10. Tester
 
 ```bash
-mvn test                                 # 30 tests Java
+mvn test                                 # 44 tests Java
 cd src/main/webui && npm install && npm test   # 3 tests d'interface
 ```
 
@@ -321,7 +321,7 @@ Un test d'API se copie de `NotesResourceTest` ; un test de stockage de `FileNote
 | 401 en production | pas de jeton, jeton expiré, ou **audience** différente de `OIDC_AUDIENCE` ; ou `OIDC_ISSUER` ne correspond pas à l'`iss` du jeton |
 | 403 | jeton valide mais sans le rôle (`source:read` / `source:write`) |
 | L'application ne reçoit pas de trafic | `/q/health/ready` ne répond pas 200 (stockage injoignable ?) : `GET /apps/<nom>` montre les instances prêtes |
-| `store=graph` : « source.graph.url est vide » | l'application n'est pas déployée avec `"uses": ["graphdb"]` |
+| `store=graph` : « source.graph.url is empty » | l'application n'est pas déployée avec `"uses": ["graphdb"]` |
 | Gdown : 401 ou « Unsupported property value type » | mauvais compte ; ou une **carte** stockée comme propriété (voir §7) |
 | Une note créée n'apparaît pas tout de suite (fichiers) | cache de liste de ~3 s entre répliques : rafraîchir |
 | Le build du dépôt est refusé | une règle `R-…` : le message la nomme ; `mvn test` (`ConformityTest`) la montre chez vous |
