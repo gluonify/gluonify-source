@@ -6,3 +6,4 @@ src/main/webui/node_modules/
 .idea/
 .vscode/
 dist/
+.quinoa/
