@@ -15,19 +15,19 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Notes dans {@code /distributed/std} : des fichiers durables, PARTAGÉS par toutes les répliques de l'application sur tous les nœuds (données sur les nœuds de stockage,
- * en deux copies). Le dossier existe parce que l'application a été déployée avec {@code "distributed": ["std"]}.
+ * Notes in {@code /distributed/std}: durable files, SHARED by all replicas of the application on all nodes (data on the storage nodes,
+ * in two copies). The folder exists because the application was deployed with {@code "distributed": ["std"]}.
  *
- * <p><b>Les règles du système de fichiers distribué</b> (celles qui ont coûté cher à découvrir ; elles expliquent la forme de cette classe) :
+ * <p><b>The rules of the distributed file system</b> (the ones that were costly to discover; they explain the shape of this class):
  * <ol>
- *   <li><b>Ne jamais réécrire un fichier ni renommer un dossier qui vient d'être écrit.</b> On n'écrit donc que de NOUVEAUX fichiers, directement sous leur nom définitif
- *       (c'est pourquoi une note est immuable) ; supprimer un fichier est permis.</li>
- *   <li><b>La liste d'un dossier peut être en retard d'environ 3 secondes</b> sur une autre réplique : une note créée sur la réplique A peut mettre quelques secondes à
- *       apparaître sur la réplique B. Ne bâtissez pas de logique qui suppose le contraire (le client rafraîchit sa liste).</li>
- *   <li>Un fichier devient visible <b>à sa fermeture</b> : un lecteur ne voit jamais un fichier à moitié écrit, mais il tolère quand même un fichier illisible (ignoré ici).</li>
- *   <li>Pas de verrous entre nœuds sans {@code distributedLocks} : ici aucun n'est nécessaire, chaque note a son fichier unique (UUID).</li>
+ *   <li><b>Never rewrite a file nor rename a folder that was just written.</b> So we only write NEW files, directly under their final name
+ *       (this is why a note is immutable); deleting a file is allowed.</li>
+ *   <li><b>A folder listing can lag by about 3 seconds</b> on another replica: a note created on replica A can take a few seconds to
+ *       show up on replica B. Do not build logic that assumes otherwise (the client refreshes its list).</li>
+ *   <li>A file becomes visible <b>when it is closed</b>: a reader never sees a half-written file, but it still tolerates an unreadable file (ignored here).</li>
+ *   <li>No locks between nodes without {@code distributedLocks}: none is needed here, each note has its own unique file (UUID).</li>
  * </ol>
- * Les noms de fichiers commencent par l'heure de création (millisecondes, 13 chiffres) : l'ordre alphabétique est l'ordre chronologique, on lit les 200 derniers.
+ * File names start with the creation time (milliseconds, 13 digits): alphabetical order is chronological order, and the last 200 are read.
  */
 public class FileNoteStore implements NoteStore {
     private static final int LIMIT = 200;
@@ -51,10 +51,10 @@ public class FileNoteStore implements NoteStore {
         Note n = new Note(id, in.title(), in.body() == null ? "" : in.body(), now, author);
         try {
             Files.createDirectories(dir);
-            // directement sous le nom définitif, jamais « écrire un .tmp puis renommer » (voir règle 1)
+            // directly under the final name, never "write a .tmp then rename" (see rule 1)
             Files.writeString(file(id), MAPPER.writeValueAsString(n), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new UncheckedIOException("écriture de la note impossible dans " + dir, e);
+            throw new UncheckedIOException("cannot write the note in " + dir, e);
         }
         return n;
     }
@@ -65,10 +65,10 @@ public class FileNoteStore implements NoteStore {
         try (Stream<Path> s = Files.list(dir)) {
             List<Path> names = s.filter(p -> p.getFileName().toString().endsWith(".json")).sorted().toList();
             List<Note> out = new ArrayList<>();
-            for (int i = names.size() - 1; i >= 0 && out.size() < LIMIT; i--) read(names.get(i)).ifPresent(out::add); // les plus récentes d'abord
+            for (int i = names.size() - 1; i >= 0 && out.size() < LIMIT; i--) read(names.get(i)).ifPresent(out::add); // most recent first
             return out;
         } catch (IOException e) {
-            throw new UncheckedIOException("lecture de " + dir + " impossible", e);
+            throw new UncheckedIOException("cannot read " + dir, e);
         }
     }
 
@@ -83,7 +83,7 @@ public class FileNoteStore implements NoteStore {
         try {
             return Files.deleteIfExists(file(id));
         } catch (IOException e) {
-            throw new UncheckedIOException("suppression impossible", e);
+            throw new UncheckedIOException("cannot delete", e);
         }
     }
 
@@ -97,7 +97,7 @@ public class FileNoteStore implements NoteStore {
         }
     }
 
-    /** Un identifiant n'est jamais un chemin : ni « .. », ni « / » (protège contre l'accès à un autre fichier). */
+    /** An identifier is never a path: no "..", no "/" (protects against access to another file). */
     static boolean safe(String id) {
         return id != null && id.matches("[0-9]{13}-[0-9a-fA-F-]{36}");
     }
@@ -111,7 +111,7 @@ public class FileNoteStore implements NoteStore {
             JsonNode j = MAPPER.readTree(Files.readString(p, StandardCharsets.UTF_8));
             return Optional.of(new Note(j.get("id").asString(), j.get("title").asString(), j.path("body").asString(""), Instant.parse(j.get("createdAt").asString()), j.path("author").asString("")));
         } catch (IOException | RuntimeException e) {
-            return Optional.empty(); // absent, partiel ou corrompu : ignoré (règle 3)
+            return Optional.empty(); // missing, partial or corrupt: ignored (rule 3)
         }
     }
 }

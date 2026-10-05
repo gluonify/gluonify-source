@@ -7,8 +7,8 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Readiness;
 
 /**
- * Condition de PRÊT : la plateforme n'envoie du trafic à cette instance que si /q/health/ready répond 200, donc si le stockage est utilisable.
- * (/q/health/live, lui, ne dépend de rien d'extérieur : une panne de Gdown ne doit pas faire redémarrer l'application en boucle.)
+ * READINESS condition: the platform only sends traffic to this instance if /q/health/ready answers 200, hence if the storage is usable.
+ * (/q/health/live depends on nothing external: a Gdown outage must not make the application restart in a loop.)
  */
 @Readiness
 @ApplicationScoped

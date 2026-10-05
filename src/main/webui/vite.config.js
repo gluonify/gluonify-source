@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// Quinoa lance « npm run dev » (port 5173) en mode dev et « npm run build » (dossier dist/) au package ; les appels /api vont à Quarkus (même origine grâce à Quinoa).
+// Quinoa runs "npm run dev" (port 5173) in dev mode and "npm run build" (dist/ folder) at package time; /api calls go to Quarkus (same origin thanks to Quinoa).
 export default defineConfig({
   plugins: [vue()],
   base: './',

@@ -6,7 +6,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
-/** Sans clé configurée (cas par défaut), le récepteur de webhooks est fermé : 404, même avec une clé. */
+/** Without a configured key (the default case), the webhook receiver is closed: 404, even with a key. */
 @QuarkusTest
 class WebhookClosedTest {
     @Test

@@ -1,10 +1,10 @@
-// Les appels à l'API REST du service (même origine : Quinoa sert l'interface et Quarkus l'API sur le même port).
-// Le jeton de Gluonify (Charm) est collé par l'utilisateur et gardé pour l'onglet seulement (sessionStorage) : jamais écrit dans le code, jamais dans un cookie.
+// Calls to the service's REST API (same origin: Quinoa serves the UI and Quarkus the API on the same port).
+// The Gluonify (Charm) token is pasted by the user and kept for the tab only (sessionStorage): never written in the code, never in a cookie.
 const KEY = 'gluonify-source-token'
 
 export const token = {
   get: () => { try { return sessionStorage.getItem(KEY) || '' } catch { return '' } },
-  set: (v) => { try { v ? sessionStorage.setItem(KEY, v) : sessionStorage.removeItem(KEY) } catch { /* stockage indisponible : le jeton reste en mémoire de la page */ } }
+  set: (v) => { try { v ? sessionStorage.setItem(KEY, v) : sessionStorage.removeItem(KEY) } catch { /* storage unavailable: the token stays in the page's memory */ } }
 }
 
 async function call(method, path, body) {
@@ -16,7 +16,7 @@ async function call(method, path, body) {
   if (r.status === 204) return null
   const text = await r.text()
   let json = null
-  try { json = text ? JSON.parse(text) : null } catch { /* corps non JSON */ }
+  try { json = text ? JSON.parse(text) : null } catch { /* non-JSON body */ }
   if (!r.ok) {
     const e = new Error((json && (json.error || (json.violations && json.violations.map((v) => v.message).join(', ')))) || `HTTP ${r.status}`)
     e.status = r.status

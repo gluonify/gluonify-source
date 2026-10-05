@@ -18,7 +18,7 @@ This repository is the **starting point** for a Quarkus 4 service that runs on G
 - **`/distributed/std`**: never rewrite a file or rename a directory that was just written; write NEW files under their final name. A directory listing can lag by ~3 s behind another replica.
 - **Photon webhooks**: a 2XX status acknowledges, anything else causes a replay; be idempotent on `X-Gluonify-Event-Id`.
 - **Security**: `DevAuthentication` exists only in the `dev` profile (`@IfBuildProfile`). Do not extend it to production. Roles come from the Charm token (`source:read`, `source:write`).
-- Code comments are in **French** in this repository; the README exists in five languages (English by default) and this file is English only. Keep commit messages plain.
+- Code comments are in **English** in this repository; the README exists in five languages (English by default) and this file is English only. Keep commit messages plain.
 
 ## Where to change what
 `NotesResource` = the model of a REST resource; `NoteStore` + `NoteStores` = where to plug in a store; `SourceConfig` + `application.properties` = configuration; `WebhookResource` = receiving Photon; `PlatformResource` = platform variables and calling another service; `src/main/webui` = the Vue UI (Quinoa).

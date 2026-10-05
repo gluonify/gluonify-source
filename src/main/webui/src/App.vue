@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { api, token } from './api.js'
 
-// État de la page : les notes, le formulaire, l'info plateforme, les erreurs (affichées, jamais avalées).
+// Page state: the notes, the form, the platform info, the errors (displayed, never swallowed).
 const notes = ref([])
 const platform = ref(null)
 const title = ref('')

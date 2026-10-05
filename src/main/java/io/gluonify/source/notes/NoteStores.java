@@ -5,7 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import java.nio.file.Path;
 
-/** Choisit la réalisation de {@link NoteStore} selon {@code source.store}. Un seul endroit à modifier pour ajouter un stockage. */
+/** Chooses the {@link NoteStore} implementation according to {@code source.store}. A single place to modify to add a storage. */
 public class NoteStores {
     @Produces
     @ApplicationScoped
@@ -14,11 +14,11 @@ public class NoteStores {
             case "memory" -> new MemoryNoteStore();
             case "files" -> new FileNoteStore(Path.of(cfg.files().dir()));
             case "graph" -> new GraphNoteStore(
-                    cfg.graph().url().filter(u -> !u.isBlank()).orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.url est vide (déployez avec \"uses\": [\"graphdb\"])")),
+                    cfg.graph().url().filter(u -> !u.isBlank()).orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.url is empty (deploy with \"uses\": [\"graphdb\"])")),
                     cfg.graph().database(),
-                    cfg.graph().user().orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.user manquant")),
-                    cfg.graph().password().orElseThrow(() -> new IllegalStateException("source.store=graph : mot de passe manquant (clé GRAPH_PASSWORD du coffre)")));
-            default -> throw new IllegalStateException("source.store inconnu : « " + cfg.store() + " » (memory, files ou graph)");
+                    cfg.graph().user().orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.user is missing")),
+                    cfg.graph().password().orElseThrow(() -> new IllegalStateException("source.store=graph : password is missing (vault key GRAPH_PASSWORD)")));
+            default -> throw new IllegalStateException("unknown source.store: \"" + cfg.store() + "\" (memory, files or graph)");
         };
     }
 }

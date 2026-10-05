@@ -11,7 +11,7 @@ import io.restassured.http.ContentType;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/** Le récepteur de webhooks de Photon, clé configurée : authentification, idempotence sur X-Gluonify-Event-Id, rejets. */
+/** The Photon webhook receiver, key configured: authentication, idempotence on X-Gluonify-Event-Id, rejections. */
 @QuarkusTest
 @TestProfile(WebhookResourceTest.AvecCle.class)
 class WebhookResourceTest {
@@ -39,7 +39,7 @@ class WebhookResourceTest {
     void evenementAcquitteUneFoisPuisDoublonToujoursAcquitte() {
         hook("cle-de-test-photon", "evt-A").body("{\"order\":{\"id\":42},\"x\":1}").when().post("/hooks/events").then().statusCode(200)
                 .body("status", is("accepted")).body("eventId", is("evt-A")).body("webhook", is("orders")).body("attempt", is("1")).body("fields", is(2));
-        // « au moins une fois » : le même événement revient (acquittement perdu) -> 200 aussi (sinon Photon rejouerait sans fin), sans refaire le travail
+        // "at least once": the same event comes back (lost acknowledgement) -> 200 too (otherwise Photon would replay endlessly), without redoing the work
         hook("cle-de-test-photon", "evt-A").body("{\"order\":{\"id\":42},\"x\":1}").when().post("/hooks/events").then().statusCode(200).body("status", is("duplicate"));
         hook("cle-de-test-photon", "evt-B").body("{}").when().post("/hooks/events").then().statusCode(200).body("status", is("accepted"));
     }

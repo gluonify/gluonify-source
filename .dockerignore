@@ -1,4 +1,4 @@
-# le contexte du build natif ne doit contenir que les sources : les dossiers générés (interface construite, dépendances npm, classes Maven) gêneraient Quinoa
+# the native build context must contain sources only: generated folders (built UI, npm dependencies, Maven classes) would get in Quinoa's way
 **/node_modules
 **/dist
 target

@@ -3,12 +3,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- Projet AUTONOME : aucun POM parent de Gluonify, rien à installer avant. Renommez groupId/artifactId (voir README, « Renommer le projet »). -->
+  <!-- STANDALONE project: no Gluonify parent POM, nothing to install first. Rename groupId/artifactId (see README, "Rename the project"). -->
   <groupId>io.gluonify.source</groupId>
   <artifactId>gluonify-source</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <name>gluonify-source (application exemple pour Gluonify)</name>
-  <description>Service Quarkus 4 de départ : REST, interface Quinoa, authentification Charm, données (fichiers distribués ou Gdown), webhooks Photon.</description>
+  <name>gluonify-source (example application for Gluonify)</name>
+  <description>Starter Quarkus 4 service: REST, Quinoa UI, Charm authentication, data (distributed files or Gdown), Photon webhooks.</description>
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
@@ -33,17 +33,17 @@
   <dependencies>
     <!-- REST + JSON (Jackson 3) -->
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-rest-jackson</artifactId></dependency>
-    <!-- Validation des corps de requête (@NotBlank, @Size…) -->
+    <!-- Request body validation (@NotBlank, @Size...) -->
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-hibernate-validator</artifactId></dependency>
-    <!-- Santé : OBLIGATOIRE pour Gluonify (règle R-SANTE du builder) : le trafic n'arrive que si /q/health/ready répond 200 -->
+    <!-- Health: REQUIRED by Gluonify (builder rule R-SANTE): traffic only arrives if /q/health/ready answers 200 -->
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-smallrye-health</artifactId></dependency>
-    <!-- Authentification : jetons de gluonify-charm (OpenID Connect, mode « service ») -->
+    <!-- Authentication: gluonify-charm tokens (OpenID Connect, "service" mode) -->
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-oidc</artifactId></dependency>
-    <!-- Contrat OpenAPI (/q/openapi) et Swagger UI (/q/swagger-ui) -->
+    <!-- OpenAPI contract (/q/openapi) and Swagger UI (/q/swagger-ui) -->
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-smallrye-openapi</artifactId></dependency>
-    <!-- Mesures Prometheus (/q/metrics) : la plateforme les relève -->
+    <!-- Prometheus metrics (/q/metrics): the platform scrapes them -->
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-micrometer-registry-prometheus</artifactId></dependency>
-    <!-- Interface web : Quinoa construit et sert le projet Vue de src/main/webui -->
+    <!-- Web UI: Quinoa builds and serves the Vue project in src/main/webui -->
     <dependency><groupId>io.quarkiverse.quinoa</groupId><artifactId>quarkus-quinoa</artifactId><version>${quinoa.version}</version></dependency>
 
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-junit</artifactId><scope>test</scope></dependency>
@@ -80,13 +80,13 @@
 
   <profiles>
     <profile>
-      <!-- activé par -Dnative (ce que fait gluonify-bup : mvn package -Dnative) -->
+      <!-- activated by -Dnative (what gluonify-bup does: mvn package -Dnative) -->
       <id>native</id>
       <activation><property><name>native</name></property></activation>
       <properties>
         <quarkus.native.enabled>true</quarkus.native.enabled>
-        <!-- -march=compatibility : l'exécutable tourne sur tout CPU x86-64 / arm64 (sinon GraalVM 25 vise x86-64-v3, AVX2).
-             SystemTicker : Netty ne doit pas figer à la compilation l'horloge de la machine de build, sinon ses délais expirent aussitôt ailleurs. -->
+        <!-- -march=compatibility : the executable runs on any x86-64 / arm64 CPU (otherwise GraalVM 25 targets x86-64-v3, AVX2).
+             SystemTicker : Netty must not freeze the build machine's clock at compile time, otherwise its timeouts expire immediately elsewhere. -->
         <quarkus.native.additional-build-args>-march=compatibility,--initialize-at-run-time=io.netty.util.concurrent.SystemTicker</quarkus.native.additional-build-args>
       </properties>
     </profile>

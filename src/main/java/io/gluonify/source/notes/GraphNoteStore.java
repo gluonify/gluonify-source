@@ -19,14 +19,14 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Notes dans <b>Gdown</b>, la base graphe de la plateforme, par son API HTTP : {@code POST <url>/db/<base>/query} avec {@code {"statement": "...", "parameters": {...}}}
- * et une authentification de base (un compte local de Gdown, voir le README : création de la base et du compte). Réponse : {@code {"columns": [...], "rows": [[...], ...]}}.
+ * Notes in <b>Gdown</b>, the platform's graph database, through its HTTP API: {@code POST <url>/db/<base>/query} avec {@code {"statement": "...", "parameters": {...}}}
+ * and basic authentication (a local Gdown account, see the README: creating the database and the account). Response: {@code {"columns": [...], "rows": [[...], ...]}}.
  *
- * <p>L'adresse de Gdown n'est pas écrite en dur : la plateforme la fournit par {@code SERVICE_GRAPHDB_URL} si l'application est déployée avec {@code "uses": ["graphdb"]}.
- * Le mot de passe vient du coffre ({@code APP_GRAPH_PASSWORD}), jamais du dépôt Git.
+ * <p>Gdown's address is not hard-coded: the platform provides it through {@code SERVICE_GRAPHDB_URL} if the application is deployed with {@code "uses": ["graphdb"]}.
+ * The password comes from the vault ({@code APP_GRAPH_PASSWORD}), never from the Git repository.
  *
- * <p>Deux pièges du natif, déjà évités ici : le {@link HttpClient} est créé à la première utilisation (pas dans un champ statique : l'état serait figé à la compilation),
- * et le JSON est lu comme un arbre ({@link JsonNode}), sans classe à enregistrer pour la réflexion.
+ * <p>Two native-image pitfalls, already avoided here: the {@link HttpClient} is created on first use (not in a static field: its state would be frozen at compile time),
+ * and the JSON is read as a tree ({@link JsonNode}), with no class to register for reflection.
  */
 public class GraphNoteStore implements NoteStore {
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -99,16 +99,16 @@ public class GraphNoteStore implements NoteStore {
             if (r.statusCode() / 100 != 2) throw new IllegalStateException("Gdown : HTTP " + r.statusCode() + " " + r.body());
             return MAPPER.readTree(r.body());
         } catch (IOException e) {
-            throw new IllegalStateException("Gdown injoignable : " + e.getMessage(), e);
+            throw new IllegalStateException("Gdown unreachable: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("interrompu", e);
+            throw new IllegalStateException("interrupted", e);
         }
     }
 
     private HttpClient client() {
         HttpClient h = http;
-        if (h == null) http = h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(); // créé à la première utilisation (natif)
+        if (h == null) http = h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(); // created on first use (native)
         return h;
     }
 }

@@ -4,28 +4,28 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Où vivent les notes. Trois réalisations, choisies par {@code source.store} (voir application.properties) :
+ * Where notes live. Three implementations, chosen by {@code source.store} (see application.properties):
  * <ul>
- *   <li>{@code memory} : en mémoire, pour le développement local et les tests (perdues au redémarrage) ;</li>
- *   <li>{@code files} : des fichiers dans {@code /distributed/std}, partagés par toutes les répliques et durables ;</li>
- *   <li>{@code graph} : dans Gdown, la base graphe de la plateforme.</li>
+ *   <li>{@code memory} : in memory, for local development and tests (lost on restart);</li>
+ *   <li>{@code files} : files in {@code /distributed/std}, shared by all replicas and durable;</li>
+ *   <li>{@code graph} : in Gdown, the platform's graph database.</li>
  * </ul>
- * Pour ajouter votre propre stockage : implémentez cette interface, annotez-la {@code @ApplicationScoped}, et branchez-la dans {@link NoteStores}.
+ * To add your own storage: implement this interface, annotate it {@code @ApplicationScoped}, and wire it in {@link NoteStores}.
  */
 public interface NoteStore {
-    /** Nom court affiché par /api/platform. */
+    /** Short name shown by /api/platform. */
     String kind();
 
     Note create(NewNote in, String author);
 
-    /** Les plus récentes d'abord, 200 au plus. */
+    /** Most recent first, 200 at most. */
     List<Note> list();
 
     Optional<Note> get(String id);
 
-    /** @return vrai si la note existait. */
+    /** @return true if the note existed. */
     boolean delete(String id);
 
-    /** Vrai si le stockage est utilisable (alimente /q/health/ready). */
+    /** True if the storage is usable (feeds /q/health/ready). */
     boolean ready();
 }

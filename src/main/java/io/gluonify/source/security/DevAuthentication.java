@@ -16,11 +16,11 @@ import jakarta.enterprise.inject.Alternative;
 import java.util.Set;
 
 /**
- * Identité de DÉVELOPPEMENT : sous {@code mvn quarkus:dev} uniquement, toute requête est « dev » avec les rôles de lecture et d'écriture, pour essayer l'API et l'interface
- * sans serveur d'identité.
+ * DEVELOPMENT identity: under {@code mvn quarkus:dev} only, every request is "dev" with the read and write roles, to try the API and the UI
+ * without an identity server.
  *
- * <p><b>Sécurité : {@code @IfBuildProfile("dev")}</b> : ce bean n'est compilé QUE dans le profil de développement. Il n'existe pas dans l'exécutable de production (ni natif ni JVM) :
- * il est impossible de l'activer par une variable d'environnement. En production, seul le jeton de Charm ouvre l'API.
+ * <p><b>Security: {@code @IfBuildProfile("dev")}</b>: this bean is compiled ONLY in the development profile. It does not exist in the production executable (neither native nor JVM):
+ * it cannot be activated through an environment variable. In production, only the Charm token opens the API.
  */
 @Alternative
 @Priority(1000)

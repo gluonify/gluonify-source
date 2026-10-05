@@ -22,12 +22,12 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * L'API REST des notes : le modèle à copier pour votre propre ressource.
+ * The notes REST API: the model to copy for your own resource.
  * <ul>
- *   <li>{@code @Path} : l'adresse ; {@code @Produces}/{@code @Consumes} : JSON ;</li>
- *   <li>{@code @RolesAllowed} : les rôles du jeton Charm (claim « roles ») ; lecture = {@code source:read}, écriture = {@code source:write} ;</li>
- *   <li>{@code @Valid} : le corps est validé, 400 sinon ;</li>
- *   <li>{@code @Operation}/{@code @Tag} : documentation OpenAPI, visible dans /q/swagger-ui.</li>
+ *   <li>{@code @Path} : the address; {@code @Produces}/{@code @Consumes}: JSON;</li>
+ *   <li>{@code @RolesAllowed} : the Charm token roles ("roles" claim); read = {@code source:read}, write = {@code source:write};</li>
+ *   <li>{@code @Valid} : the body is validated, 400 otherwise;</li>
+ *   <li>{@code @Operation}/{@code @Tag} : OpenAPI documentation, visible in /q/swagger-ui.</li>
  * </ul>
  */
 @Path("/api/notes")
@@ -40,7 +40,7 @@ public class NotesResource {
 
     @GET
     @RolesAllowed("source:read")
-    @Operation(summary = "Les notes, les plus récentes d'abord (200 au plus)")
+    @Operation(summary = "The notes, most recent first (200 at most)")
     public List<Note> list() {
         return store.list();
     }
@@ -48,14 +48,14 @@ public class NotesResource {
     @GET
     @Path("{id}")
     @RolesAllowed("source:read")
-    @Operation(summary = "Une note")
+    @Operation(summary = "One note")
     public Response get(@PathParam("id") String id) {
         return store.get(id).map(n -> Response.ok(n).build()).orElseGet(() -> Response.status(404).entity(Map.of("error", "note inconnue")).build());
     }
 
     @POST
     @RolesAllowed("source:write")
-    @Operation(summary = "Crée une note (l'auteur est le sujet du jeton)")
+    @Operation(summary = "Creates a note (the author is the token subject)")
     public Response create(@Valid NewNote in, @Context SecurityContext sc, @Context UriInfo uri) {
         String author = sc.getUserPrincipal() == null ? "" : sc.getUserPrincipal().getName();
         Note n = store.create(in, author);
@@ -65,7 +65,7 @@ public class NotesResource {
     @DELETE
     @Path("{id}")
     @RolesAllowed("source:write")
-    @Operation(summary = "Supprime une note")
+    @Operation(summary = "Deletes a note")
     public Response delete(@PathParam("id") String id) {
         return store.delete(id) ? Response.noContent().build() : Response.status(404).entity(Map.of("error", "note inconnue")).build();
     }

@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Notes en mémoire : le choix par défaut pour développer. Chaque réplique a ses propres notes, et elles disparaissent à l'arrêt. */
+/** In-memory notes: the default choice for development. Each replica has its own notes, and they disappear on shutdown. */
 public class MemoryNoteStore implements NoteStore {
     private final ConcurrentHashMap<String, Note> notes = new ConcurrentHashMap<>();
 

@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/** Le stockage par fichiers (celui de /distributed/std) : fichiers neufs, ordre chronologique, tolérance aux fichiers illisibles, identifiants sûrs. */
+/** File-based storage (the /distributed/std one): new files, chronological order, tolerance to unreadable files, safe identifiers. */
 class FileNoteStoreTest {
     @TempDir
     Path dir;
@@ -21,9 +21,9 @@ class FileNoteStoreTest {
         Note a = s.create(new NewNote("A", "premier"), "ada");
         Thread.sleep(3);
         Note b = s.create(new NewNote("B", null), "bob");
-        assertEquals(List.of(b.id(), a.id()), s.list().stream().map(Note::id).toList(), "les plus récentes d'abord");
+        assertEquals(List.of(b.id(), a.id()), s.list().stream().map(Note::id).toList(), "most recent first");
         assertEquals("premier", s.get(a.id()).orElseThrow().body());
-        assertEquals("", s.get(b.id()).orElseThrow().body(), "un corps absent devient vide");
+        assertEquals("", s.get(b.id()).orElseThrow().body(), "a missing body becomes empty");
         assertTrue(s.delete(a.id()));
         assertFalse(s.delete(a.id()));
         assertEquals(1, s.list().size());
@@ -31,7 +31,7 @@ class FileNoteStoreTest {
 
     @Test
     void uneAutreReplicaVoitLesNotes() {
-        // deux instances sur le même dossier = deux répliques de l'application sur /distributed/std
+        // two instances on the same folder = two replicas of the application on /distributed/std
         Path notes = dir.resolve("partage");
         FileNoteStore r1 = new FileNoteStore(notes), r2 = new FileNoteStore(notes);
         Note n = r1.create(new NewNote("vue partout", "x"), "ada");
@@ -49,7 +49,7 @@ class FileNoteStoreTest {
             List<String> names = files.map(p -> p.getFileName().toString()).toList();
             assertEquals(2, names.size());
             assertTrue(names.stream().allMatch(n -> n.matches("[0-9]{13}-[0-9a-f-]{36}\\.json")), names.toString());
-            assertTrue(names.stream().noneMatch(n -> n.contains("tmp") || n.startsWith(".")), "aucun fichier temporaire à renommer");
+            assertTrue(names.stream().noneMatch(n -> n.contains("tmp") || n.startsWith(".")), "no temporary file to rename");
         }
     }
 
@@ -75,9 +75,9 @@ class FileNoteStoreTest {
 
     @Test
     void pretSiLeDossierEstUtilisable() throws Exception {
-        assertTrue(new FileNoteStore(dir.resolve("a/b/c")).ready(), "le dossier est créé");
+        assertTrue(new FileNoteStore(dir.resolve("a/b/c")).ready(), "the folder is created");
         Path file = dir.resolve("fichier");
         Files.writeString(file, "x");
-        assertFalse(new FileNoteStore(file.resolve("sous")).ready(), "sous un fichier : impossible");
+        assertFalse(new FileNoteStore(file.resolve("sous")).ready(), "under a file: impossible");
     }
 }

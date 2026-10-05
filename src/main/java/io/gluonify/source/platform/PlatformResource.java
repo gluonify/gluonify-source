@@ -23,17 +23,17 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * Ce que la plateforme a fourni à cette instance, et comment parler aux AUTRES services. Les variables sont celles que Gluonify ajoute toujours :
+ * What the platform provided to this instance, and how to talk to OTHER services. The variables are the ones Gluonify always adds:
  * <ul>
- *   <li>{@code ENV_NAME} : l'environnement (SBX, QUA, ACP, PRD…) ; {@code ENV_NODE} : le rang de la réplique (1, 2…) ; {@code GLUONIFY_SELF_URL} : l'adresse de cette instance ;</li>
- *   <li>{@code SERVICE_<APP>_URL} : l'adresse d'une autre application, présente si vous l'avez déclarée dans {@code "uses"} au déploiement
- *       (c'est aussi ce qui ouvre le réseau : une application isolée ne joint que ce qu'elle déclare).</li>
+ *   <li>{@code ENV_NAME} : the environment (SBX, QUA, ACP, PRD...); {@code ENV_NODE}: the replica rank (1, 2...); {@code GLUONIFY_SELF_URL}: the address of this instance;</li>
+ *   <li>{@code SERVICE_<APP>_URL} : the address of another application, present if you declared it in {@code "uses"} at deployment
+ *       (this is also what opens the network: an isolated application only reaches what it declares).</li>
  * </ul>
- * Aucune valeur secrète n'est jamais renvoyée ici.
+ * No secret value is ever returned here.
  */
 @Path("/api/platform")
 @Produces(MediaType.APPLICATION_JSON)
-@Tag(name = "Plateforme")
+@Tag(name = "Platform")
 public class PlatformResource {
     @Inject
     SourceConfig config;
@@ -42,13 +42,13 @@ public class PlatformResource {
     @Inject
     WebhookResource webhooks;
 
-    /** Les variables d'environnement : remplaçable dans les tests. */
+    /** The environment variables: replaceable in tests. */
     Supplier<Map<String, String>> env = System::getenv;
     private volatile HttpClient http;
 
     @GET
     @RolesAllowed("source:read")
-    @Operation(summary = "Environnement fourni par la plateforme, services déclarés, stockage, webhooks reçus")
+    @Operation(summary = "Environment provided by the platform, declared services, storage, received webhooks")
     public Map<String, Object> info() {
         Map<String, String> e = env.get();
         Map<String, String> services = new TreeMap<>();
@@ -68,13 +68,13 @@ public class PlatformResource {
     }
 
     /**
-     * Appelle la santé d'une AUTRE application de la plateforme, par son adresse {@code SERVICE_<APP>_URL}. Exemple minimal d'appel de service à service :
-     * l'adresse vient de l'environnement (jamais écrite en dur), seules les applications déclarées dans « uses » sont joignables (liste blanche = les variables SERVICE_*).
+     * Calls the health of ANOTHER platform application, through its {@code SERVICE_<APP>_URL} address. Minimal example of a service-to-service call:
+     * the address comes from the environment (never hard-coded), only applications declared in "uses" are reachable (allow-list = the SERVICE_* variables).
      */
     @GET
     @Path("ping/{app}")
     @RolesAllowed("source:read")
-    @Operation(summary = "Interroge /q/health/ready d'une application déclarée dans « uses »")
+    @Operation(summary = "Queries /q/health/ready of an application declared in \"uses\"")
     public Response ping(@PathParam("app") String app) {
         if (!app.matches("[a-z0-9-]{1,63}")) return Response.status(400).entity(Map.of("error", "nom d'application invalide")).build();
         String url = env.get().get("SERVICE_" + app.toUpperCase(Locale.ROOT).replace('-', '_') + "_URL");
@@ -92,7 +92,7 @@ public class PlatformResource {
 
     private HttpClient client() {
         HttpClient h = http;
-        if (h == null) http = h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).followRedirects(HttpClient.Redirect.NEVER).build(); // à la première utilisation (natif)
+        if (h == null) http = h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).followRedirects(HttpClient.Redirect.NEVER).build(); // on first use (native)
         return h;
     }
 }

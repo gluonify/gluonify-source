@@ -12,7 +12,7 @@ import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
-/** L'API REST des notes : droits (rôles du jeton), validation, cycle de vie complet. Stockage en mémoire (défaut). */
+/** The notes REST API: permissions (token roles), validation, full lifecycle. In-memory storage (default). */
 @QuarkusTest
 class NotesResourceTest {
     @Test

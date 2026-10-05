@@ -16,11 +16,11 @@ import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-/** Le stockage Gdown, contre un faux Gdown (HTTP) : chemin, authentification de base, instruction Cypher et paramètres, lecture des lignes, échec. */
+/** Gdown storage, against a fake Gdown (HTTP): path, basic authentication, Cypher statement and parameters, row reading, failure. */
 class GraphNoteStoreTest {
     private static final ObjectMapper M = new ObjectMapper();
     HttpServer gdown;
-    final ConcurrentLinkedQueue<String[]> seen = new ConcurrentLinkedQueue<>(); // {chemin, Authorization, corps}
+    final ConcurrentLinkedQueue<String[]> seen = new ConcurrentLinkedQueue<>(); // {path, Authorization, body}
     volatile int status = 200;
     volatile String reply = "{\"columns\":[],\"rows\":[],\"stats\":{}}";
 
@@ -55,7 +55,7 @@ class GraphNoteStoreTest {
         assertEquals("Basic " + Base64.getEncoder().encodeToString("notes:mot-de-passe".getBytes(StandardCharsets.UTF_8)), req[1]);
         JsonNode j = M.readTree(req[2]);
         assertTrue(j.get("statement").asString().startsWith("CREATE (:Note"));
-        assertFalse(j.get("statement").asString().contains("corps"), "jamais de valeur dans le texte de l'instruction (injection) : tout passe par les paramètres");
+        assertFalse(j.get("statement").asString().contains("corps"), "never a value in the statement text (injection): everything goes through parameters");
         assertEquals("corps", j.at("/parameters/body").asString());
         assertEquals(n.id(), j.at("/parameters/id").asString());
         assertEquals("ada", j.at("/parameters/author").asString());
@@ -67,7 +67,7 @@ class GraphNoteStoreTest {
         List<Note> l = store().list();
         assertEquals(2, l.size());
         assertEquals("A", l.get(0).title());
-        assertEquals("", l.get(1).body(), "null devient chaîne vide");
+        assertEquals("", l.get(1).body(), "null becomes an empty string");
         assertEquals("", l.get(1).author());
         assertEquals("ORDER BY n.createdAt DESC LIMIT 200", seen.poll()[2].replaceAll(".*(ORDER BY n.createdAt DESC LIMIT 200).*", "$1"));
     }
@@ -91,6 +91,6 @@ class GraphNoteStoreTest {
         reply = "{\"error\":\"boum\"}";
         assertFalse(store().ready());
         gdown.stop(0);
-        assertFalse(store().ready(), "injoignable : pas prêt, sans lever d'exception");
+        assertFalse(store().ready(), "unreachable: not ready, without throwing");
     }
 }

@@ -20,16 +20,16 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Récepteur de webhooks de <b>Photon</b> (la passerelle d'API de Gluonify). Photon reçoit les messages de vos partenaires (signature vérifiée, conversion XML/SOAP/formulaire en
- * JSON), puis les LIVRE à cette adresse. Le contrat de livraison est simple et il faut le respecter :
+ * Webhook receiver for <b>Photon</b> (Gluonify's API gateway). Photon receives your partners' messages (signature verified, XML/SOAP/form converted to
+ * JSON), then DELIVERS them to this address. The delivery contract is simple and must be respected:
  * <ol>
- *   <li><b>Un code 2XX acquitte</b> : Photon considère le message livré. Tout autre code (ou une panne) le fait <b>rejouer</b> selon la politique du webhook ;</li>
- *   <li>donc <b>répondez vite</b> (le traitement long se fait après) et <b>soyez idempotent</b> : « au moins une fois » signifie qu'un même message peut arriver deux fois
- *       (un acquittement perdu, un basculement de meneur). L'en-tête {@code X-Gluonify-Event-Id} est la clé de déduplication ; {@code X-Gluonify-Delivery-Attempt} compte les essais ;</li>
- *   <li>Photon n'envoie pas de jeton Charm : protégez ce point d'entrée par une clé que vous configurez dans la cible du webhook
- *       ({@code "headers": {"X-Api-Key": "…"}}) et ici ({@code source.webhook.key}, venant du coffre). Sans clé configurée, le récepteur est fermé (404).</li>
+ *   <li><b>A 2XX code acknowledges</b>: Photon considers the message delivered. Any other code (or a failure) makes it <b>replay</b> according to the webhook policy;</li>
+ *   <li>so <b>answer quickly</b> (long processing happens afterwards) and <b>be idempotent</b>: "at least once" means the same message can arrive twice
+ *       (a lost acknowledgement, a leader failover). The {@code X-Gluonify-Event-Id} header is the deduplication key; {@code X-Gluonify-Delivery-Attempt} counts the attempts;</li>
+ *   <li>Photon does not send a Charm token: protect this entry point with a key that you configure in the webhook target
+ *       ({@code "headers": {"X-Api-Key": "..."}}) and here ({@code source.webhook.key}, coming from the vault). Without a configured key, the receiver is closed (404).</li>
  * </ol>
- * Cet exemple se contente de compter les événements reçus (visible dans /api/platform) ; remplacez le corps de {@link #receive} par votre traitement.
+ * This example just counts the received events (visible in /api/platform); replace the body of {@link #receive} with your own processing.
  */
 @Path("/hooks/events")
 @Tag(name = "Webhooks")
@@ -46,27 +46,27 @@ public class WebhookResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Reçoit une livraison de Photon (acquitte en 200 ; idempotent sur X-Gluonify-Event-Id)")
+    @Operation(summary = "Receives a delivery from Photon (acknowledges with 200; idempotent on X-Gluonify-Event-Id)")
     public Response receive(@HeaderParam("X-Api-Key") String key, @HeaderParam("X-Gluonify-Event-Id") String eventId, @HeaderParam("X-Gluonify-Webhook-Id") String webhook,
             @HeaderParam("X-Gluonify-Delivery-Attempt") String attempt, String body) {
         String expected = config.webhook().key().orElse("");
-        if (expected.isBlank()) return Response.status(404).build(); // récepteur fermé tant qu'aucune clé n'est configurée
+        if (expected.isBlank()) return Response.status(404).build(); // receiver closed as long as no key is configured
         if (key == null || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8))) return Response.status(401).entity(Map.of("error", "clé invalide")).build();
         if (eventId == null || eventId.isBlank()) return Response.status(400).entity(Map.of("error", "X-Gluonify-Event-Id manquant")).build();
         JsonNode json;
         try {
             json = MAPPER.readTree(body);
         } catch (RuntimeException e) {
-            // un corps illisible ne s'arrangera pas en rejouant : 4XX (Photon le rejouera selon sa politique, puis le mettra en file morte)
+            // an unreadable body will not fix itself by replaying: 4XX (Photon will replay it according to its policy, then dead-letter it)
             return Response.status(400).entity(Map.of("error", "JSON illisible")).build();
         }
-        if (seen.size() > MAX_REMEMBERED) seen.clear(); // mémoire bornée (un vrai service garde ces identifiants dans sa base)
+        if (seen.size() > MAX_REMEMBERED) seen.clear(); // bounded memory (a real service keeps these identifiers in its database)
         if (seen.putIfAbsent(eventId, Boolean.TRUE) != null) {
             duplicates.incrementAndGet();
-            return Response.ok(Map.of("status", "duplicate", "eventId", eventId)).build(); // déjà traité : on acquitte quand même (2XX), sans refaire le travail
+            return Response.ok(Map.of("status", "duplicate", "eventId", eventId)).build(); // already processed: we still acknowledge (2XX), without redoing the work
         }
         accepted.incrementAndGet();
-        // ICI : votre traitement. Il reçoit « json » (le message DÉJÀ converti en JSON par Photon).
+        // HERE: your processing. It receives "json" (the message ALREADY converted to JSON by Photon).
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("status", "accepted");
         out.put("eventId", eventId);
@@ -76,7 +76,7 @@ public class WebhookResource {
         return Response.ok(out).build();
     }
 
-    /** Pour /api/platform. */
+    /** For /api/platform. */
     public Map<String, Long> counters() {
         return Map.of("accepted", accepted.get(), "duplicates", duplicates.get());
     }
