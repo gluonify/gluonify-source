@@ -23,3 +23,7 @@ button.danger { background: transparent; color: var(--danger); border-color: var
 .grid { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
 .grid dt { color: var(--muted); } .grid dd { margin: 0; }
 code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.top h1 { margin: 0; }
+select { font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
