@@ -1,35 +1,37 @@
 # gluonify-source
 
-**Le point de départ d'un service Quarkus 4 sur [Gluonify](https://gluonify.cloud).** Un petit service complet (des « notes ») qui montre, avec du code qui tourne et des tests, comment :
+**English** · [Français](README.fr.md) · [Español](README.es.md) · [Italiano](README.it.md) · [Deutsch](README.de.md)
 
-1. faire un **service REST** (validation, rôles, OpenAPI) ;
-2. faire une **interface web** avec [Quinoa](https://quarkus.io/extensions/io.quarkiverse.quinoa/quarkus-quinoa/) (Vue 3, servie par le même exécutable) ;
-3. **s'interfacer avec les services de Gluonify** : configuration et secrets (Top), jetons d'identité (Charm), données (Gdown) ou fichiers distribués, autres applications, webhooks reçus de Photon, sites statiques (Field), domaines et politiques (Higgs) ;
-4. le **construire en exécutable natif** et le **déployer**.
+**The starting point for a Quarkus 4 service on [Gluonify](https://gluonify.cloud).** A small, complete service (some "notes") that shows, with running code and tests, how to:
 
-Il s'adresse à un développeur ou à **un assistant IA** qui démarre un service de zéro : chaque choix est expliqué ici, chaque ligne de configuration est commentée dans le code, et [`CLAUDE.md`](CLAUDE.md) résume les règles pour une IA.
+1. build a **REST service** (validation, roles, OpenAPI);
+2. build a **web interface** with [Quinoa](https://quarkus.io/extensions/io.quarkiverse.quinoa/quarkus-quinoa/) (Vue 3, served by the same executable);
+3. **integrate with Gluonify services**: configuration and secrets (Top), identity tokens (Charm), data (Gdown) or distributed files, other applications, webhooks received from Photon, static sites (Field), domains and policies (Higgs);
+4. **build it as a native executable** and **deploy it**.
 
-> Gluonify exécute des **applications Quarkus natives** (un fichier exécutable, sans JVM) sur des machines Debian. Vous donnez accès à votre code sur Git ; la plateforme le construit, le déploie, le sécurise et le fait tourner.
+It is aimed at a developer or an **AI assistant** starting a service from scratch: every choice is explained here, every configuration line is commented in the code, and [`CLAUDE.md`](CLAUDE.md) summarizes the rules for an AI.
 
-## Sommaire
-1. [Démarrer en 5 minutes](#1-démarrer-en-5-minutes)
-2. [La carte du projet](#2-la-carte-du-projet)
-3. [Renommer le projet](#3-renommer-le-projet)
-4. [Faire un service REST](#4-faire-un-service-rest)
-5. [Faire une interface avec Quinoa](#5-faire-une-interface-avec-quinoa)
-6. [Authentification : les jetons de Charm](#6-authentification--les-jetons-de-charm)
-7. [S'interfacer avec les services de Gluonify](#7-sinterfacer-avec-les-services-de-gluonify)
-8. [Construire](#8-construire)
-9. [Déployer](#9-déployer)
-10. [Tester](#10-tester)
-11. [Pièges connus](#11-pièges-connus)
-12. [Dépannage](#12-dépannage)
+> Gluonify runs **native Quarkus applications** (a single executable file, no JVM) on Debian machines. You give access to your code on Git; the platform builds it, deploys it, secures it and runs it.
+
+## Table of contents
+1. [Getting started in 5 minutes](#1-getting-started-in-5-minutes)
+2. [The project map](#2-the-project-map)
+3. [Renaming the project](#3-renaming-the-project)
+4. [Building a REST service](#4-building-a-rest-service)
+5. [Building a UI with Quinoa](#5-building-a-ui-with-quinoa)
+6. [Authentication: Charm tokens](#6-authentication-charm-tokens)
+7. [Integrating with Gluonify services](#7-integrating-with-gluonify-services)
+8. [Building](#8-building)
+9. [Deploying](#9-deploying)
+10. [Testing](#10-testing)
+11. [Known pitfalls](#11-known-pitfalls)
+12. [Troubleshooting](#12-troubleshooting)
 
 ---
 
-## 1. Démarrer en 5 minutes
+## 1. Getting started in 5 minutes
 
-**Prérequis** : Java 25 (`JAVA_HOME`), Maven 3.9+. Node.js n'est pas nécessaire : Quinoa télécharge le sien (v24.3.0) à la première construction. Docker n'est utile que pour l'exécutable natif.
+**Prerequisites**: Java 25 (`JAVA_HOME`), Maven 3.9+. Node.js is not needed: Quinoa downloads its own (v24.3.0) on the first build. Docker is only useful for the native executable.
 
 ```bash
 git clone https://github.com/gluonify/gluonify-source.git
@@ -37,73 +39,73 @@ cd gluonify-source
 mvn quarkus:dev
 ```
 
-Ouvrez <http://localhost:8080> : l'interface (ajouter, lister, supprimer des notes). Aussi :
+Open <http://localhost:8080>: the interface (add, list, delete notes). Also:
 
-| Adresse | Contenu |
+| Address | Content |
 |---|---|
-| `/` | l'interface Vue |
-| `/api/notes` | l'API REST (JSON) |
-| `/q/swagger-ui` | la documentation interactive de l'API |
-| `/q/openapi` | le contrat OpenAPI (JSON ou YAML) |
-| `/q/health/ready` · `/q/health/live` | santé : « prêt » et « vivant » (voir [§7](#7-sinterfacer-avec-les-services-de-gluonify)) |
-| `/q/metrics` | mesures Prometheus |
+| `/` | the Vue interface |
+| `/api/notes` | the REST API (JSON) |
+| `/q/swagger-ui` | the interactive API documentation |
+| `/q/openapi` | the OpenAPI contract (JSON or YAML) |
+| `/q/health/ready` · `/q/health/live` | health: "ready" and "alive" (see [§7](#7-integrating-with-gluonify-services)) |
+| `/q/metrics` | Prometheus metrics |
 
-En **développement**, aucun jeton n'est demandé : une identité « dev » (avec tous les rôles) n'existe que dans ce profil (`@IfBuildProfile("dev")`, absente de l'exécutable de production). Les notes sont **en mémoire** (`source.store=memory`) : elles disparaissent à l'arrêt.
+In **development**, no token is required: a "dev" identity (with all roles) exists only in this profile (`@IfBuildProfile("dev")`, absent from the production executable). Notes are **in memory** (`source.store=memory`): they disappear on shutdown.
 
 ```bash
 curl -s localhost:8080/api/notes -H 'Content-Type: application/json' -d '{"title":"Courses","body":"du pain"}'
 curl -s localhost:8080/api/notes
 ```
 
-## 2. La carte du projet
+## 2. The project map
 
 ```
-pom.xml                         projet Maven AUTONOME (Quarkus 4.0.0.Beta1, Java 25) : aucun parent Gluonify
-Dockerfile.build                construit l'exécutable natif dans Docker
+pom.xml                         STANDALONE Maven project (Quarkus 4.0.0.Beta1, Java 25): no Gluonify parent
+Dockerfile.build                builds the native executable in Docker
 src/main/resources/
-  application.properties        TOUTE la configuration, commentée ligne par ligne
+  application.properties        ALL the configuration, commented line by line
 src/main/java/io/gluonify/source/
-  SourceConfig.java             la configuration de l'application (préfixe « source. »)
+  SourceConfig.java             the application configuration (prefix "source.")
   notes/
-    Note.java, NewNote.java     le modèle (records) et le corps de création (validé)
-    NotesResource.java          ← LE MODÈLE D'UNE RESSOURCE REST (à copier)
-    NoteStore.java              l'interface du stockage ; trois réalisations :
-    MemoryNoteStore.java          en mémoire (développement)
-    FileNoteStore.java            fichiers dans /distributed/std (durable, partagé par les répliques)
-    GraphNoteStore.java           Gdown, la base graphe de la plateforme
-    NoteStores.java             choisit la réalisation (source.store) : l'endroit où brancher la vôtre
-    StoreHealth.java            la condition « prêt » (/q/health/ready)
+    Note.java, NewNote.java     the model (records) and the (validated) creation body
+    NotesResource.java          ← THE MODEL OF A REST RESOURCE (to copy)
+    NoteStore.java              the storage interface; three implementations:
+    MemoryNoteStore.java          in memory (development)
+    FileNoteStore.java            files in /distributed/std (durable, shared by replicas)
+    GraphNoteStore.java           Gdown, the platform's graph database
+    NoteStores.java             picks the implementation (source.store): the place to plug in yours
+    StoreHealth.java            the "ready" condition (/q/health/ready)
   platform/
-    PlatformResource.java       variables fournies par la plateforme ; appel d'une autre application
-    WebhookResource.java        recevoir les livraisons de Photon
-  security/DevAuthentication.java   identité de développement (profil dev seulement)
-src/main/webui/                 l'interface Vue 3 (Vite + vitest), construite par Quinoa
-src/test/java/…                 30 tests Java ; src/main/webui/src/App.test.js : 3 tests d'interface
-deploy/                         exemples : AppSpec, domaine, webhook Photon, base Gdown
-scripts/rename.py               renomme le projet
+    PlatformResource.java       variables provided by the platform; calling another application
+    WebhookResource.java        receiving Photon deliveries
+  security/DevAuthentication.java   development identity (dev profile only)
+src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
+src/test/java/…                 30 Java tests; src/main/webui/src/App.test.js: 3 interface tests
+deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
+scripts/rename.py               renames the project
 ```
 
-## 3. Renommer le projet
+## 3. Renaming the project
 
-Votre service ne s'appelle pas `gluonify-source`. Une commande change les coordonnées Maven, le paquet Java (dossiers compris), le nom de l'exécutable, le titre OpenAPI et l'**audience** attendue des jetons :
+Your service is not called `gluonify-source`. One command changes the Maven coordinates, the Java package (folders included), the executable name, the OpenAPI title and the expected token **audience**:
 
 ```bash
 python3 scripts/rename.py com.acme shop-api com.acme.shop
 mvn test
 ```
 
-(`groupId` `com.acme`, `artifactId` `shop-api`, paquet Java `com.acme.shop`. Le script se relance sans risque.) Le nom de l'artefact devient aussi le nom de l'application sur Gluonify ; choisissez-le comme un nom DNS : minuscules, chiffres, tirets.
+(`groupId` `com.acme`, `artifactId` `shop-api`, Java package `com.acme.shop`. The script is safe to run again.) The artifact name also becomes the application name on Gluonify; choose it like a DNS name: lowercase letters, digits, hyphens.
 
-## 4. Faire un service REST
+## 4. Building a REST service
 
-Lisez [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResource.java) : c'est le modèle. Pour ajouter **votre** ressource, par exemple des commandes :
+Read [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResource.java): it is the model. To add **your** resource, for example orders:
 
-1. **Le modèle** : un `record` Java (immuable, Jackson le lit et l'écrit, OpenAPI le décrit).
+1. **The model**: a Java `record` (immutable, read and written by Jackson, described by OpenAPI).
    ```java
    public record Order(String id, String customer, int quantity) {}
-   public record NewOrder(@NotBlank String customer, @Min(1) int quantity) {}   // validé
+   public record NewOrder(@NotBlank String customer, @Min(1) int quantity) {}   // validated
    ```
-2. **La ressource** : une classe avec `@Path`, des méthodes `@GET`/`@POST`…, les rôles avec `@RolesAllowed`, la validation avec `@Valid`.
+2. **The resource**: a class with `@Path`, `@GET`/`@POST`… methods, roles with `@RolesAllowed`, validation with `@Valid`.
    ```java
    @Path("/api/orders")
    @Produces(MediaType.APPLICATION_JSON) @Consumes(MediaType.APPLICATION_JSON)
@@ -112,44 +114,44 @@ Lisez [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResourc
        public Response create(@Valid NewOrder in) { … return Response.created(uri).entity(order).build(); }
    }
    ```
-3. **La documentation** : `@Operation(summary = "…")` et `@Tag(name = "…")` (microprofile-openapi) : elles apparaissent dans `/q/swagger-ui`. Le contrat est regénéré à chaque démarrage.
-4. **Les tests** : copiez [`NotesResourceTest`](src/test/java/io/gluonify/source/NotesResourceTest.java). `@TestSecurity(user = "ada", roles = {"shop:write"})` fixe l'identité d'un test ; sans annotation, c'est un appel sans jeton (attendu : 401).
-5. **Les codes HTTP** : 201 + `Location` à la création, 204 sans corps, 400 pour un corps invalide (Hibernate Validator), 401 sans jeton, 403 sans le bon rôle, 404 pour un identifiant inconnu. Les erreurs renvoient `{"error": "…"}`.
+3. **The documentation**: `@Operation(summary = "…")` and `@Tag(name = "…")` (microprofile-openapi): they appear in `/q/swagger-ui`. The contract is regenerated at every startup.
+4. **The tests**: copy [`NotesResourceTest`](src/test/java/io/gluonify/source/NotesResourceTest.java). `@TestSecurity(user = "ada", roles = {"shop:write"})` sets a test's identity; without the annotation, it is a call without a token (expected: 401).
+5. **HTTP codes**: 201 + `Location` on creation, 204 with no body, 400 for an invalid body (Hibernate Validator), 401 without a token, 403 without the right role, 404 for an unknown identifier. Errors return `{"error": "…"}`.
 
-**Le stockage** est derrière l'interface [`NoteStore`](src/main/java/io/gluonify/source/notes/NoteStore.java) : la ressource ne sait pas où vivent les données. Pour votre propre stockage (une autre base, un autre dossier), implémentez l'interface et ajoutez un cas dans [`NoteStores`](src/main/java/io/gluonify/source/notes/NoteStores.java).
+**Storage** sits behind the [`NoteStore`](src/main/java/io/gluonify/source/notes/NoteStore.java) interface: the resource does not know where the data lives. For your own storage (another database, another folder), implement the interface and add a case in [`NoteStores`](src/main/java/io/gluonify/source/notes/NoteStores.java).
 
-## 5. Faire une interface avec Quinoa
+## 5. Building a UI with Quinoa
 
-[Quinoa](https://quarkus.io/extensions/io.quarkiverse.quinoa/quarkus-quinoa/) construit un projet web (ici Vue 3 + Vite, dans `src/main/webui`) et le sert **par le même exécutable** que l'API : un seul fichier à déployer, une seule origine (pas de CORS).
+[Quinoa](https://quarkus.io/extensions/io.quarkiverse.quinoa/quarkus-quinoa/) builds a web project (here Vue 3 + Vite, in `src/main/webui`) and serves it **from the same executable** as the API: a single file to deploy, a single origin (no CORS).
 
-- **Développer** : `mvn quarkus:dev` lance aussi le serveur Vite (port 5173, rechargement à chaud de l'interface) ; Quarkus sert l'API. Ouvrez <http://localhost:8080>.
-- **Appeler l'API** : des adresses relatives (`fetch('/api/notes')`), voir [`src/api.js`](src/main/webui/src/api.js). Le jeton Charm est collé par l'utilisateur et gardé pour l'onglet (`sessionStorage`).
-- **Les routes de l'interface** : `quarkus.quinoa.enable-spa-routing=true` renvoie `index.html` pour une adresse inconnue (utile avec vue-router). Mais **une adresse d'API inconnue ne doit pas renvoyer l'interface** : `quarkus.quinoa.ignored-path-prefixes=/api,/hooks,/q` (déjà réglé). Si vous ajoutez un préfixe d'API, ajoutez-le ici.
-- **Construire** : `mvn package` exécute `npm install` puis `npm run build` ; `dist/` est embarqué dans l'exécutable. Sans interface : `-Dquarkus.quinoa=false`.
-- **Tester l'interface** : `cd src/main/webui && npm install && npm test` (vitest + jsdom, `fetch` simulé : voir `App.test.js`). Avec `quarkus.quinoa.run-tests=true`, `mvn package` les lance aussi.
-- **Mettre en cache** : les fichiers de `dist/assets` ont une empreinte dans leur nom (immuables) ; `index.html` est servi avec `Cache-Control: no-cache` (réglage `ui-entry`).
+- **Develop**: `mvn quarkus:dev` also starts the Vite server (port 5173, hot reload of the interface); Quarkus serves the API. Open <http://localhost:8080>.
+- **Call the API**: relative addresses (`fetch('/api/notes')`), see [`src/api.js`](src/main/webui/src/api.js). The Charm token is pasted by the user and kept for the tab (`sessionStorage`).
+- **Interface routes**: `quarkus.quinoa.enable-spa-routing=true` returns `index.html` for an unknown address (useful with vue-router). But **an unknown API address must not return the interface**: `quarkus.quinoa.ignored-path-prefixes=/api,/hooks,/q` (already set). If you add an API prefix, add it here.
+- **Build**: `mvn package` runs `npm install` then `npm run build`; `dist/` is embedded in the executable. Without the interface: `-Dquarkus.quinoa=false`.
+- **Test the interface**: `cd src/main/webui && npm install && npm test` (vitest + jsdom, mocked `fetch`: see `App.test.js`). With `quarkus.quinoa.run-tests=true`, `mvn package` runs them too.
+- **Caching**: files in `dist/assets` have a hash in their name (immutable); `index.html` is served with `Cache-Control: no-cache` (`ui-entry` setting).
 
-Une autre technologie (React, Svelte…) : remplacez le contenu de `src/main/webui` ; Quinoa ne demande qu'un `package.json` avec les scripts `dev` et `build` et un dossier de sortie (`quarkus.quinoa.build-dir`).
+Another technology (React, Svelte…): replace the contents of `src/main/webui`; Quinoa only requires a `package.json` with `dev` and `build` scripts and an output folder (`quarkus.quinoa.build-dir`).
 
-## 6. Authentification : les jetons de Charm
+## 6. Authentication: Charm tokens
 
-L'API est **fermée sans jeton**. Elle attend un jeton porteur (JWT) émis par **gluonify-charm**, le fournisseur d'identité de Gluonify (OpenID Connect, ES256) :
+The API is **closed without a token**. It expects a bearer token (JWT) issued by **gluonify-charm**, Gluonify's identity provider (OpenID Connect, ES256):
 
 ```
-Authorization: Bearer <jeton>
+Authorization: Bearer <token>
 ```
 
-Le service ne **crée** jamais de jeton : il en **vérifie** (mode `quarkus.oidc.application-type=service`). Ce qu'il contrôle :
+The service never **creates** tokens: it **verifies** them (mode `quarkus.oidc.application-type=service`). What it checks:
 
-| Contrôle | Réglage | Valeur |
+| Check | Setting | Value |
 |---|---|---|
-| Signature | clés de Charm, lues à `${SERVICE_ID_URL}/realms/gluonify` | `SERVICE_ID_URL` est fournie par la plateforme si l'application est déployée avec `"uses": ["id"]` |
-| Émetteur (`iss`) | `quarkus.oidc.token.issuer` | `OIDC_ISSUER` = `https://id.<votre zone>/realms/gluonify` (stable : ce n'est pas l'adresse de l'instance de Charm) |
-| Audience (`aud`) | `quarkus.oidc.token.audience` | `OIDC_AUDIENCE`, par défaut le nom du projet (`gluonify-source`) |
-| Expiration | automatique | jetons courts |
-| Rôles | claim `roles` | `source:read` (lire), `source:write` (écrire) : voir `@RolesAllowed` |
+| Signature | Charm's keys, read at `${SERVICE_ID_URL}/realms/gluonify` | `SERVICE_ID_URL` is provided by the platform if the application is deployed with `"uses": ["id"]` |
+| Issuer (`iss`) | `quarkus.oidc.token.issuer` | `OIDC_ISSUER` = `https://id.<your zone>/realms/gluonify` (stable: it is not the address of the Charm instance) |
+| Audience (`aud`) | `quarkus.oidc.token.audience` | `OIDC_AUDIENCE`, by default the project name (`gluonify-source`) |
+| Expiration | automatic | short-lived tokens |
+| Roles | `roles` claim | `source:read` (read), `source:write` (write): see `@RolesAllowed` |
 
-**Obtenir un jeton de test** (l'administrateur de la plateforme, avec le jeton d'administration de Charm) :
+**Getting a test token** (the platform administrator, with Charm's administration token):
 
 ```bash
 curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $ID_ADMIN_TOKEN" -H 'Content-Type: application/json' \
@@ -158,173 +160,173 @@ curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $ID_ADMIN_TOKEN
 curl -s https://gluonify-source.<zone>/api/notes -H "Authorization: Bearer eyJ…"
 ```
 
-Une valeur d'audience différente (`"audience": "autre"`) donne **401** ; un jeton valide sans le bon rôle donne **403**.
+A different audience value (`"audience": "other"`) gives **401**; a valid token without the right role gives **403**.
 
-**En local**, le profil `dev` fournit l'identité « dev » (voir [`DevAuthentication`](src/main/java/io/gluonify/source/security/DevAuthentication.java)) ; **dans les tests**, `@TestSecurity`. Jamais d'identité de ce genre en production : elle est compilée seulement dans le profil `dev`.
+**Locally**, the `dev` profile provides the "dev" identity (see [`DevAuthentication`](src/main/java/io/gluonify/source/security/DevAuthentication.java)); **in tests**, `@TestSecurity`. Never an identity like this in production: it is compiled only in the `dev` profile.
 
-## 7. S'interfacer avec les services de Gluonify
+## 7. Integrating with Gluonify services
 
-Une application sur Gluonify est **isolée** : son propre compte, son propre réseau, un système de fichiers réduit. Elle ne joint que ce qu'elle **déclare** (`"uses"`) et reçoit sa configuration **par l'environnement**. Voici chaque service, avec l'endroit du code.
+An application on Gluonify is **isolated**: its own account, its own network, a reduced file system. It only reaches what it **declares** (`"uses"`) and receives its configuration **through the environment**. Here is each service, with its place in the code.
 
-| Service | Ce qu'il offre | Comment l'application s'en sert | Dans ce dépôt |
+| Service | What it offers | How the application uses it | In this repository |
 |---|---|---|---|
-| **Top** (coffre) | configuration et secrets par application | les clés de l'espace `app` de votre application arrivent en `APP_<CLÉ>` ; `${app.graph.password}` dans `application.properties` | `source.graph.password`, `source.webhook.key` |
-| **Charm** (identité) | jetons JWT courts | `"uses": ["id"]` → `SERVICE_ID_URL` ; `quarkus-oidc` vérifie les jetons | [§6](#6-authentification--les-jetons-de-charm) |
-| **Gdown** (base graphe) | base répliquée (Raft), Cypher par HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL` ; un compte local de Gdown | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
-| **Fichiers distribués** | `/distributed/std` : durable, partagé par toutes les répliques, 2 copies | `"distributed": ["std"]` au déploiement | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
-| **Autres applications** | appel de service à service | `"uses": ["autre"]` → `SERVICE_AUTRE_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
-| **Photon** (passerelle d'API) | webhooks signés, conversion XML / SOAP / formulaire → JSON, rejeu | Photon livre à `…/hooks/events` ; votre service acquitte en 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
-| **Field** | sites statiques (ZIP) servis sur votre domaine | rien à coder : un site se dépose en ZIP | — |
-| **Higgs** (orchestrateur) | domaines, certificats HTTPS automatiques, routes, politiques (jeton, limites, CORS, adresses) | `PUT /domains/<nom>` | `deploy/domain.json` |
+| **Top** (vault) | per-application configuration and secrets | the keys in your application's `app` space arrive as `APP_<KEY>`; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
+| **Charm** (identity) | short-lived JWT tokens | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` verifies tokens | [§6](#6-authentication-charm-tokens) |
+| **Gdown** (graph database) | replicated database (Raft), Cypher over HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; a local Gdown account | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
+| **Distributed files** | `/distributed/std`: durable, shared by all replicas, 2 copies | `"distributed": ["std"]` at deployment | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
+| **Other applications** | service-to-service calls | `"uses": ["other"]` → `SERVICE_OTHER_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
+| **Photon** (API gateway) | signed webhooks, XML / SOAP / form → JSON conversion, replay | Photon delivers to `…/hooks/events`; your service acknowledges with 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
+| **Field** | static sites (ZIP) served on your domain | nothing to code: a site is uploaded as a ZIP | — |
+| **Higgs** (orchestrator) | domains, automatic HTTPS certificates, routes, policies (token, limits, CORS, addresses) | `PUT /domains/<name>` | `deploy/domain.json` |
 
-### Configuration et secrets (Top)
+### Configuration and secrets (Top)
 
-- Une valeur **non secrète** : dans `"env"` du déploiement (`deploy/appspec.json`) : `"SOURCE_STORE": "files"`. Elle est stockée dans l'état du cluster.
-- Une valeur **secrète** (mot de passe, clé d'API) : dans le **coffre** (Top, espace `<uuid>.app` de votre application). La clé `GRAPH_PASSWORD` arrive en variable `APP_GRAPH_PASSWORD` et se lit `${app.graph.password}`. Déclarez-la avec `"vaultNamespace"` au déploiement. **Jamais** dans le dépôt : le builder refuse un mot de passe en clair (règle R-SECRET), et `ConformityTest` vous le dit avant.
-- **Enregistrer une valeur ne redémarre rien** : après avoir modifié plusieurs clés, déclenchez **un** redéploiement (`POST /apps/<nom>/redeploy`) ; les répliques redémarrent une à une, sans coupure si vous en avez deux ou plus.
-- Variables que la plateforme ajoute **toujours** : `QUARKUS_HTTP_PORT` et `QUARKUS_HTTP_HOST`, `ENV_NAME` (l'environnement : SBX, QUA, PRD…), `ENV_NODE` (rang de la réplique : 1, 2…), `GLUONIFY_SELF_URL` (adresse de cette instance). Elles sont lues et affichées par [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, jamais de secret).
+- A **non-secret** value: in the deployment's `"env"` (`deploy/appspec.json`): `"SOURCE_STORE": "files"`. It is stored in the cluster state.
+- A **secret** value (password, API key): in the **vault** (Top, the `<uuid>.app` space of your application). The `GRAPH_PASSWORD` key arrives as the `APP_GRAPH_PASSWORD` variable and is read as `${app.graph.password}`. Declare it with `"vaultNamespace"` at deployment. **Never** in the repository: the builder rejects a plaintext password (rule R-SECRET), and `ConformityTest` tells you before that.
+- **Saving a value restarts nothing**: after changing several keys, trigger **one** redeployment (`POST /apps/<name>/redeploy`); replicas restart one by one, with no downtime if you have two or more.
+- Variables the platform **always** adds: `QUARKUS_HTTP_PORT` and `QUARKUS_HTTP_HOST`, `ENV_NAME` (the environment: SBX, QUA, PRD…), `ENV_NODE` (replica rank: 1, 2…), `GLUONIFY_SELF_URL` (address of this instance). They are read and displayed by [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, never a secret).
 
-### Santé : `/q/health/ready` et `/q/health/live`
+### Health: `/q/health/ready` and `/q/health/live`
 
-La plateforme n'envoie du trafic qu'aux instances dont **`/q/health/ready`** répond 200, et redémarre celles dont **`/q/health/live`** échoue de façon répétée. `quarkus-smallrye-health` est **obligatoire** (le builder le contrôle : règle R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) rend l'instance « prête » seulement si le stockage répond. Gardez « vivant » indépendant des services extérieurs : une panne de Gdown ne doit pas faire redémarrer l'application en boucle.
+The platform only sends traffic to instances whose **`/q/health/ready`** answers 200, and restarts those whose **`/q/health/live`** fails repeatedly. `quarkus-smallrye-health` is **mandatory** (the builder checks it: rule R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) makes the instance "ready" only if storage responds. Keep "alive" independent of external services: a Gdown outage must not make the application restart in a loop.
 
-### Données dans Gdown (`source.store=graph`)
+### Data in Gdown (`source.store=graph`)
 
-1. Déployez avec `"uses": ["graphdb"]` (c'est aussi ce qui **ouvre le réseau** vers Gdown) et `SOURCE_STORE=graph`.
-2. Un administrateur crée la base et le compte de l'application ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher) : base `source`, rôle confiné, compte `notes`).
-3. Mettez `GRAPH_USER` (= `notes`) et `GRAPH_PASSWORD` dans le coffre.
+1. Deploy with `"uses": ["graphdb"]` (this is also what **opens the network** to Gdown) and `SOURCE_STORE=graph`.
+2. An administrator creates the database and the application account ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher): `source` database, confined role, `notes` account).
+3. Put `GRAPH_USER` (= `notes`) and `GRAPH_PASSWORD` in the vault.
 
-L'API HTTP de Gdown : `POST <url>/db/<base>/query` avec `{"statement": "…", "parameters": {…}}` et une authentification de base ; réponse `{"columns": […], "rows": [[…]], "stats": {…}}`. **Toujours des paramètres** (`$id`, `$title`), jamais de valeur collée dans l'instruction (injection). Une **carte** n'est pas stockable comme propriété d'un nœud : stockez des scalaires, des listes de scalaires, ou le JSON en texte. Gdown peut aussi publier des requêtes Cypher nommées comme API REST (contrats OpenAPI, jetons, limites) : voir [gluonify.io](https://gluonify.io).
+Gdown's HTTP API: `POST <url>/db/<database>/query` with `{"statement": "…", "parameters": {…}}` and basic authentication; response `{"columns": […], "rows": [[…]], "stats": {…}}`. **Always use parameters** (`$id`, `$title`), never a value pasted into the statement (injection). A **map** cannot be stored as a node property: store scalars, lists of scalars, or the JSON as text. Gdown can also publish named Cypher queries as a REST API (OpenAPI contracts, tokens, limits): see [gluonify.io](https://gluonify.io).
 
-### Fichiers distribués (`source.store=files`)
+### Distributed files (`source.store=files`)
 
-Déployez avec `"distributed": ["std"]` : `/distributed/std` apparaît, partagé par toutes les répliques sur tous les nœuds, avec 2 copies sur les nœuds de stockage. **Règles** (elles expliquent la forme de [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java)) :
+Deploy with `"distributed": ["std"]`: `/distributed/std` appears, shared by all replicas on all nodes, with 2 copies on the storage nodes. **Rules** (they explain the shape of [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java)):
 
-1. **Ne jamais réécrire un fichier ni renommer un dossier qui vient d'être écrit** : écrivez de **nouveaux** fichiers sous leur nom définitif (c'est pourquoi une note est immuable) ; supprimer est permis.
-2. **La liste d'un dossier peut avoir ~3 secondes de retard** sur une autre réplique : une note créée sur la réplique A peut mettre un moment à apparaître sur B.
-3. Un fichier devient visible **à sa fermeture** ; tolérez quand même un fichier illisible.
-4. Pas de verrous entre nœuds par défaut (option `distributedLocks`).
-5. **Un corps de requête HTTP se lit jusqu'au bout**, sinon la connexion réutilisée se bloque.
+1. **Never rewrite a file or rename a folder that has just been written**: write **new** files under their final name (this is why a note is immutable); deleting is allowed.
+2. **A folder listing can lag by ~3 seconds** on another replica: a note created on replica A may take a moment to appear on B.
+3. A file becomes visible **when it is closed**; still tolerate an unreadable file.
+4. No cross-node locks by default (`distributedLocks` option).
+5. **An HTTP request body must be read to the end**, otherwise the reused connection hangs.
 
-### Recevoir les webhooks de Photon
+### Receiving Photon webhooks
 
-Photon reçoit les messages de vos partenaires (vérifie leur signature HMAC, convertit XML, SOAP ou formulaire en JSON) puis les **livre** à votre service. Contrat de livraison :
+Photon receives your partners' messages (verifies their HMAC signature, converts XML, SOAP or form to JSON) and then **delivers** them to your service. Delivery contract:
 
-- **un code 2XX acquitte** ; tout autre code (ou une panne) fait **rejouer** selon la politique du webhook (`retry`), puis met en file morte ;
-- donc **répondez vite** et soyez **idempotent** : « au moins une fois » signifie qu'un même message peut arriver deux fois. L'en-tête `X-Gluonify-Event-Id` est la clé de déduplication ; `X-Gluonify-Delivery-Attempt` compte les essais ; `X-Gluonify-Webhook-Id` nomme le webhook ;
-- Photon n'envoie **pas** de jeton Charm : protégez le point d'entrée par une clé que vous mettez dans la cible du webhook (`"headers": {"X-Api-Key": "…"}`, voir [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) et dans le coffre (`WEBHOOK_KEY`). **Sans clé configurée, le récepteur est fermé** (404).
+- **a 2XX code acknowledges**; any other code (or an outage) causes a **replay** according to the webhook's policy (`retry`), then a move to the dead-letter queue;
+- so **answer quickly** and be **idempotent**: "at least once" means the same message may arrive twice. The `X-Gluonify-Event-Id` header is the deduplication key; `X-Gluonify-Delivery-Attempt` counts attempts; `X-Gluonify-Webhook-Id` names the webhook;
+- Photon does **not** send a Charm token: protect the entry point with a key that you put in the webhook target (`"headers": {"X-Api-Key": "…"}`, see [`deploy/photon-webhook.json`](deploy/photon-webhook.json)) and in the vault (`WEBHOOK_KEY`). **Without a configured key, the receiver is closed** (404).
 
-[`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) montre le tout (clé comparée en temps constant, déduplication, JSON illisible → 400) ; remplacez le corps de `receive` par votre traitement.
+[`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) shows it all (key compared in constant time, deduplication, unreadable JSON → 400); replace the body of `receive` with your own processing.
 
-### Appeler une autre application
+### Calling another application
 
-Déclarez-la dans `"uses"` : la plateforme fournit `SERVICE_<APP>_URL` **et ouvre le réseau** vers elle (sans `uses`, l'application ne la joint pas). N'écrivez jamais l'adresse en dur : lisez la variable (voir `ping` dans [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java)).
+Declare it in `"uses"`: the platform provides `SERVICE_<APP>_URL` **and opens the network** to it (without `uses`, the application cannot reach it). Never hardcode the address: read the variable (see `ping` in [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java)).
 
-### Sites statiques et domaines
+### Static sites and domains
 
-- **Field** sert un site statique (ZIP) sur votre domaine ; rien à coder dans ce service.
-- **Votre domaine** : `PUT /domains/<nom>` sur l'API de Higgs (voir [`deploy/domain.json`](deploy/domain.json)) route un chemin vers l'application et applique des **politiques** : jeton Charm (audience, rôles), limites de débit, CORS, listes d'adresses. Le certificat HTTPS est obtenu automatiquement.
+- **Field** serves a static site (ZIP) on your domain; nothing to code in this service.
+- **Your domain**: `PUT /domains/<name>` on Higgs's API (see [`deploy/domain.json`](deploy/domain.json)) routes a path to the application and applies **policies**: Charm token (audience, roles), rate limits, CORS, address lists. The HTTPS certificate is obtained automatically.
 
-## 8. Construire
+## 8. Building
 
 ```bash
-mvn test                       # tests Java (30)
-mvn package                    # JVM : target/quarkus-app/ ; construit aussi l'interface (Quinoa)
+mvn test                       # Java tests (30)
+mvn package                    # JVM: target/quarkus-app/; also builds the interface (Quinoa)
 ```
 
-**L'exécutable natif** (ce que Gluonify exécute : un fichier, sans JVM) :
+**The native executable** (what Gluonify runs: one file, no JVM):
 
 ```bash
 docker build --target out --output type=local,dest=dist -f Dockerfile.build .
-./dist/gluonify-source         # tourne sur ce Linux, port 8080
+./dist/gluonify-source         # runs on this Linux, port 8080
 ```
 
-Le fichier `dist/gluonify-source` est un exécutable Linux **glibc** de l'architecture de votre Docker (arm64 sur Apple Silicon, amd64 sur x86_64). Pour l'autre architecture : `docker build --platform linux/amd64 …` (lent : émulation ; voir les commentaires de `Dockerfile.build`).
+The `dist/gluonify-source` file is a **glibc** Linux executable for your Docker's architecture (arm64 on Apple Silicon, amd64 on x86_64). For the other architecture: `docker build --platform linux/amd64 …` (slow: emulation; see the comments in `Dockerfile.build`).
 
-Sans Docker : `mvn package -Dnative` exige GraalVM (NIK 25) installé.
+Without Docker: `mvn package -Dnative` requires GraalVM (NIK 25) to be installed.
 
-**Les normes de la plateforme** : après le clone, le builder de Gluonify contrôle le projet (`R-SANTE`, `R-SECRET`, `R-FICHIER-SENSIBLE`, `R-NATIF`, `R-IMAGE`, `R-ECOUTE`) et refuse un dépôt qui ne les respecte pas. [`ConformityTest`](src/test/java/io/gluonify/source/ConformityTest.java) les vérifie **chez vous** ; gardez-le.
+**Platform standards**: after the clone, Gluonify's builder checks the project (`R-SANTE`, `R-SECRET`, `R-FICHIER-SENSIBLE`, `R-NATIF`, `R-IMAGE`, `R-ECOUTE`) and rejects a repository that does not comply. [`ConformityTest`](src/test/java/io/gluonify/source/ConformityTest.java) checks them **on your side**; keep it.
 
-## 9. Déployer
+## 9. Deploying
 
-Il y a deux chemins.
+There are two paths.
 
-**A. Gluonify construit pour vous** (le plus simple) : donnez l'adresse Git au builder (**gluonify-bup**) :
+**A. Gluonify builds for you** (the simplest): give the Git address to the builder (**gluonify-bup**):
 
 ```bash
 curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-Token: $GIT_TOKEN" \
   -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"vaultNamespace":"gluonify-source"}'
 ```
 
-Le builder clone, contrôle la conformité, compile en natif, publie l'exécutable et le déploie. Suivez-le : `GET /v1/builds/<id>` et `/logs`. (Un push Git peut aussi lancer le build par un webhook : `POST /v1/webhooks/git`.)
+The builder clones, checks compliance, compiles natively, publishes the executable and deploys it. Follow it: `GET /v1/builds/<id>` and `/logs`. (A Git push can also trigger the build through a webhook: `POST /v1/webhooks/git`.)
 
-**B. Vous publiez l'exécutable** vous-même, puis vous déployez :
+**B. You publish the executable** yourself, then you deploy:
 
 ```bash
 SHA=$(shasum -a 256 dist/gluonify-source | cut -d' ' -f1)
-# publiez dist/gluonify-source à une adresse HTTPS, puis :
+# publish dist/gluonify-source at an HTTPS address, then:
 curl -X PUT "https://api.$ZONE/apps/gluonify-source" -H "Authorization: Bearer $ADMIN" -H 'Content-Type: application/json' \
-  -d @deploy/appspec.json     # après avoir mis votre adresse et votre empreinte dans artifacts
+  -d @deploy/appspec.json     # after putting your address and your hash in artifacts
 ```
 
-L'application est alors à `https://gluonify-source.<zone>` (certificat automatique). Les champs de [`deploy/appspec.json`](deploy/appspec.json) :
+The application is then at `https://gluonify-source.<zone>` (automatic certificate). The fields of [`deploy/appspec.json`](deploy/appspec.json):
 
-| Champ | Rôle |
+| Field | Role |
 |---|---|
-| `artifacts` | l'exécutable par architecture : `URL#sha256=…` (l'empreinte est **obligatoire**, vérifiée par le nœud) |
-| `replicas` | nombre d'instances (2 ou plus : mises à jour sans coupure) |
-| `memoryMb` | plafond mémoire par instance (un natif tient dans 64 à 128 Mo) |
-| `uses` | services joignables : `SERVICE_<APP>_URL` fournie, réseau ouvert (`id` = Charm, `graphdb` = Gdown) |
-| `distributed` | `["std"]` pour `/distributed/std` |
-| `env` | variables **non secrètes** ; `${NOM}` et `${NOM:-défaut}` sont résolus |
-| `vaultNamespace` | l'espace du coffre dont les clés arrivent en `APP_<CLÉ>` |
-| `internal` | `true` : aucune route publique (service interne) |
+| `artifacts` | the executable per architecture: `URL#sha256=…` (the hash is **mandatory**, verified by the node) |
+| `replicas` | number of instances (2 or more: updates without downtime) |
+| `memoryMb` | memory cap per instance (a native executable fits in 64 to 128 MB) |
+| `uses` | reachable services: `SERVICE_<APP>_URL` provided, network opened (`id` = Charm, `graphdb` = Gdown) |
+| `distributed` | `["std"]` for `/distributed/std` |
+| `env` | **non-secret** variables; `${NAME}` and `${NAME:-default}` are resolved |
+| `vaultNamespace` | the vault space whose keys arrive as `APP_<KEY>` |
+| `internal` | `true`: no public route (internal service) |
 
-Mettre à jour : même `PUT` (ou nouveau build) ; les répliques sont remplacées **une à une**. Redémarrer sans changer : `POST /apps/<nom>/redeploy`. Journaux : `GET /apps/<nom>/logs`. Mesures : `/q/metrics`.
+To update: same `PUT` (or a new build); replicas are replaced **one by one**. To restart without changes: `POST /apps/<name>/redeploy`. Logs: `GET /apps/<name>/logs`. Metrics: `/q/metrics`.
 
-## 10. Tester
+## 10. Testing
 
 ```bash
-mvn test                                 # 30 tests Java
-cd src/main/webui && npm install && npm test   # 3 tests d'interface
+mvn test                                 # 30 Java tests
+cd src/main/webui && npm install && npm test   # 3 interface tests
 ```
 
-| Test | Ce qu'il vérifie |
+| Test | What it checks |
 |---|---|
-| `NotesResourceTest` | 401 sans jeton, 403 sans le bon rôle, cycle de vie complet, validation 400, OpenAPI, santé, mesures |
-| `FileNoteStoreTest` | fichiers neufs jamais renommés, ordre, deux répliques sur le même dossier, fichiers illisibles ignorés, identifiants jamais des chemins |
-| `GraphNoteStoreTest` | contre un faux Gdown : chemin, authentification, instruction **paramétrée**, lecture des lignes, échec |
-| `WebhookResourceTest` / `WebhookClosedTest` | clé, acquittement, **idempotence**, rejets ; fermé sans clé |
-| `PlatformResourceTest` | variables de la plateforme lues, **aucun secret renvoyé**, appel de service à service limité aux services déclarés |
-| `ConformityTest` | les normes du builder, chez vous |
+| `NotesResourceTest` | 401 without a token, 403 without the right role, full lifecycle, 400 validation, OpenAPI, health, metrics |
+| `FileNoteStoreTest` | new files never renamed, ordering, two replicas on the same folder, unreadable files ignored, identifiers never paths |
+| `GraphNoteStoreTest` | against a fake Gdown: path, authentication, **parameterized** statement, row reading, failure |
+| `WebhookResourceTest` / `WebhookClosedTest` | key, acknowledgment, **idempotence**, rejections; closed without a key |
+| `PlatformResourceTest` | platform variables read, **no secret returned**, service-to-service call limited to declared services |
+| `ConformityTest` | the builder's standards, on your side |
 
-Un test d'API se copie de `NotesResourceTest` ; un test de stockage de `FileNoteStoreTest` (sans démarrer Quarkus : rapide).
+An API test is copied from `NotesResourceTest`; a storage test from `FileNoteStoreTest` (without starting Quarkus: fast).
 
-## 11. Pièges connus
+## 11. Known pitfalls
 
-- **Natif** : ne créez **pas** de `HttpClient`, de `Random` ni de `SecureRandom` dans un champ `static` (l'état serait figé à la compilation, pas à l'exécution) : créez-les à la première utilisation (voir `GraphNoteStore.client()`). Lisez le JSON de tiers en arbre (`JsonNode`) plutôt que dans des classes ; un type (dé)sérialisé par Jackson hors d'une signature REST doit porter `@RegisterForReflection`. **Un bogue qui n'apparaît qu'en natif ne se voit pas dans `mvn test`** : lancez l'exécutable natif avant de livrer.
-- **Jackson 3** : le paquet est `tools.jackson.databind`, pas `com.fasterxml.jackson.databind`.
-- **Aucune adresse, aucun port, aucun mot de passe en dur** : tout vient de l'environnement.
-- **Fichiers distribués** : voir les règles du [§7](#fichiers-distribués-sourcestorefiles) (ne jamais réécrire, ~3 s de retard).
-- **Webhooks** : répondre vite en 2XX, être idempotent, protéger par une clé.
-- **Une identité de développement n'a rien à faire en production** : gardez `@IfBuildProfile("dev")`.
-- **Quinoa et les adresses d'API** : ajoutez tout nouveau préfixe d'API à `quarkus.quinoa.ignored-path-prefixes`.
-- **Sous émulation x86_64** (Docker sur Apple Silicon) : construisez avec `--build-arg MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=VFORK`.
+- **Native**: do **not** create an `HttpClient`, a `Random` or a `SecureRandom` in a `static` field (the state would be frozen at compile time, not at run time): create them on first use (see `GraphNoteStore.client()`). Read third-party JSON as a tree (`JsonNode`) rather than into classes; a type (de)serialized by Jackson outside a REST signature must carry `@RegisterForReflection`. **A bug that only appears in native does not show up in `mvn test`**: run the native executable before shipping.
+- **Jackson 3**: the package is `tools.jackson.databind`, not `com.fasterxml.jackson.databind`.
+- **No address, no port, no password hardcoded**: everything comes from the environment.
+- **Distributed files**: see the rules in [§7](#distributed-files-sourcestorefiles) (never rewrite, ~3 s lag).
+- **Webhooks**: answer quickly with 2XX, be idempotent, protect with a key.
+- **A development identity has no business in production**: keep `@IfBuildProfile("dev")`.
+- **Quinoa and API addresses**: add any new API prefix to `quarkus.quinoa.ignored-path-prefixes`.
+- **Under x86_64 emulation** (Docker on Apple Silicon): build with `--build-arg MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=VFORK`.
 
-## 12. Dépannage
+## 12. Troubleshooting
 
-| Symptôme | Cause probable |
+| Symptom | Probable cause |
 |---|---|
-| 401 en production | pas de jeton, jeton expiré, ou **audience** différente de `OIDC_AUDIENCE` ; ou `OIDC_ISSUER` ne correspond pas à l'`iss` du jeton |
-| 403 | jeton valide mais sans le rôle (`source:read` / `source:write`) |
-| L'application ne reçoit pas de trafic | `/q/health/ready` ne répond pas 200 (stockage injoignable ?) : `GET /apps/<nom>` montre les instances prêtes |
-| `store=graph` : « source.graph.url est vide » | l'application n'est pas déployée avec `"uses": ["graphdb"]` |
-| Gdown : 401 ou « Unsupported property value type » | mauvais compte ; ou une **carte** stockée comme propriété (voir §7) |
-| Une note créée n'apparaît pas tout de suite (fichiers) | cache de liste de ~3 s entre répliques : rafraîchir |
-| Le build du dépôt est refusé | une règle `R-…` : le message la nomme ; `mvn test` (`ConformityTest`) la montre chez vous |
-| `mvn package` ne trouve pas Node | accès réseau pour le télécharger, ou `-Dquarkus.quinoa=false` pour construire sans l'interface |
-| Le natif plante au démarrage mais pas en JVM | un état figé à la compilation (`static`) ou une réflexion manquante (§11) |
+| 401 in production | no token, expired token, or **audience** different from `OIDC_AUDIENCE`; or `OIDC_ISSUER` does not match the token's `iss` |
+| 403 | valid token but without the role (`source:read` / `source:write`) |
+| The application receives no traffic | `/q/health/ready` does not answer 200 (storage unreachable?): `GET /apps/<name>` shows the ready instances |
+| `store=graph`: "source.graph.url is empty" | the application is not deployed with `"uses": ["graphdb"]` |
+| Gdown: 401 or "Unsupported property value type" | wrong account; or a **map** stored as a property (see §7) |
+| A created note does not appear right away (files) | ~3 s list cache between replicas: refresh |
+| The repository build is rejected | an `R-…` rule: the message names it; `mvn test` (`ConformityTest`) shows it on your side |
+| `mvn package` cannot find Node | network access to download it, or `-Dquarkus.quinoa=false` to build without the interface |
+| The native executable crashes at startup but not on the JVM | state frozen at compile time (`static`) or missing reflection (§11) |
 
 ---
 
-*Gluonify est une plateforme minimaliste pour applications Quarkus natives : [gluonify.cloud](https://gluonify.cloud) (présentation) et [gluonify.io](https://gluonify.io) (technique). Ce dépôt est volontairement petit : il se lit en une heure.*
+*Gluonify is a minimalist platform for native Quarkus applications: [gluonify.cloud](https://gluonify.cloud) (overview) and [gluonify.io](https://gluonify.io) (technical). This repository is deliberately small: it can be read in an hour.*
