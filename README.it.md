@@ -193,6 +193,10 @@ La piattaforma invia traffico solo alle istanze per cui **`/q/health/ready`** ri
 
 ### Dati in Gdown (`source.store=graph`)
 
+**Il più semplice: un database dedicato.** Distribuisca con `"graphDatabase": true` e `SOURCE_STORE=graph`: la piattaforma crea un database proprio per l'applicazione (il suo gruppo Raft, un account confinato) e fornisce `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` e l'accesso di rete (`SERVICE_GRAPHDB_URL`); non c'è altro da fare. Il database **non viene mai eliminato** con l'applicazione.
+
+**A mano** (database condiviso, nomi propri):
+
 1. Distribuisca con `"uses": ["graphdb"]` (è anche ciò che **apre la rete** verso Gdown) e `SOURCE_STORE=graph`.
 2. Un amministratore crea il database e l'account dell'applicazione ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher): database `source`, ruolo confinato, account `notes`).
 3. Metta `GRAPH_USER` (= `notes`) e `GRAPH_PASSWORD` nel vault.

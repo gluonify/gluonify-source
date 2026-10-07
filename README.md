@@ -193,6 +193,10 @@ The platform only sends traffic to instances whose **`/q/health/ready`** answers
 
 ### Data in Gdown (`source.store=graph`)
 
+**Simplest: a dedicated database.** Deploy with `"graphDatabase": true` and `SOURCE_STORE=graph`: the platform creates a database of its own for the application (its own Raft group, a confined account) and provides `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` and the network access (`SERVICE_GRAPHDB_URL`); nothing else to do. The database is **never deleted** with the application.
+
+**By hand** (shared database, your own naming):
+
 1. Deploy with `"uses": ["graphdb"]` (this is also what **opens the network** to Gdown) and `SOURCE_STORE=graph`.
 2. An administrator creates the database and the application account ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher): `source` database, confined role, `notes` account).
 3. Put `GRAPH_USER` (= `notes`) and `GRAPH_PASSWORD` in the vault.

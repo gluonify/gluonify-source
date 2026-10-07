@@ -193,6 +193,10 @@ Die Plattform sendet Verkehr nur an Instanzen, deren **`/q/health/ready`** mit 2
 
 ### Daten in Gdown (`source.store=graph`)
 
+**Am einfachsten: eine dedizierte Datenbank.** Deployen Sie mit `"graphDatabase": true` und `SOURCE_STORE=graph`: Die Plattform legt eine eigene Datenbank für die Anwendung an (eigene Raft-Gruppe, eingeschränktes Konto) und liefert `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` und den Netzwerkzugang (`SERVICE_GRAPHDB_URL`); mehr ist nicht zu tun. Die Datenbank wird mit der Anwendung **nie gelöscht**.
+
+**Von Hand** (gemeinsame Datenbank, eigene Namen):
+
 1. Deployen Sie mit `"uses": ["graphdb"]` (das **öffnet** auch das Netzwerk zu Gdown) und `SOURCE_STORE=graph`.
 2. Ein Administrator legt die Datenbank und das Konto der Anwendung an ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher): Datenbank `source`, eingeschränkte Rolle, Konto `notes`).
 3. Legen Sie `GRAPH_USER` (= `notes`) und `GRAPH_PASSWORD` im Tresor ab.
