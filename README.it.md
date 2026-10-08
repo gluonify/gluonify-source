@@ -2,6 +2,8 @@
 
 [English](README.md) · [Français](README.fr.md) · [Español](README.es.md) · **Italiano** · [Deutsch](README.de.md)
 
+> **Variante Gradle.** Lo stesso servizio, costruito con **Gradle** (Kotlin DSL) invece di Maven, esiste in [`gluonify-source-gradle`](https://github.com/gluonify/gluonify-source-gradle): stesso codice, stessi test, stesse regole della piattaforma.
+
 **Il punto di partenza di un servizio Quarkus 4 su [Gluonify](https://gluonify.cloud).** Un piccolo servizio completo (delle «note») che mostra, con codice funzionante e test, come:
 
 1. creare un **servizio REST** (validazione, ruoli, OpenAPI);
