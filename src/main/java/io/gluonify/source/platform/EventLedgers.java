@@ -13,7 +13,7 @@ public class EventLedgers {
     EventLedger eventLedger(SourceConfig cfg) {
         return switch (cfg.store()) {
             case "files" -> new FileEventLedger(Path.of(cfg.files().dir()).resolveSibling("events"));
-            case "graph" -> new GraphEventLedger(NoteStores.graph(cfg));
+            case "gdown" -> new GraphEventLedger(NoteStores.graph(cfg));
             default -> new MemoryEventLedger();
         };
     }

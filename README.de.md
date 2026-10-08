@@ -193,7 +193,7 @@ Eine Anwendung auf Gluonify ist **isoliert**: eigenes Konto, eigenes Netzwerk, e
 
 Die Plattform sendet Verkehr nur an Instanzen, deren **`/q/health/ready`** mit 200 antwortet, und startet jene neu, deren **`/q/health/live`** wiederholt fehlschlägt. `quarkus-smallrye-health` ist **obligatorisch** (der Builder kontrolliert es: Regel R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) macht die Instanz nur »bereit«, wenn der Speicher antwortet. Halten Sie »lebendig« unabhängig von externen Diensten: Ein Ausfall von Gdown darf die Anwendung nicht in eine Neustartschleife schicken.
 
-### Daten in Gdown (`source.store=graph`)
+### Daten in Gdown (`source.store=gdown`)
 
 **Am einfachsten: eine dedizierte Datenbank.** Deployen Sie mit `"gdownDatabase": true` und `SOURCE_STORE=gdown`: Die Plattform legt eine eigene Datenbank für die Anwendung an (eigene Raft-Gruppe, eingeschränktes Konto) und liefert `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` und den Netzwerkzugang (`GLUONIFY_SERVICE_GDOWN_URL`); mehr ist nicht zu tun. Die Datenbank wird mit der Anwendung **nie gelöscht**.
 
@@ -332,7 +332,7 @@ Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNot
 | 401 in der Produktion | kein Token, abgelaufenes Token oder **Audience** abweichend von `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; oder `GLUONIFY_ZZZNONE_OIDC_ISSUER` stimmt nicht mit dem `iss` des Tokens überein |
 | 403 | gültiges Token, aber ohne die Rolle (`source:read` / `source:write`) |
 | Die Anwendung erhält keinen Verkehr | `/q/health/ready` antwortet nicht mit 200 (Speicher nicht erreichbar?): `GET /apps/<name>` zeigt die bereiten Instanzen |
-| `store=graph`: »source.graph.url is empty« | die Anwendung ist nicht mit `"uses": ["gdown"]` deployt |
+| `store=gdown`: »source.graph.url is empty« | die Anwendung ist nicht mit `"uses": ["gdown"]` deployt |
 | Gdown: 401 oder »Unsupported property value type« | falsches Konto; oder eine als Eigenschaft gespeicherte **Map** (siehe §7) |
 | Eine angelegte Notiz erscheint nicht sofort (Dateien) | Listen-Cache von ~3 s zwischen Replikaten: aktualisieren |
 | Der Build des Repositorys wird abgelehnt | eine Regel `R-…`: die Meldung nennt sie; `mvn test` (`ConformityTest`) zeigt sie bei Ihnen |

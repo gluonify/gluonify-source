@@ -193,7 +193,7 @@ Une application sur Gluonify est **isolée** : son propre compte, son propre ré
 
 La plateforme n'envoie du trafic qu'aux instances dont **`/q/health/ready`** répond 200, et redémarre celles dont **`/q/health/live`** échoue de façon répétée. `quarkus-smallrye-health` est **obligatoire** (le builder le contrôle : règle R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) rend l'instance « prête » seulement si le stockage répond. Gardez « vivant » indépendant des services extérieurs : une panne de Gdown ne doit pas faire redémarrer l'application en boucle.
 
-### Données dans Gdown (`source.store=graph`)
+### Données dans Gdown (`source.store=gdown`)
 
 **Le plus simple : une base dédiée.** Déployez avec `"gdownDatabase": true` et `SOURCE_STORE=gdown` : la plateforme crée une base propre à l'application (son propre groupe Raft, un compte confiné) et fournit `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` et l'accès réseau (`GLUONIFY_SERVICE_GDOWN_URL`) ; il n'y a rien d'autre à faire. La base n'est **jamais supprimée** avec l'application.
 
@@ -332,7 +332,7 @@ Un test d'API se copie de `NotesResourceTest` ; un test de stockage de `FileNote
 | 401 en production | pas de jeton, jeton expiré, ou **audience** différente de `GLUONIFY_ZZZNONE_OIDC_AUDIENCE` ; ou `GLUONIFY_ZZZNONE_OIDC_ISSUER` ne correspond pas à l'`iss` du jeton |
 | 403 | jeton valide mais sans le rôle (`source:read` / `source:write`) |
 | L'application ne reçoit pas de trafic | `/q/health/ready` ne répond pas 200 (stockage injoignable ?) : `GET /apps/<nom>` montre les instances prêtes |
-| `store=graph` : « source.graph.url is empty » | l'application n'est pas déployée avec `"uses": ["gdown"]` |
+| `store=gdown` : « source.graph.url is empty » | l'application n'est pas déployée avec `"uses": ["gdown"]` |
 | Gdown : 401 ou « Unsupported property value type » | mauvais compte ; ou une **carte** stockée comme propriété (voir §7) |
 | Une note créée n'apparaît pas tout de suite (fichiers) | cache de liste de ~3 s entre répliques : rafraîchir |
 | Le build du dépôt est refusé | une règle `R-…` : le message la nomme ; `mvn test` (`ConformityTest`) la montre chez vous |

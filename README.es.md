@@ -193,7 +193,7 @@ Una aplicación en Gluonify está **aislada**: su propia cuenta, su propia red, 
 
 La plataforma solo envía tráfico a las instancias cuyo **`/q/health/ready`** responde 200, y reinicia las cuyo **`/q/health/live`** falla de forma repetida. `quarkus-smallrye-health` es **obligatorio** (el builder lo controla: regla R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) declara la instancia «lista» solo si el almacenamiento responde. Mantenga «vivo» independiente de los servicios externos: una caída de Gdown no debe hacer reiniciar la aplicación en bucle.
 
-### Datos en Gdown (`source.store=graph`)
+### Datos en Gdown (`source.store=gdown`)
 
 **Lo más simple: una base dedicada.** Despliegue con `"gdownDatabase": true` y `SOURCE_STORE=gdown`: la plataforma crea una base propia para la aplicación (su propio grupo Raft, una cuenta confinada) y proporciona `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` y el acceso de red (`GLUONIFY_SERVICE_GDOWN_URL`); no hay nada más que hacer. La base **nunca se elimina** con la aplicación.
 
@@ -332,7 +332,7 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 | 401 en producción | sin token, token caducado, o **audiencia** distinta de `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; o `GLUONIFY_ZZZNONE_OIDC_ISSUER` no coincide con el `iss` del token |
 | 403 | token válido pero sin el rol (`source:read` / `source:write`) |
 | La aplicación no recibe tráfico | `/q/health/ready` no responde 200 (¿almacenamiento inaccesible?): `GET /apps/<nombre>` muestra las instancias listas |
-| `store=graph`: «source.graph.url is empty» | la aplicación no está desplegada con `"uses": ["gdown"]` |
+| `store=gdown`: «source.graph.url is empty» | la aplicación no está desplegada con `"uses": ["gdown"]` |
 | Gdown: 401 o «Unsupported property value type» | cuenta incorrecta; o un **mapa** almacenado como propiedad (véase §7) |
 | Una nota creada no aparece enseguida (archivos) | caché de lista de ~3 s entre réplicas: refrescar |
 | Se rechaza el build del repositorio | una regla `R-…`: el mensaje la nombra; `mvn test` (`ConformityTest`) la muestra en su máquina |

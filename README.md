@@ -193,7 +193,7 @@ An application on Gluonify is **isolated**: its own account, its own network, a 
 
 The platform only sends traffic to instances whose **`/q/health/ready`** answers 200, and restarts those whose **`/q/health/live`** fails repeatedly. `quarkus-smallrye-health` is **mandatory** (the builder checks it: rule R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) makes the instance "ready" only if storage responds. Keep "alive" independent of external services: a Gdown outage must not make the application restart in a loop.
 
-### Data in Gdown (`source.store=graph`)
+### Data in Gdown (`source.store=gdown`)
 
 **Simplest: a dedicated database.** Deploy with `"gdownDatabase": true` and `SOURCE_STORE=gdown`: the platform creates a database of its own for the application (its own Raft group, a confined account) and provides `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` and the network access (`GLUONIFY_SERVICE_GDOWN_URL`); nothing else to do. The database is **never deleted** with the application.
 
@@ -332,7 +332,7 @@ An API test is copied from `NotesResourceTest`; a storage test from `FileNoteSto
 | 401 in production | no token, expired token, or **audience** different from `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; or `GLUONIFY_ZZZNONE_OIDC_ISSUER` does not match the token's `iss` |
 | 403 | valid token but without the role (`source:read` / `source:write`) |
 | The application receives no traffic | `/q/health/ready` does not answer 200 (storage unreachable?): `GET /apps/<name>` shows the ready instances |
-| `store=graph`: "source.graph.url is empty" | the application is not deployed with `"uses": ["gdown"]` |
+| `store=gdown`: "source.graph.url is empty" | the application is not deployed with `"uses": ["gdown"]` |
 | Gdown: 401 or "Unsupported property value type" | wrong account; or a **map** stored as a property (see §7) |
 | A created note does not appear right away (files) | ~3 s list cache between replicas: refresh |
 | The repository build is rejected | an `R-…` rule: the message names it; `mvn test` (`ConformityTest`) shows it on your side |

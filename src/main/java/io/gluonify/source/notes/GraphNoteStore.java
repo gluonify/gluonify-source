@@ -42,7 +42,7 @@ public class GraphNoteStore implements NoteStore {
 
     @Override
     public String kind() {
-        return "graph";
+        return "gdown";
     }
 
     @Override

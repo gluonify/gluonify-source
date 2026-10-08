@@ -193,7 +193,7 @@ Un'applicazione su Gluonify è **isolata**: un proprio account, una propria rete
 
 La piattaforma invia traffico solo alle istanze per cui **`/q/health/ready`** risponde 200, e riavvia quelle per cui **`/q/health/live`** fallisce ripetutamente. `quarkus-smallrye-health` è **obbligatorio** (il builder lo controlla: regola R-SANTE). [`StoreHealth`](src/main/java/io/gluonify/source/notes/StoreHealth.java) rende l'istanza «pronta» solo se l'archiviazione risponde. Mantenga «vivo» indipendente dai servizi esterni: un guasto di Gdown non deve far riavviare l'applicazione in loop.
 
-### Dati in Gdown (`source.store=graph`)
+### Dati in Gdown (`source.store=gdown`)
 
 **Il più semplice: un database dedicato.** Distribuisca con `"gdownDatabase": true` e `SOURCE_STORE=gdown`: la piattaforma crea un database proprio per l'applicazione (il suo gruppo Raft, un account confinato) e fornisce `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` e l'accesso di rete (`GLUONIFY_SERVICE_GDOWN_URL`); non c'è altro da fare. Il database **non viene mai eliminato** con l'applicazione.
 
@@ -332,7 +332,7 @@ Un test d'API si copia da `NotesResourceTest`; un test di archiviazione da `File
 | 401 in produzione | nessun token, token scaduto, o **audience** diversa da `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; oppure `GLUONIFY_ZZZNONE_OIDC_ISSUER` non corrisponde all'`iss` del token |
 | 403 | token valido ma senza il ruolo (`source:read` / `source:write`) |
 | L'applicazione non riceve traffico | `/q/health/ready` non risponde 200 (archiviazione irraggiungibile?): `GET /apps/<nome>` mostra le istanze pronte |
-| `store=graph`: «source.graph.url is empty» | l'applicazione non è distribuita con `"uses": ["gdown"]` |
+| `store=gdown`: «source.graph.url is empty» | l'applicazione non è distribuita con `"uses": ["gdown"]` |
 | Gdown: 401 o «Unsupported property value type» | account errato; oppure una **mappa** memorizzata come proprietà (vedere §7) |
 | Una nota creata non compare subito (file) | cache dell'elenco di ~3 s tra repliche: aggiornare |
 | Il build del repository viene rifiutato | una regola `R-…`: il messaggio la nomina; `mvn test` (`ConformityTest`) la mostra in locale |

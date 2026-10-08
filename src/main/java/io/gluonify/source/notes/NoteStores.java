@@ -13,7 +13,7 @@ public class NoteStores {
         return switch (cfg.store()) {
             case "memory" -> new MemoryNoteStore();
             case "files" -> new FileNoteStore(Path.of(cfg.files().dir()));
-            case "graph" -> graph(cfg);
+            case "gdown" -> graph(cfg);
             default -> throw new IllegalStateException("unknown source.store: \"" + cfg.store() + "\" (memory, files or graph)");
         };
     }
