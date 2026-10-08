@@ -2,20 +2,7 @@
 
 This repository is the **starting point** for a Quarkus 4 service that runs on Gluonify. Read `README.md` first: it explains everything, step by step (also available as `README.fr.md`, `README.es.md`, `README.it.md`, `README.de.md`). This file summarizes what you must not break.
 
-## Règles des projets
-
-- **README.md est tenu à jour à chaque modification.** Toute évolution qui ajoute, change ou retire une fonctionnalité, une limite, une option de configuration ou un format met à jour dans le même
-  changement : la matrice « Ce qui est pris en charge, et ce qui ne l'est pas encore », la section qui détaille la fonctionnalité, le tableau de configuration et `plan.md`.
-- Réponses et documentation en français. Ne committer que sur demande explicite, ou sous le mandat permanent ci-dessous.
-- **Enchaîner sans s'arrêter.** Quand l'utilisateur a dit de terminer le plan « tout seul » (mandat permanent en vigueur : « termine le plan tout seul », « continue sans me demander quoi faire »), ne jamais finir un
-  tour par un point d'étape, une question ou « je continue ensuite » : passer au point suivant de `plan.md` dans le même tour. Ne s'arrêter que si le backlog est vide, ou si une décision appartient vraiment à
-  l'utilisateur (donnée manquante, action irréversible ou hors périmètre) ; dans ce cas, poser la question une fois, avec une recommandation.
-- **Attendre dans le tour, pas entre deux tours.** Une vérification longue (`mvn clean verify`, `scripts/e2e-cluster.sh`, endurance) se lance en arrière-plan, puis on attend son résultat dans le même tour
-  (boucle `until … ; do sleep 30; done` en arrière-plan avec un délai maximal de 7 200 000 ms, relancée si elle expire), sans clore le tour pendant l'attente. Une notification « terminé » d'une tâche de fond ne
-  dit que le lancement est fini, pas que les tests ont réussi : lire le fichier de résultat.
-- **Commits sous mandat permanent** : après chaque étape, si `mvn clean verify` et `scripts/e2e-cluster.sh` passent tous les deux (même commande, `JAVA_HOME` du JDK Liberica 25 défini), committer et pousser sur
-  `main` sans demander ; sinon corriger. Les messages de commit finissent par la ligne d'attribution demandée par l'environnement.
-- Ne pas modifier `/Users/a/dev/gluonify-gdown` sans accord car un autre Claude travaille dessus par défaut.
+Shared context for every gluonify-* repository (rules, build order, pitfalls, conventions, Edge model): `/Users/a/dev/gluonify/CLAUDE.md`, loaded automatically with this file (written in French).
 
 ## Commands
 - `mvn quarkus:dev`: development (hot reload, UI at http://localhost:8080, **no token needed**: the "dev" identity exists only in this profile).
@@ -38,4 +25,3 @@ This repository is the **starting point** for a Quarkus 4 service that runs on G
 
 ## Where to change what
 `NotesResource` = the model of a REST resource; `NoteStore` + `NoteStores` = where to plug in a store; `SourceConfig` + `application.properties` = configuration; `WebhookResource` = receiving Photon; `PlatformResource` = platform variables and calling another service; `src/main/webui` = the Vue UI (Quinoa).
-- **Multilingual Vue JS interfaces.** Every Vue JS interface is multilingual: no hard-coded text in components, translations live in language files (English by default, then fr, es, it, de like the websites), with a language selector whose choice is remembered. Test fixtures and example data are in English.
