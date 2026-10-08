@@ -157,7 +157,7 @@ Le service ne **crée** jamais de jeton : il en **vérifie** (mode `quarkus.oidc
 **Obtenir un jeton de test** (l'administrateur de la plateforme, avec le jeton d'administration de Charm) :
 
 ```bash
-curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $ID_ADMIN_TOKEN" -H 'Content-Type: application/json' \
+curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \
   -d '{"sub":"ada","audience":"gluonify-source","ttlSeconds":3600,"roles":["source:read","source:write"]}'
 # -> {"token": "eyJ…"}
 curl -s https://gluonify-source.<zone>/api/notes -H "Authorization: Bearer eyJ…"

@@ -157,7 +157,7 @@ The service never **creates** tokens: it **verifies** them (mode `quarkus.oidc.a
 **Getting a test token** (the platform administrator, with Charm's administration token):
 
 ```bash
-curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $ID_ADMIN_TOKEN" -H 'Content-Type: application/json' \
+curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \
   -d '{"sub":"ada","audience":"gluonify-source","ttlSeconds":3600,"roles":["source:read","source:write"]}'
 # -> {"token": "eyJ…"}
 curl -s https://gluonify-source.<zone>/api/notes -H "Authorization: Bearer eyJ…"
