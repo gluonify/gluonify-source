@@ -34,7 +34,7 @@ public interface SourceConfig {
 
         Optional<String> user();
 
-        /** Comes from the vault (key GLUONIFY_GDOWN_PASSWORD of the <uuid>.app space obtained with "top": true -> variable APP_GRAPH_PASSWORD; no prefix with a literal topNamespace). Never in the repository. */
+        /** Comes from the vault (key GLUONIFY_GDOWN_PASSWORD of the <uuid>.app space obtained with "top": true -> variable APP_GLUONIFY_GDOWN_PASSWORD; no prefix with a literal topNamespace). Never in the repository. */
         Optional<String> password();
     }
 
