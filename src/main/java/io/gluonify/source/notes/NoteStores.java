@@ -24,6 +24,6 @@ public class NoteStores {
                     cfg.graph().url().filter(u -> !u.isBlank()).orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.url is empty (deploy with \"uses\": [\"graphdb\"])")),
                     cfg.graph().database(),
                     cfg.graph().user().orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.user is missing")),
-                    cfg.graph().password().orElseThrow(() -> new IllegalStateException("source.store=graph : password is missing (vault key GRAPH_PASSWORD)")));
+                    cfg.graph().password().orElseThrow(() -> new IllegalStateException("source.store=graph : password is missing (vault key GLUONIFY_GDOWN_PASSWORD)")));
     }
 }

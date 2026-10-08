@@ -26,7 +26,7 @@ public interface SourceConfig {
     }
 
     interface Graph {
-        /** Provided by the platform: SERVICE_GRAPHDB_URL (application deployed with "uses": ["graphdb"]). */
+        /** Provided by the platform: GLUONIFY_SERVICE_GDOWN_URL (application deployed with "uses": ["gdown"]). */
         Optional<String> url();
 
         @WithDefault("source")
@@ -34,7 +34,7 @@ public interface SourceConfig {
 
         Optional<String> user();
 
-        /** Comes from the vault (key GRAPH_PASSWORD of the <uuid>.app space obtained with "vault": true -> variable APP_GRAPH_PASSWORD; no prefix with a literal vaultNamespace). Never in the repository. */
+        /** Comes from the vault (key GLUONIFY_GDOWN_PASSWORD of the <uuid>.app space obtained with "top": true -> variable APP_GRAPH_PASSWORD; no prefix with a literal topNamespace). Never in the repository. */
         Optional<String> password();
     }
 

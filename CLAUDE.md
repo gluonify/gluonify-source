@@ -19,7 +19,7 @@ Shared context for every gluonify-* repository (rules, build order, pitfalls, co
 - **Native**: no `HttpClient` and no `SecureRandom`/`Random` in a `static` field (state frozen at build time): create it on first use. Read third-party JSON as a tree (`JsonNode`) rather than into undeclared classes. A type (de)serialized by Jackson outside a REST signature must carry `@RegisterForReflection`.
 - **`/distributed/std`**: never rewrite a file or rename a directory that was just written; write NEW files under their final name. A directory listing can lag by ~3 s behind another replica.
 - **Photon webhooks**: a 2XX status acknowledges, anything else causes a replay; be idempotent on `X-Gluonify-Event-Id`, across ALL replicas (`EventLedger`: never an in-memory map alone; files = `CREATE_NEW` of a new file, graph = uniqueness constraint).
-- **Vault**: the `APP_` prefix exists only in the `<uuid>.app` space obtained with `"vault": true` in the app spec; with a literal `vaultNamespace` keys arrive unprefixed.
+- **Vault**: the `APP_` prefix exists only in the `<uuid>.app` space obtained with `"top": true` in the app spec; with a literal `topNamespace` keys arrive unprefixed.
 - **Security**: `DevAuthentication` exists only in the `dev` profile (`@IfBuildProfile`). Do not extend it to production. Roles come from the Charm token (`source:read`, `source:write`).
 - Code comments are in **English** in this repository; the README exists in five languages (English by default) and this file is English only. Keep commit messages plain.
 

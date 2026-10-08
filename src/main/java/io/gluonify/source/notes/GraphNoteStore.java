@@ -22,7 +22,7 @@ import tools.jackson.databind.ObjectMapper;
  * Notes in <b>Gdown</b>, the platform's graph database, through its HTTP API: {@code POST <url>/db/<base>/query} avec {@code {"statement": "...", "parameters": {...}}}
  * and basic authentication (a local Gdown account, see the README: creating the database and the account). Response: {@code {"columns": [...], "rows": [[...], ...]}}.
  *
- * <p>Gdown's address is not hard-coded: the platform provides it through {@code SERVICE_GRAPHDB_URL} if the application is deployed with {@code "uses": ["graphdb"]}.
+ * <p>Gdown's address is not hard-coded: the platform provides it through {@code GLUONIFY_SERVICE_GDOWN_URL} if the application is deployed with {@code "uses": ["gdown"]}.
  * The password comes from the vault ({@code APP_GRAPH_PASSWORD}), never from the Git repository.
  *
  * <p>Two native-image pitfalls, already avoided here: the {@link HttpClient} is created on first use (not in a static field: its state would be frozen at compile time),

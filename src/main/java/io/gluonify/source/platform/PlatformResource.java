@@ -25,8 +25,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * What the platform provided to this instance, and how to talk to OTHER services. The variables are the ones Gluonify always adds:
  * <ul>
- *   <li>{@code ENV_NAME} : the environment (SBX, QUA, ACP, PRD...); {@code ENV_NODE}: the replica rank (1, 2...); {@code GLUONIFY_SELF_URL}: the address of this instance;</li>
- *   <li>{@code SERVICE_<APP>_URL} : the address of another application, present if you declared it in {@code "uses"} at deployment
+ *   <li>{@code GLUONIFY_ENVIRONMENT} : the environment (SBX, QUA, ACP, PRD...); {@code GLUONIFY_REPLICA}: the replica rank (1, 2...); {@code GLUONIFY_SELF_URL}: the address of this instance;</li>
+ *   <li>{@code GLUONIFY_SERVICE_<APP>_URL} : the address of another application, present if you declared it in {@code "uses"} at deployment
  *       (this is also what opens the network: an isolated application only reaches what it declares).</li>
  * </ul>
  * No secret value is ever returned here.
@@ -53,11 +53,11 @@ public class PlatformResource {
         Map<String, String> e = env.get();
         Map<String, String> services = new TreeMap<>();
         e.forEach((k, v) -> {
-            if (k.startsWith("SERVICE_") && k.endsWith("_URL")) services.put(k.substring("SERVICE_".length(), k.length() - "_URL".length()).toLowerCase(Locale.ROOT), v);
+            if (k.startsWith("GLUONIFY_SERVICE_") && k.endsWith("_URL")) services.put(k.substring("GLUONIFY_SERVICE_".length(), k.length() - "_URL".length()).toLowerCase(Locale.ROOT), v);
         });
         Map<String, Object> out = new TreeMap<>();
-        out.put("envName", e.getOrDefault("ENV_NAME", ""));
-        out.put("envNode", e.getOrDefault("ENV_NODE", ""));
+        out.put("envName", e.getOrDefault("GLUONIFY_ENVIRONMENT", ""));
+        out.put("envNode", e.getOrDefault("GLUONIFY_REPLICA", ""));
         out.put("selfUrl", e.getOrDefault("GLUONIFY_SELF_URL", ""));
         out.put("services", services);
         out.put("store", store.kind());
@@ -68,7 +68,7 @@ public class PlatformResource {
     }
 
     /**
-     * Calls the health of ANOTHER platform application, through its {@code SERVICE_<APP>_URL} address. Minimal example of a service-to-service call:
+     * Calls the health of ANOTHER platform application, through its {@code GLUONIFY_SERVICE_<APP>_URL} address. Minimal example of a service-to-service call:
      * the address comes from the environment (never hard-coded), only applications declared in "uses" are reachable (allow-list = the SERVICE_* variables).
      */
     @GET
@@ -77,7 +77,7 @@ public class PlatformResource {
     @Operation(summary = "Queries /q/health/ready of an application declared in \"uses\"")
     public Response ping(@PathParam("app") String app) {
         if (!app.matches("[a-z0-9-]{1,63}")) return Response.status(400).entity(Map.of("error", "nom d'application invalide")).build();
-        String url = env.get().get("SERVICE_" + app.toUpperCase(Locale.ROOT).replace('-', '_') + "_URL");
+        String url = env.get().get("GLUONIFY_SERVICE_" + app.toUpperCase(Locale.ROOT).replace('-', '_') + "_URL");
         if (url == null) return Response.status(404).entity(Map.of("error", "application non déclarée dans « uses » : " + app)).build();
         try {
             HttpResponse<String> r = client().send(HttpRequest.newBuilder(URI.create(url + "/q/health/ready")).timeout(Duration.ofSeconds(5)).GET().build(), HttpResponse.BodyHandlers.ofString());

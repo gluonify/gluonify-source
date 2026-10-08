@@ -2,7 +2,7 @@
   "signature": { "secret": "AT-LEAST-16-CHARACTERS-SHARED-WITH-THE-SENDER" },
   "target": {
     "type": "app",
-    "url": "${SERVICE_GLUONIFY_SOURCE_URL}/hooks/events",
+    "url": "${GLUONIFY_SERVICE_GLUONIFY_SOURCE_URL}/hooks/events",
     "headers": { "X-Api-Key": "THE-SAME-VALUE-AS-WEBHOOK_KEY-IN-THE-VAULT" }
   },
   "retry": { "maxAttempts": 8, "backoffSeconds": 5, "factor": 2.0 }

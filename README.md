@@ -148,9 +148,9 @@ The service never **creates** tokens: it **verifies** them (mode `quarkus.oidc.a
 
 | Check | Setting | Value |
 |---|---|---|
-| Signature | Charm's keys, read at `${SERVICE_ID_URL}/realms/gluonify` | `SERVICE_ID_URL` is provided by the platform if the application is deployed with `"uses": ["id"]` |
-| Issuer (`iss`) | `quarkus.oidc.token.issuer` | `OIDC_ISSUER` = `https://id.<your zone>/realms/gluonify` (stable: it is not the address of the Charm instance) |
-| Audience (`aud`) | `quarkus.oidc.token.audience` | `OIDC_AUDIENCE`, by default the project name (`gluonify-source`) |
+| Signature | Charm's keys, read at `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` is provided by the platform if the application is deployed with `"uses": ["charm"]` |
+| Issuer (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<your zone>/realms/gluonify` (stable: it is not the address of the Charm instance) |
+| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, by default the project name (`gluonify-source`) |
 | Expiration | automatic | short-lived tokens |
 | Roles | `roles` claim | `source:read` (read), `source:write` (write): see `@RolesAllowed` |
 
@@ -173,9 +173,9 @@ An application on Gluonify is **isolated**: its own account, its own network, a 
 
 | Service | What it offers | How the application uses it | In this repository |
 |---|---|---|---|
-| **Top** (vault) | per-application configuration and secrets | with `"vault": true`, the keys of your application's own `<uuid>.app` space arrive as `APP_<KEY>`; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
-| **Charm** (identity) | short-lived JWT tokens | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` verifies tokens | [§6](#6-authentication-charm-tokens) |
-| **Gdown** (graph database) | replicated database (Raft), Cypher over HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; a local Gdown account | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
+| **Top** (vault) | per-application configuration and secrets | with `"top": true`, the keys of your application's own `<uuid>.app` space arrive as `APP_<KEY>`; `${app.graph.password}` in `application.properties` | `source.graph.password`, `source.webhook.key` |
+| **Charm** (identity) | short-lived JWT tokens | `"uses": ["charm"]` → `GLUONIFY_SERVICE_CHARM_URL`; `quarkus-oidc` verifies tokens | [§6](#6-authentication-charm-tokens) |
+| **Gdown** (graph database) | replicated database (Raft), Cypher over HTTP | `"uses": ["gdown"]` → `GLUONIFY_SERVICE_GDOWN_URL`; a local Gdown account | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
 | **Distributed files** | `/distributed/std`: durable, shared by all replicas, 2 copies | `"distributed": ["std"]` at deployment | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
 | **Other applications** | service-to-service calls | `"uses": ["other"]` → `SERVICE_OTHER_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
 | **Photon** (API gateway) | signed webhooks, XML / SOAP / form → JSON conversion, replay | Photon delivers to `…/hooks/events`; your service acknowledges with 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
@@ -185,9 +185,9 @@ An application on Gluonify is **isolated**: its own account, its own network, a 
 ### Configuration and secrets (Top)
 
 - A **non-secret** value: in the deployment's `"env"` (`deploy/appspec.json`): `"SOURCE_STORE": "files"`. It is stored in the cluster state.
-- A **secret** value (password, API key): in the **vault** (Top, the `<uuid>.app` space of your application). The `GRAPH_PASSWORD` key arrives as the `APP_GRAPH_PASSWORD` variable and is read as `${app.graph.password}`. Ask for that space with `"vault": true` in the application spec: only in this control-plane-assigned `<uuid>.app` space do keys get the `APP_` prefix. With a literal `"vaultNamespace"` (for example `"gluonify-source"`, the only option of the builder), keys arrive **unprefixed**, exactly as named in the vault (`GRAPH_PASSWORD` stays `GRAPH_PASSWORD`): name them after the properties you read (for example `SOURCE_GRAPH_PASSWORD`). **Never** in the repository: the builder rejects a plaintext password (rule R-SECRET), and `ConformityTest` warns you beforehand.
+- A **secret** value (password, API key): in the **vault** (Top, the `<uuid>.app` space of your application). The `GLUONIFY_GDOWN_PASSWORD` key arrives as the `APP_GRAPH_PASSWORD` variable and is read as `${app.graph.password}`. Ask for that space with `"top": true` in the application spec: only in this control-plane-assigned `<uuid>.app` space do keys get the `APP_` prefix. With a literal `"topNamespace"` (for example `"gluonify-source"`, the only option of the builder), keys arrive **unprefixed**, exactly as named in the vault (`GLUONIFY_GDOWN_PASSWORD` stays `GLUONIFY_GDOWN_PASSWORD`): name them after the properties you read (for example `SOURCE_GRAPH_PASSWORD`). **Never** in the repository: the builder rejects a plaintext password (rule R-SECRET), and `ConformityTest` warns you beforehand.
 - **Saving a value restarts nothing**: after changing several keys, trigger **one** redeployment (`POST /apps/<name>/redeploy`); replicas restart one by one, with no downtime if you have two or more.
-- Variables the platform **always** adds: `QUARKUS_HTTP_PORT` and `QUARKUS_HTTP_HOST`, `ENV_NAME` (the environment: SBX, QUA, PRD…), `ENV_NODE` (replica rank: 1, 2…), `GLUONIFY_SELF_URL` (address of this instance). They are read and displayed by [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, never a secret).
+- Variables the platform **always** adds: `QUARKUS_HTTP_PORT` and `QUARKUS_HTTP_HOST`, `GLUONIFY_ENVIRONMENT` (the environment: SBX, QUA, PRD…), `GLUONIFY_REPLICA` (replica rank: 1, 2…), `GLUONIFY_SELF_URL` (address of this instance). They are read and displayed by [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, never a secret).
 
 ### Health: `/q/health/ready` and `/q/health/live`
 
@@ -195,15 +195,15 @@ The platform only sends traffic to instances whose **`/q/health/ready`** answers
 
 ### Data in Gdown (`source.store=graph`)
 
-**Simplest: a dedicated database.** Deploy with `"graphDatabase": true` and `SOURCE_STORE=graph`: the platform creates a database of its own for the application (its own Raft group, a confined account) and provides `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` and the network access (`SERVICE_GRAPHDB_URL`); nothing else to do. The database is **never deleted** with the application.
+**Simplest: a dedicated database.** Deploy with `"gdownDatabase": true` and `SOURCE_STORE=gdown`: the platform creates a database of its own for the application (its own Raft group, a confined account) and provides `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` and the network access (`GLUONIFY_SERVICE_GDOWN_URL`); nothing else to do. The database is **never deleted** with the application.
 
 A ready-to-use spec is in [`deploy/appspec-graph.json`](deploy/appspec-graph.json).
 
 **By hand** (shared database, your own naming):
 
-1. Deploy with `"uses": ["graphdb"]` (this is also what **opens the network** to Gdown) and `SOURCE_STORE=graph`.
+1. Deploy with `"uses": ["gdown"]` (this is also what **opens the network** to Gdown) and `SOURCE_STORE=gdown`.
 2. An administrator creates the database and the application account ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher): `source` database, confined role, `notes` account).
-3. Put `GRAPH_USER` (= `notes`) and `GRAPH_PASSWORD` in the vault.
+3. Put `GLUONIFY_GDOWN_USER` (= `notes`) and `GLUONIFY_GDOWN_PASSWORD` in the vault.
 
 Gdown's HTTP API: `POST <url>/db/<database>/query` with `{"statement": "…", "parameters": {…}}` and basic authentication; response `{"columns": […], "rows": [[…]], "stats": {…}}`. **Always use parameters** (`$id`, `$title`), never a value pasted into the statement (injection). A **map** cannot be stored as a node property: store scalars, lists of scalars, or the JSON as text. Gdown can also publish named Cypher queries as a REST API (OpenAPI contracts, tokens, limits): see [gluonify.io](https://gluonify.io).
 
@@ -229,7 +229,7 @@ Photon receives your partners' messages (verifies their HMAC signature, converts
 
 ### Calling another application
 
-Declare it in `"uses"`: the platform provides `SERVICE_<APP>_URL` **and opens the network** to it (without `uses`, the application cannot reach it). Never hardcode the address: read the variable (see `ping` in [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java)).
+Declare it in `"uses"`: the platform provides `GLUONIFY_SERVICE_<APP>_URL` **and opens the network** to it (without `uses`, the application cannot reach it). Never hardcode the address: read the variable (see `ping` in [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java)).
 
 ### Static sites and domains
 
@@ -264,10 +264,10 @@ There are two paths.
 
 ```bash
 curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-Token: $GIT_TOKEN" \
-  -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"vaultNamespace":"gluonify-source"}'
+  -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"topNamespace":"gluonify-source"}'
 ```
 
-The builder clones, checks compliance, compiles natively, publishes the executable and deploys it. Follow it: `GET /v1/builds/<id>` and `/logs`. (A Git push can also trigger the build through a webhook: `POST /v1/webhooks/git`.) Note: the builder only knows `vaultNamespace`, so with it the vault keys arrive unprefixed.
+The builder clones, checks compliance, compiles natively, publishes the executable and deploys it. Follow it: `GET /v1/builds/<id>` and `/logs`. (A Git push can also trigger the build through a webhook: `POST /v1/webhooks/git`.) Note: the builder only knows `topNamespace`, so with it the vault keys arrive unprefixed.
 
 **B. You publish the executable** yourself, then you deploy:
 
@@ -285,12 +285,12 @@ The application is then at `https://gluonify-source.<zone>` (automatic certifica
 | `artifacts` | the executable per architecture: `URL#sha256=…` (the hash is **mandatory**, verified by the node) |
 | `replicas` | number of instances (2 or more: updates without downtime) |
 | `memoryMb` | memory cap per instance (a native executable fits in 64 to 128 MB) |
-| `uses` | reachable services: `SERVICE_<APP>_URL` provided, network opened (`id` = Charm, `graphdb` = Gdown) |
+| `uses` | reachable services: `GLUONIFY_SERVICE_<APP>_URL` provided, network opened (`id` = Charm, `graphdb` = Gdown) |
 | `distributed` | `["std"]` for `/distributed/std` |
 | `env` | **non-secret** variables; `${NAME}` and `${NAME:-default}` are resolved |
 | `vault` | `true`: the control plane gives the application its own vault space `<uuid>.app`, whose keys arrive as `APP_<KEY>` |
-| `graphDatabase` | `true`: a dedicated Gdown database for the application (own Raft group, confined account); `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` and `SERVICE_GRAPHDB_URL` are provided; never deleted with the application (see [`deploy/appspec-graph.json`](deploy/appspec-graph.json)) |
-| `vaultNamespace` | alternative: an existing vault space by name; its keys arrive **unprefixed** (no `APP_`) |
+| `gdownDatabase` | `true`: a dedicated Gdown database for the application (own Raft group, confined account); `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` and `GLUONIFY_SERVICE_GDOWN_URL` are provided; never deleted with the application (see [`deploy/appspec-graph.json`](deploy/appspec-graph.json)) |
+| `topNamespace` | alternative: an existing vault space by name; its keys arrive **unprefixed** (no `APP_`) |
 | `internal` | `true`: no public route (internal service) |
 
 To update: same `PUT` (or a new build); replicas are replaced **one by one**. To restart without changes: `POST /apps/<name>/redeploy`. Logs: `GET /apps/<name>/logs`. Metrics: `/q/metrics`.
@@ -329,10 +329,10 @@ An API test is copied from `NotesResourceTest`; a storage test from `FileNoteSto
 
 | Symptom | Probable cause |
 |---|---|
-| 401 in production | no token, expired token, or **audience** different from `OIDC_AUDIENCE`; or `OIDC_ISSUER` does not match the token's `iss` |
+| 401 in production | no token, expired token, or **audience** different from `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; or `GLUONIFY_ZZZNONE_OIDC_ISSUER` does not match the token's `iss` |
 | 403 | valid token but without the role (`source:read` / `source:write`) |
 | The application receives no traffic | `/q/health/ready` does not answer 200 (storage unreachable?): `GET /apps/<name>` shows the ready instances |
-| `store=graph`: "source.graph.url is empty" | the application is not deployed with `"uses": ["graphdb"]` |
+| `store=graph`: "source.graph.url is empty" | the application is not deployed with `"uses": ["gdown"]` |
 | Gdown: 401 or "Unsupported property value type" | wrong account; or a **map** stored as a property (see §7) |
 | A created note does not appear right away (files) | ~3 s list cache between replicas: refresh |
 | The repository build is rejected | an `R-…` rule: the message names it; `mvn test` (`ConformityTest`) shows it on your side |

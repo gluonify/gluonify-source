@@ -2,12 +2,12 @@
   "artifacts": { "arm64": "https://YOUR-REPO/gluonify-source#sha256=SHA256-DIGEST" },
   "replicas": 2,
   "memoryMb": 128,
-  "uses": ["id", "graphdb"],
+  "uses": ["id", "gdown"],
   "distributed": ["std"],
   "env": {
     "SOURCE_STORE": "files",
-    "OIDC_ISSUER": "https://id.YOUR-ZONE/realms/gluonify",
-    "OIDC_AUDIENCE": "gluonify-source"
+    "GLUONIFY_ZZZNONE_OIDC_ISSUER": "https://id.YOUR-ZONE/realms/gluonify",
+    "GLUONIFY_ZZZNONE_OIDC_AUDIENCE": "gluonify-source"
   },
-  "vault": true
+  "top": true
 }

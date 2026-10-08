@@ -148,9 +148,9 @@ El servicio nunca **crea** tokens: los **verifica** (modo `quarkus.oidc.applicat
 
 | Control | Ajuste | Valor |
 |---|---|---|
-| Firma | claves de Charm, leídas en `${SERVICE_ID_URL}/realms/gluonify` | `SERVICE_ID_URL` la proporciona la plataforma si la aplicación se despliega con `"uses": ["id"]` |
-| Emisor (`iss`) | `quarkus.oidc.token.issuer` | `OIDC_ISSUER` = `https://id.<su zona>/realms/gluonify` (estable: no es la dirección de la instancia de Charm) |
-| Audiencia (`aud`) | `quarkus.oidc.token.audience` | `OIDC_AUDIENCE`, por defecto el nombre del proyecto (`gluonify-source`) |
+| Firma | claves de Charm, leídas en `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` la proporciona la plataforma si la aplicación se despliega con `"uses": ["charm"]` |
+| Emisor (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<su zona>/realms/gluonify` (estable: no es la dirección de la instancia de Charm) |
+| Audiencia (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, por defecto el nombre del proyecto (`gluonify-source`) |
 | Caducidad | automática | tokens de corta duración |
 | Roles | claim `roles` | `source:read` (leer), `source:write` (escribir): véase `@RolesAllowed` |
 
@@ -173,9 +173,9 @@ Una aplicación en Gluonify está **aislada**: su propia cuenta, su propia red, 
 
 | Servicio | Qué ofrece | Cómo lo usa la aplicación | En este repositorio |
 |---|---|---|---|
-| **Top** (caja fuerte) | configuración y secretos por aplicación | con `"vault": true`, las claves del espacio `<uuid>.app` propio de su aplicación llegan como `APP_<CLAVE>`; `${app.graph.password}` en `application.properties` | `source.graph.password`, `source.webhook.key` |
-| **Charm** (identidad) | tokens JWT de corta duración | `"uses": ["id"]` → `SERVICE_ID_URL`; `quarkus-oidc` verifica los tokens | [§6](#6-autenticación-los-tokens-de-charm) |
-| **Gdown** (base de grafos) | base replicada (Raft), Cypher por HTTP | `"uses": ["graphdb"]` → `SERVICE_GRAPHDB_URL`; una cuenta local de Gdown | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
+| **Top** (caja fuerte) | configuración y secretos por aplicación | con `"top": true`, las claves del espacio `<uuid>.app` propio de su aplicación llegan como `APP_<CLAVE>`; `${app.graph.password}` en `application.properties` | `source.graph.password`, `source.webhook.key` |
+| **Charm** (identidad) | tokens JWT de corta duración | `"uses": ["charm"]` → `GLUONIFY_SERVICE_CHARM_URL`; `quarkus-oidc` verifica los tokens | [§6](#6-autenticación-los-tokens-de-charm) |
+| **Gdown** (base de grafos) | base replicada (Raft), Cypher por HTTP | `"uses": ["gdown"]` → `GLUONIFY_SERVICE_GDOWN_URL`; una cuenta local de Gdown | [`GraphNoteStore`](src/main/java/io/gluonify/source/notes/GraphNoteStore.java) |
 | **Archivos distribuidos** | `/distributed/std`: duradero, compartido por todas las réplicas, 2 copias | `"distributed": ["std"]` en el despliegue | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
 | **Otras aplicaciones** | llamada de servicio a servicio | `"uses": ["other"]` → `SERVICE_OTHER_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
 | **Photon** (pasarela de API) | webhooks firmados, conversión XML / SOAP / formulario → JSON, reenvío | Photon entrega en `…/hooks/events`; su servicio confirma con 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
@@ -185,9 +185,9 @@ Una aplicación en Gluonify está **aislada**: su propia cuenta, su propia red, 
 ### Configuración y secretos (Top)
 
 - Un valor **no secreto**: en `"env"` del despliegue (`deploy/appspec.json`): `"SOURCE_STORE": "files"`. Se almacena en el estado del clúster.
-- Un valor **secreto** (contraseña, clave de API): en la **caja fuerte** (Top, espacio `<uuid>.app` de su aplicación). La clave `GRAPH_PASSWORD` llega como variable `APP_GRAPH_PASSWORD` y se lee `${app.graph.password}`. Solicite ese espacio con `"vault": true` en la especificación de la aplicación: solo ese espacio `<uuid>.app`, asignado por el plano de control, añade el prefijo `APP_`. Con un `"vaultNamespace"` literal (por ejemplo `"gluonify-source"`, la única opción del builder), las claves llegan **sin prefijo**, tal como se nombran en la caja fuerte (`GRAPH_PASSWORD` sigue siendo `GRAPH_PASSWORD`): nómbrelas según las propiedades leídas (por ejemplo `SOURCE_GRAPH_PASSWORD`). **Nunca** en el repositorio: el builder rechaza una contraseña en claro (regla R-SECRET), y `ConformityTest` se lo indica antes.
+- Un valor **secreto** (contraseña, clave de API): en la **caja fuerte** (Top, espacio `<uuid>.app` de su aplicación). La clave `GLUONIFY_GDOWN_PASSWORD` llega como variable `APP_GRAPH_PASSWORD` y se lee `${app.graph.password}`. Solicite ese espacio con `"top": true` en la especificación de la aplicación: solo ese espacio `<uuid>.app`, asignado por el plano de control, añade el prefijo `APP_`. Con un `"topNamespace"` literal (por ejemplo `"gluonify-source"`, la única opción del builder), las claves llegan **sin prefijo**, tal como se nombran en la caja fuerte (`GLUONIFY_GDOWN_PASSWORD` sigue siendo `GLUONIFY_GDOWN_PASSWORD`): nómbrelas según las propiedades leídas (por ejemplo `SOURCE_GRAPH_PASSWORD`). **Nunca** en el repositorio: el builder rechaza una contraseña en claro (regla R-SECRET), y `ConformityTest` se lo indica antes.
 - **Guardar un valor no reinicia nada**: tras modificar varias claves, lance **un** redespliegue (`POST /apps/<nombre>/redeploy`); las réplicas se reinician una a una, sin corte si tiene dos o más.
-- Variables que la plataforma añade **siempre**: `QUARKUS_HTTP_PORT` y `QUARKUS_HTTP_HOST`, `ENV_NAME` (el entorno: SBX, QUA, PRD…), `ENV_NODE` (número de la réplica: 1, 2…), `GLUONIFY_SELF_URL` (dirección de esta instancia). Las lee y muestra [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, nunca un secreto).
+- Variables que la plataforma añade **siempre**: `QUARKUS_HTTP_PORT` y `QUARKUS_HTTP_HOST`, `GLUONIFY_ENVIRONMENT` (el entorno: SBX, QUA, PRD…), `GLUONIFY_REPLICA` (número de la réplica: 1, 2…), `GLUONIFY_SELF_URL` (dirección de esta instancia). Las lee y muestra [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java) (`GET /api/platform`, nunca un secreto).
 
 ### Salud: `/q/health/ready` y `/q/health/live`
 
@@ -195,15 +195,15 @@ La plataforma solo envía tráfico a las instancias cuyo **`/q/health/ready`** r
 
 ### Datos en Gdown (`source.store=graph`)
 
-**Lo más simple: una base dedicada.** Despliegue con `"graphDatabase": true` y `SOURCE_STORE=graph`: la plataforma crea una base propia para la aplicación (su propio grupo Raft, una cuenta confinada) y proporciona `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` y el acceso de red (`SERVICE_GRAPHDB_URL`); no hay nada más que hacer. La base **nunca se elimina** con la aplicación.
+**Lo más simple: una base dedicada.** Despliegue con `"gdownDatabase": true` y `SOURCE_STORE=gdown`: la plataforma crea una base propia para la aplicación (su propio grupo Raft, una cuenta confinada) y proporciona `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` y el acceso de red (`GLUONIFY_SERVICE_GDOWN_URL`); no hay nada más que hacer. La base **nunca se elimina** con la aplicación.
 
 Un ejemplo listo para usar se encuentra en [`deploy/appspec-graph.json`](deploy/appspec-graph.json).
 
 **A mano** (base compartida, sus propios nombres):
 
-1. Despliegue con `"uses": ["graphdb"]` (eso también **abre la red** hacia Gdown) y `SOURCE_STORE=graph`.
+1. Despliegue con `"uses": ["gdown"]` (eso también **abre la red** hacia Gdown) y `SOURCE_STORE=gdown`.
 2. Un administrador crea la base y la cuenta de la aplicación ([`deploy/gdown-setup.cypher`](deploy/gdown-setup.cypher): base `source`, rol confinado, cuenta `notes`).
-3. Ponga `GRAPH_USER` (= `notes`) y `GRAPH_PASSWORD` en la caja fuerte.
+3. Ponga `GLUONIFY_GDOWN_USER` (= `notes`) y `GLUONIFY_GDOWN_PASSWORD` en la caja fuerte.
 
 La API HTTP de Gdown: `POST <url>/db/<base>/query` con `{"statement": "…", "parameters": {…}}` y autenticación básica; respuesta `{"columns": […], "rows": [[…]], "stats": {…}}`. **Siempre parámetros** (`$id`, `$title`), nunca un valor pegado en la instrucción (inyección). Un **mapa** no se puede almacenar como propiedad de un nodo: almacene escalares, listas de escalares, o el JSON como texto. Gdown también puede publicar consultas Cypher con nombre como API REST (contratos OpenAPI, tokens, límites): véase [gluonify.io](https://gluonify.io).
 
@@ -229,7 +229,7 @@ Photon recibe los mensajes de sus socios (verifica su firma HMAC, convierte XML,
 
 ### Llamar a otra aplicación
 
-Declárela en `"uses"`: la plataforma proporciona `SERVICE_<APP>_URL` **y abre la red** hacia ella (sin `uses`, la aplicación no la alcanza). Nunca escriba la dirección en el código: lea la variable (véase `ping` en [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java)).
+Declárela en `"uses"`: la plataforma proporciona `GLUONIFY_SERVICE_<APP>_URL` **y abre la red** hacia ella (sin `uses`, la aplicación no la alcanza). Nunca escriba la dirección en el código: lea la variable (véase `ping` en [`PlatformResource`](src/main/java/io/gluonify/source/platform/PlatformResource.java)).
 
 ### Sitios estáticos y dominios
 
@@ -264,10 +264,10 @@ Hay dos caminos.
 
 ```bash
 curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-Token: $GIT_TOKEN" \
-  -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"vaultNamespace":"gluonify-source"}'
+  -d '{"name":"gluonify-source","gitUrl":"https://github.com/VOUS/VOTRE-DEPOT.git","ref":"main","deploy":true,"replicas":2,"memoryMb":128,"topNamespace":"gluonify-source"}'
 ```
 
-El builder clona, controla la conformidad, compila en nativo, publica el ejecutable y lo despliega. Sígalo: `GET /v1/builds/<id>` y `/logs`. (Un push de Git también puede lanzar el build mediante un webhook: `POST /v1/webhooks/git`.) Nota: el builder solo conoce `vaultNamespace`, así que con él las claves de la caja fuerte llegan sin prefijo.
+El builder clona, controla la conformidad, compila en nativo, publica el ejecutable y lo despliega. Sígalo: `GET /v1/builds/<id>` y `/logs`. (Un push de Git también puede lanzar el build mediante un webhook: `POST /v1/webhooks/git`.) Nota: el builder solo conoce `topNamespace`, así que con él las claves de la caja fuerte llegan sin prefijo.
 
 **B. Usted publica el ejecutable** y luego despliega:
 
@@ -285,12 +285,12 @@ La aplicación queda entonces en `https://gluonify-source.<zone>` (certificado a
 | `artifacts` | el ejecutable por arquitectura: `URL#sha256=…` (la huella es **obligatoria**, la verifica el nodo) |
 | `replicas` | número de instancias (2 o más: actualizaciones sin corte) |
 | `memoryMb` | límite de memoria por instancia (un nativo cabe en 64 a 128 MB) |
-| `uses` | servicios alcanzables: `SERVICE_<APP>_URL` proporcionada, red abierta (`id` = Charm, `graphdb` = Gdown) |
+| `uses` | servicios alcanzables: `GLUONIFY_SERVICE_<APP>_URL` proporcionada, red abierta (`id` = Charm, `graphdb` = Gdown) |
 | `distributed` | `["std"]` para `/distributed/std` |
 | `env` | variables **no secretas**; `${NAME}` y `${NAME:-default}` se resuelven |
 | `vault` | `true`: el plano de control asigna a la aplicación su propio espacio de caja fuerte `<uuid>.app`, cuyas claves llegan como `APP_<CLAVE>` |
-| `graphDatabase` | `true`: una base Gdown dedicada para la aplicación (grupo Raft propio, cuenta confinada); `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` y `SERVICE_GRAPHDB_URL` se proporcionan; nunca eliminada con la aplicación (ver [`deploy/appspec-graph.json`](deploy/appspec-graph.json)) |
-| `vaultNamespace` | alternativa: un espacio de caja fuerte existente, por su nombre; sus claves llegan **sin prefijo** (sin `APP_`) |
+| `gdownDatabase` | `true`: una base Gdown dedicada para la aplicación (grupo Raft propio, cuenta confinada); `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` y `GLUONIFY_SERVICE_GDOWN_URL` se proporcionan; nunca eliminada con la aplicación (ver [`deploy/appspec-graph.json`](deploy/appspec-graph.json)) |
+| `topNamespace` | alternativa: un espacio de caja fuerte existente, por su nombre; sus claves llegan **sin prefijo** (sin `APP_`) |
 | `internal` | `true`: ninguna ruta pública (servicio interno) |
 
 Actualizar: el mismo `PUT` (o un nuevo build); las réplicas se sustituyen **una a una**. Reiniciar sin cambios: `POST /apps/<nombre>/redeploy`. Registros: `GET /apps/<nombre>/logs`. Métricas: `/q/metrics`.
@@ -329,10 +329,10 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 
 | Síntoma | Causa probable |
 |---|---|
-| 401 en producción | sin token, token caducado, o **audiencia** distinta de `OIDC_AUDIENCE`; o `OIDC_ISSUER` no coincide con el `iss` del token |
+| 401 en producción | sin token, token caducado, o **audiencia** distinta de `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; o `GLUONIFY_ZZZNONE_OIDC_ISSUER` no coincide con el `iss` del token |
 | 403 | token válido pero sin el rol (`source:read` / `source:write`) |
 | La aplicación no recibe tráfico | `/q/health/ready` no responde 200 (¿almacenamiento inaccesible?): `GET /apps/<nombre>` muestra las instancias listas |
-| `store=graph`: «source.graph.url is empty» | la aplicación no está desplegada con `"uses": ["graphdb"]` |
+| `store=graph`: «source.graph.url is empty» | la aplicación no está desplegada con `"uses": ["gdown"]` |
 | Gdown: 401 o «Unsupported property value type» | cuenta incorrecta; o un **mapa** almacenado como propiedad (véase §7) |
 | Una nota creada no aparece enseguida (archivos) | caché de lista de ~3 s entre réplicas: refrescar |
 | Se rechaza el build del repositorio | una regla `R-…`: el mensaje la nombra; `mvn test` (`ConformityTest`) la muestra en su máquina |
