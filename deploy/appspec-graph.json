@@ -1,0 +1,12 @@
+{
+  "artifacts": { "arm64": "https://YOUR-REPO/gluonify-source#sha256=SHA256-DIGEST" },
+  "replicas": 2,
+  "memoryMb": 128,
+  "uses": ["id"],
+  "graphDatabase": true,
+  "env": {
+    "SOURCE_STORE": "graph",
+    "OIDC_ISSUER": "https://id.YOUR-ZONE/realms/gluonify",
+    "OIDC_AUDIENCE": "gluonify-source"
+  }
+}

@@ -197,6 +197,8 @@ La piattaforma invia traffico solo alle istanze per cui **`/q/health/ready`** ri
 
 **Il più semplice: un database dedicato.** Distribuisca con `"graphDatabase": true` e `SOURCE_STORE=graph`: la piattaforma crea un database proprio per l'applicazione (il suo gruppo Raft, un account confinato) e fornisce `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` e l'accesso di rete (`SERVICE_GRAPHDB_URL`); non c'è altro da fare. Il database **non viene mai eliminato** con l'applicazione.
 
+Un esempio pronto all'uso si trova in [`deploy/appspec-graph.json`](deploy/appspec-graph.json).
+
 **A mano** (database condiviso, nomi propri):
 
 1. Distribuisca con `"uses": ["graphdb"]` (è anche ciò che **apre la rete** verso Gdown) e `SOURCE_STORE=graph`.
@@ -287,6 +289,7 @@ L'applicazione è quindi su `https://gluonify-source.<zone>` (certificato automa
 | `distributed` | `["std"]` per `/distributed/std` |
 | `env` | variabili **non segrete**; `${NAME}` e `${NAME:-default}` vengono risolte |
 | `vault` | `true`: il piano di controllo assegna all'applicazione il proprio spazio del vault `<uuid>.app`, le cui chiavi arrivano come `APP_<CHIAVE>` |
+| `graphDatabase` | `true`: un database Gdown dedicato per l'applicazione (gruppo Raft proprio, account confinato); `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` e `SERVICE_GRAPHDB_URL` sono forniti; mai eliminato con l'applicazione (vedere [`deploy/appspec-graph.json`](deploy/appspec-graph.json)) |
 | `vaultNamespace` | alternativa: uno spazio del vault esistente, per nome; le sue chiavi arrivano **senza prefisso** (niente `APP_`) |
 | `internal` | `true`: nessuna rotta pubblica (servizio interno) |
 

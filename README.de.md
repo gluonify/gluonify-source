@@ -197,6 +197,8 @@ Die Plattform sendet Verkehr nur an Instanzen, deren **`/q/health/ready`** mit 2
 
 **Am einfachsten: eine dedizierte Datenbank.** Deployen Sie mit `"graphDatabase": true` und `SOURCE_STORE=graph`: Die Plattform legt eine eigene Datenbank für die Anwendung an (eigene Raft-Gruppe, eingeschränktes Konto) und liefert `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` und den Netzwerkzugang (`SERVICE_GRAPHDB_URL`); mehr ist nicht zu tun. Die Datenbank wird mit der Anwendung **nie gelöscht**.
 
+Ein einsatzbereites Beispiel steht in [`deploy/appspec-graph.json`](deploy/appspec-graph.json).
+
 **Von Hand** (gemeinsame Datenbank, eigene Namen):
 
 1. Deployen Sie mit `"uses": ["graphdb"]` (das **öffnet** auch das Netzwerk zu Gdown) und `SOURCE_STORE=graph`.
@@ -287,6 +289,7 @@ Die Anwendung ist dann unter `https://gluonify-source.<zone>` erreichbar (automa
 | `distributed` | `["std"]` für `/distributed/std` |
 | `env` | **nicht geheime** Variablen; `${NAME}` und `${NAME:-default}` werden aufgelöst |
 | `vault` | `true`: Die Steuerungsebene weist der Anwendung ihren eigenen Tresor-Namensraum `<uuid>.app` zu, dessen Schlüssel als `APP_<SCHLÜSSEL>` ankommen |
+| `graphDatabase` | `true`: eine dedizierte Gdown-Datenbank für die Anwendung (eigene Raft-Gruppe, eingeschränktes Konto); `GRAPH_DATABASE`, `GRAPH_USER`, `GRAPH_PASSWORD` und `SERVICE_GRAPHDB_URL` werden bereitgestellt; nie mit der Anwendung gelöscht (siehe [`deploy/appspec-graph.json`](deploy/appspec-graph.json)) |
 | `vaultNamespace` | Alternative: ein bestehender Tresor-Namensraum per Name; seine Schlüssel kommen **ohne Präfix** an (kein `APP_`) |
 | `internal` | `true`: keine öffentliche Route (interner Dienst) |
 
