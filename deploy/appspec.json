@@ -2,7 +2,7 @@
   "artifacts": { "arm64": "https://YOUR-REPO/gluonify-source#sha256=SHA256-DIGEST" },
   "replicas": 2,
   "memoryMb": 128,
-  "uses": ["id", "gdown"],
+  "uses": ["charm", "gdown"],
   "distributed": ["std"],
   "env": {
     "SOURCE_STORE": "files",
