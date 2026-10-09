@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import App from './App.vue'
@@ -119,5 +121,20 @@ describe('gluonify-source UI', () => {
     const { readFileSync } = await import('node:fs')
     const css = readFileSync('src/style.css', 'utf8')
     expect(css).toMatch(/\.notes li > div\s*\{[^}]*min-width: 0[^}]*overflow-wrap: anywhere/)
+  })
+})
+
+describe('brand logo', () => {
+  it('shows the component logo next to the title, translated, and the favicon is the same mark', async () => {
+    mockApi({ 'GET /api/notes': { status: 200, body: [] }, 'GET /api/platform': { status: 200, body: platform } })
+    const w = mount(App)
+    await flushPromises()
+    const svg = w.find('h1 svg')
+    expect(svg.attributes('role')).toBe('img')
+    expect(svg.attributes('aria-label')).toBe('Gluonify Source logo')
+    expect(svg.attributes('focusable')).toBe('false')
+    const shapes = (s) => (s.match(/<(rect|path|circle)\b[^>]*>/g) || []).map((x) => x.replace(/\s+/g, ' ').replace(/ ?\/?>$/, '')).join('\n')
+    expect(shapes(svg.html())).toBe(shapes(readFileSync(join(process.cwd(), 'public/favicon.svg'), 'utf8')))
+    expect(readFileSync(join(process.cwd(), 'index.html'), 'utf8')).toContain('href="/favicon.svg"')
   })
 })

@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { api, token } from './api.js'
 import { useI18n } from './i18n/index.js'
+import BrandLogo from './BrandLogo.vue'
 
 const { t, locale, setLanguage, languages } = useI18n()
 
@@ -61,7 +62,7 @@ onMounted(refresh)
 <template>
   <main>
     <header class="top">
-      <h1>gluonify-source</h1>
+      <h1><BrandLogo :label="t('logo')" /> {{ t('pageTitle') }}</h1>
       <label class="lang">
         <span class="sr-only">{{ t('language') }}</span>
         <select :value="locale" :aria-label="t('language')" @change="setLanguage($event.target.value)">
