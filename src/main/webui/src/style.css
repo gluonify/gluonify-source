@@ -32,3 +32,10 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: .9em; }
 select { font: inherit; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .top h1 { display: flex; align-items: center; gap: 10px; }
+.brandtext { display: flex; flex-direction: column; line-height: 1.2; font-size: 1.1rem; }
+.brandtext .name { font-weight: 700; white-space: nowrap; }
+.brandtext .role { font-weight: 400; color: var(--muted); font-size: .9rem; }
+.brandtext .particle { font-weight: 700; font-size: .8rem; color: #E11D48; }
+@media (prefers-color-scheme: dark) { .brandtext .particle { color: #FB7185; } }
+@media (max-width: 480px) { .brandtext .role { display: none; } }
+footer.foot { margin-top: 28px; text-align: center; color: var(--muted); font-size: .8rem; }

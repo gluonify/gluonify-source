@@ -15,6 +15,8 @@ const jwt = ref(token.get())
 // Error shown: { key, params } (translated at display time, so a language change applies) or { text } (API message shown as returned).
 const error = ref(null)
 const loading = ref(false)
+const SEP = '\u00b7' // separator between the name and the role of the header
+const year = new Date().getFullYear()
 
 async function refresh() {
   loading.value = true
@@ -62,7 +64,7 @@ onMounted(refresh)
 <template>
   <main>
     <header class="top">
-      <h1><BrandLogo :label="t('logo')" /> {{ t('pageTitle') }}</h1>
+      <h1><BrandLogo :label="t('logo')" /> <span class="brandtext"><span class="line"><span class="name">{{ t('pageTitle') }} {{ SEP }}</span> <span class="role">{{ t('appRole') }}</span></span><span class="particle">{{ t('appParticle') }}</span></span></h1>
       <label class="lang">
         <span class="sr-only">{{ t('language') }}</span>
         <select :value="locale" :aria-label="t('language')" @change="setLanguage($event.target.value)">
@@ -115,5 +117,6 @@ onMounted(refresh)
         <dt>{{ t('webhooks') }}</dt><dd>{{ platform.webhookOpen ? t('open') : t('closed') }} — {{ t('received') }}: {{ platform.webhooks.accepted }}, {{ t('duplicates') }}: {{ platform.webhooks.duplicates }}</dd>
       </dl>
     </section>
+    <footer class="foot">{{ t('copyright', { year }) }}</footer>
   </main>
 </template>

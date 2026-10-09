@@ -1,7 +1,10 @@
 // Deutsch. Dieselben Schlüssel wie in en.js.
 export default {
-  pageTitle: 'gluonify-source',
+  pageTitle: 'Source',
   logo: 'Gluonify-Source-Logo',
+  appRole: "Startanwendung",
+  appParticle: "Quelle",
+  copyright: '© {year} Gluonify',
   lead: 'Beispielanwendung für Gluonify: ein REST-Dienst, diese Oberfläche und die Dienste der Plattform.',
   language: 'Sprache',
   authTitle: 'Authentifizierung',

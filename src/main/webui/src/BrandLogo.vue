@@ -1,34 +1,31 @@
 <script setup>
-// Source brand mark (field lines around a proton), taken from gluonify-codex/branding/gluonify-source.svg without
-// the wordmark. The dark tile keeps it readable in the light and dark themes; public/favicon.svg is the same mark.
+// Source brand mark (field lines around a proton), taken from gluonify-codex/branding/gluonify-source.svg without the wordmark and
+// without the dark tile: transparent background. public/favicon.svg is the same mark.
 // Your own application: replace the shapes below (and public/favicon.svg) with your logo; the label is translated.
-defineProps({ label: { type: String, required: true }, size: { type: Number, default: 26 } })
+defineProps({ label: { type: String, required: true }, size: { type: Number, default: 40 } })
 </script>
 
 <template>
-  <svg :aria-label="label" :height="size" :width="size" focusable="false" role="img" viewBox="-30 -21 190 190" xmlns="http://www.w3.org/2000/svg">
-    <rect x="-30" y="-21" width="190" height="190" rx="28" fill="#0A0A0C"/>
-    <g transform="translate(15, 20)">
-      <path d="M 106,54 L 130,54" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 89.5976,93.5976 L 106.568,110.568" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 50,110 L 50,134" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 10.4024,93.5976 L -6.567999999999998,110.568" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M -6,54 L -30,54" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 10.4024,14.4024 L -6.567999999999998,-2.567999999999998" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 50,-2 L 50,-26" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 89.5976,14.4024 L 106.568,-2.567999999999998" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
-      <path d="M 50,28 Q 18,42 20,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
-      <path d="M 50,28 Q 48,60 20,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
-      <path d="M 50,28 L 80,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
-      <path d="M 20,80 L 80,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
-      <circle cx="25" cy="50" r="5.5" fill="#C084FC" />
-      <circle cx="41" cy="58" r="5.5" fill="#C084FC" />
-      <circle cx="65" cy="54" r="5.5" fill="#C084FC" />
-      <circle cx="50" cy="80" r="5.5" fill="#C084FC" />
-      <circle cx="50" cy="28" r="14" fill="#EF4444" />
-      <circle cx="20" cy="80" r="14" fill="#3B82F6" />
-      <circle cx="80" cy="80" r="18.6" fill="#22C55E" />
-      <path d="M 98,22 L 98,38 M 90,30 L 106,30" fill="none" stroke="#FB7185" stroke-width="3" stroke-linecap="round" />
-    </g>
+  <svg :aria-label="label" :height="size" :width="size * 1.000" focusable="false" role="img" viewBox="-32 -28 164 164" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 106,54 L 130,54" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 89.5976,93.5976 L 106.568,110.568" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 50,110 L 50,134" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 10.4024,93.5976 L -6.567999999999998,110.568" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M -6,54 L -30,54" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 10.4024,14.4024 L -6.567999999999998,-2.567999999999998" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 50,-2 L 50,-26" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 89.5976,14.4024 L 106.568,-2.567999999999998" fill="none" stroke="#FB7185" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5" />
+    <path d="M 50,28 Q 18,42 20,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 50,28 Q 48,60 20,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 50,28 L 80,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
+    <path d="M 20,80 L 80,80" fill="none" stroke="#A855F7" stroke-width="4.5" stroke-linecap="round" />
+    <circle cx="25" cy="50" r="5.5" fill="#C084FC" />
+    <circle cx="41" cy="58" r="5.5" fill="#C084FC" />
+    <circle cx="65" cy="54" r="5.5" fill="#C084FC" />
+    <circle cx="50" cy="80" r="5.5" fill="#C084FC" />
+    <circle cx="50" cy="28" r="14" fill="#EF4444" />
+    <circle cx="20" cy="80" r="14" fill="#3B82F6" />
+    <circle cx="80" cy="80" r="18.6" fill="#22C55E" />
+    <path d="M 98,22 L 98,38 M 90,30 L 106,30" fill="none" stroke="#FB7185" stroke-width="3" stroke-linecap="round" />
   </svg>
 </template>

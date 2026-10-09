@@ -1,7 +1,10 @@
 // English (default language). Keys are shared by all language files; {name} marks a parameter.
 export default {
-  pageTitle: 'gluonify-source',
+  pageTitle: 'Source',
   logo: 'Gluonify Source logo',
+  appRole: "Starter application",
+  appParticle: "Source",
+  copyright: '© {year} Gluonify',
   lead: 'Sample application for Gluonify: a REST service, this interface, and the platform services.',
   language: 'Language',
   authTitle: 'Authentication',

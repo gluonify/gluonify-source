@@ -45,7 +45,7 @@ Open <http://localhost:8080>: the interface (add, list, delete notes). Also:
 
 | Address | Content |
 |---|---|
-| `/` | the Vue interface (shows the Source logo, `BrandLogo.vue` and `public/favicon.svg`: replace both with your own logo) |
+| `/` | the Vue interface (shows the Source logo on a transparent background, "Source · role" and the particle line in the header, "© year Gluonify" at the bottom, `BrandLogo.vue` and `public/favicon.svg`: replace both with your own logo) |
 | `/api/notes` | the REST API (JSON) |
 | `/q/swagger-ui` | the interactive API documentation |
 | `/q/openapi` | the OpenAPI contract (JSON or YAML) |

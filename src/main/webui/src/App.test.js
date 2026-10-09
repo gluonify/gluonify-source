@@ -124,8 +124,8 @@ describe('gluonify-source UI', () => {
   })
 })
 
-describe('brand logo', () => {
-  it('shows the component logo next to the title, translated, and the favicon is the same mark', async () => {
+describe('brand logo and header', () => {
+  it('shows the transparent logo next to the title, translated, and the favicon is the same mark', async () => {
     mockApi({ 'GET /api/notes': { status: 200, body: [] }, 'GET /api/platform': { status: 200, body: platform } })
     const w = mount(App)
     await flushPromises()
@@ -133,8 +133,25 @@ describe('brand logo', () => {
     expect(svg.attributes('role')).toBe('img')
     expect(svg.attributes('aria-label')).toBe('Gluonify Source logo')
     expect(svg.attributes('focusable')).toBe('false')
+    expect(svg.find('rect').exists()).toBe(false)
     const shapes = (s) => (s.match(/<(rect|path|circle)\b[^>]*>/g) || []).map((x) => x.replace(/\s+/g, ' ').replace(/ ?\/?>$/, '')).join('\n')
     expect(shapes(svg.html())).toBe(shapes(readFileSync(join(process.cwd(), 'public/favicon.svg'), 'utf8')))
+    expect(readFileSync(join(process.cwd(), 'public/favicon.svg'), 'utf8')).not.toContain('<rect')
     expect(readFileSync(join(process.cwd(), 'index.html'), 'utf8')).toContain('href="/favicon.svg"')
+    expect(readFileSync(join(process.cwd(), 'index.html'), 'utf8')).toContain('<title>Source</title>')
+  })
+  it('header: name, role and particle in every language, and the Gluonify copyright at the bottom', async () => {
+    mockApi({ 'GET /api/notes': { status: 200, body: [] }, 'GET /api/platform': { status: 200, body: platform } })
+    for (const [code, m] of Object.entries({ en, fr, es, it: it_, de })) {
+      setLanguage(code)
+      const w = mount(App)
+      await flushPromises()
+      const h = w.find('h1')
+      expect(h.find('.name').text()).toBe('Source \u00b7')
+      expect(h.find('.role').text()).toBe(m.appRole)
+      expect(h.find('.particle').text()).toBe(m.appParticle)
+      expect(w.find('footer.foot').text()).toBe('\u00a9 ' + new Date().getFullYear() + ' Gluonify')
+    }
+    setLanguage('en')
   })
 })
