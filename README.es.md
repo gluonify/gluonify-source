@@ -152,7 +152,7 @@ El servicio nunca **crea** tokens: los **verifica** (modo `quarkus.oidc.applicat
 | Emisor (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<su zona>/realms/gluonify` (estable: no es la dirección de la instancia de Charm) |
 | Audiencia (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, por defecto el nombre del proyecto (`gluonify-source`) |
 | Caducidad | automática | tokens de corta duración |
-| Roles | claim `roles` | `source:read` (leer), `source:write` (escribir): véase `@RolesAllowed` |
+| Roles | claim `roles` | `source:read` (leer), `source:write` (escribir): véase `@RolesAllowed`; el prefijo `gluonify:` está reservado a la plataforma (Charm lo rechaza para los roles de una aplicación) |
 
 **Obtener un token de prueba** (el administrador de la plataforma, con el token de administración de Charm):
 

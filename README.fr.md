@@ -152,7 +152,7 @@ Le service ne **crée** jamais de jeton : il en **vérifie** (mode `quarkus.oidc
 | Émetteur (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<votre zone>/realms/gluonify` (stable : ce n'est pas l'adresse de l'instance de Charm) |
 | Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, par défaut le nom du projet (`gluonify-source`) |
 | Expiration | automatique | jetons courts |
-| Rôles | claim `roles` | `source:read` (lire), `source:write` (écrire) : voir `@RolesAllowed` |
+| Rôles | claim `roles` | `source:read` (lire), `source:write` (écrire) : voir `@RolesAllowed` ; le préfixe `gluonify:` est réservé à la plateforme (Charm le refuse pour les rôles d’une application) |
 
 **Obtenir un jeton de test** (l'administrateur de la plateforme, avec le jeton d'administration de Charm) :
 
