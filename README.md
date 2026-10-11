@@ -160,8 +160,8 @@ The service never **creates** tokens: it **verifies** them (mode `quarkus.oidc.a
 | Check | Setting | Value |
 |---|---|---|
 | Signature | Charm's keys, read at `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` is provided by the platform if the application is deployed with `"uses": ["charm"]` |
-| Issuer (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<your zone>/realms/gluonify` (stable: it is not the address of the Charm instance) |
-| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, by default the project name (`gluonify-source`) |
+| Issuer (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_SOURCE_OIDC_ISSUER` = `https://id.<your zone>/realms/gluonify` (stable: it is not the address of the Charm instance) |
+| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_SOURCE_OIDC_AUDIENCE`, by default the project name (`gluonify-source`) |
 | Expiration | automatic | short-lived tokens |
 | Roles | `roles` claim | `source:read` (read), `source:write` (write): see `@RolesAllowed`; the `gluonify:` prefix is reserved for the platform (Charm refuses it for application roles) |
 
@@ -440,7 +440,7 @@ An API test is copied from `NotesResourceTest`; a storage test from `FileNoteSto
 
 | Symptom | Probable cause |
 |---|---|
-| 401 in production | no token, expired token, or **audience** different from `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; or `GLUONIFY_ZZZNONE_OIDC_ISSUER` does not match the token's `iss` |
+| 401 in production | no token, expired token, or **audience** different from `GLUONIFY_SOURCE_OIDC_AUDIENCE`; or `GLUONIFY_SOURCE_OIDC_ISSUER` does not match the token's `iss` |
 | 403 | valid token but without the role (`source:read` / `source:write`) |
 | The application receives no traffic | `/q/health/ready` does not answer 200 (storage unreachable?): `GET /apps/<name>` shows the ready instances |
 | `store=gdown`: "source.graph.url is empty" | the application is not deployed with `"uses": ["gdown"]` |

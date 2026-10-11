@@ -160,8 +160,8 @@ Der Dienst **erzeugt** nie ein Token: Er **prüft** welche (Modus `quarkus.oidc.
 | Kontrolle | Einstellung | Wert |
 |---|---|---|
 | Signatur | Schlüssel von Charm, gelesen unter `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` wird von der Plattform bereitgestellt, wenn die Anwendung mit `"uses": ["charm"]` deployt wird |
-| Aussteller (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<Ihre Zone>/realms/gluonify` (stabil: nicht die Adresse der Charm-Instanz) |
-| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, standardmäßig der Projektname (`gluonify-source`) |
+| Aussteller (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_SOURCE_OIDC_ISSUER` = `https://id.<Ihre Zone>/realms/gluonify` (stabil: nicht die Adresse der Charm-Instanz) |
+| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_SOURCE_OIDC_AUDIENCE`, standardmäßig der Projektname (`gluonify-source`) |
 | Ablauf | automatisch | kurzlebige Tokens |
 | Rollen | Claim `roles` | `source:read` (lesen), `source:write` (schreiben): siehe `@RolesAllowed`; das Präfix `gluonify:` ist der Plattform vorbehalten (Charm lehnt es für Rollen einer Anwendung ab) |
 
@@ -440,7 +440,7 @@ Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNot
 
 | Symptom | Wahrscheinliche Ursache |
 |---|---|
-| 401 in der Produktion | kein Token, abgelaufenes Token oder **Audience** abweichend von `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; oder `GLUONIFY_ZZZNONE_OIDC_ISSUER` stimmt nicht mit dem `iss` des Tokens überein |
+| 401 in der Produktion | kein Token, abgelaufenes Token oder **Audience** abweichend von `GLUONIFY_SOURCE_OIDC_AUDIENCE`; oder `GLUONIFY_SOURCE_OIDC_ISSUER` stimmt nicht mit dem `iss` des Tokens überein |
 | 403 | gültiges Token, aber ohne die Rolle (`source:read` / `source:write`) |
 | Die Anwendung erhält keinen Verkehr | `/q/health/ready` antwortet nicht mit 200 (Speicher nicht erreichbar?): `GET /apps/<name>` zeigt die bereiten Instanzen |
 | `store=gdown`: »source.graph.url is empty« | die Anwendung ist nicht mit `"uses": ["gdown"]` deployt |

@@ -160,8 +160,8 @@ Le service ne **crée** jamais de jeton : il en **vérifie** (mode `quarkus.oidc
 | Contrôle | Réglage | Valeur |
 |---|---|---|
 | Signature | clés de Charm, lues à `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` est fournie par la plateforme si l'application est déployée avec `"uses": ["charm"]` |
-| Émetteur (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<votre zone>/realms/gluonify` (stable : ce n'est pas l'adresse de l'instance de Charm) |
-| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, par défaut le nom du projet (`gluonify-source`) |
+| Émetteur (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_SOURCE_OIDC_ISSUER` = `https://id.<votre zone>/realms/gluonify` (stable : ce n'est pas l'adresse de l'instance de Charm) |
+| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_SOURCE_OIDC_AUDIENCE`, par défaut le nom du projet (`gluonify-source`) |
 | Expiration | automatique | jetons courts |
 | Rôles | claim `roles` | `source:read` (lire), `source:write` (écrire) : voir `@RolesAllowed` ; le préfixe `gluonify:` est réservé à la plateforme (Charm le refuse pour les rôles d’une application) |
 
@@ -440,7 +440,7 @@ Un test d'API se copie de `NotesResourceTest` ; un test de stockage de `FileNote
 
 | Symptôme | Cause probable |
 |---|---|
-| 401 en production | pas de jeton, jeton expiré, ou **audience** différente de `GLUONIFY_ZZZNONE_OIDC_AUDIENCE` ; ou `GLUONIFY_ZZZNONE_OIDC_ISSUER` ne correspond pas à l'`iss` du jeton |
+| 401 en production | pas de jeton, jeton expiré, ou **audience** différente de `GLUONIFY_SOURCE_OIDC_AUDIENCE` ; ou `GLUONIFY_SOURCE_OIDC_ISSUER` ne correspond pas à l'`iss` du jeton |
 | 403 | jeton valide mais sans le rôle (`source:read` / `source:write`) |
 | L'application ne reçoit pas de trafic | `/q/health/ready` ne répond pas 200 (stockage injoignable ?) : `GET /apps/<nom>` montre les instances prêtes |
 | `store=gdown` : « source.graph.url is empty » | l'application n'est pas déployée avec `"uses": ["gdown"]` |

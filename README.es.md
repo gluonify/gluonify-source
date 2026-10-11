@@ -160,8 +160,8 @@ El servicio nunca **crea** tokens: los **verifica** (modo `quarkus.oidc.applicat
 | Control | Ajuste | Valor |
 |---|---|---|
 | Firma | claves de Charm, leídas en `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` la proporciona la plataforma si la aplicación se despliega con `"uses": ["charm"]` |
-| Emisor (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<su zona>/realms/gluonify` (estable: no es la dirección de la instancia de Charm) |
-| Audiencia (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, por defecto el nombre del proyecto (`gluonify-source`) |
+| Emisor (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_SOURCE_OIDC_ISSUER` = `https://id.<su zona>/realms/gluonify` (estable: no es la dirección de la instancia de Charm) |
+| Audiencia (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_SOURCE_OIDC_AUDIENCE`, por defecto el nombre del proyecto (`gluonify-source`) |
 | Caducidad | automática | tokens de corta duración |
 | Roles | claim `roles` | `source:read` (leer), `source:write` (escribir): véase `@RolesAllowed`; el prefijo `gluonify:` está reservado a la plataforma (Charm lo rechaza para los roles de una aplicación) |
 
@@ -440,7 +440,7 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 
 | Síntoma | Causa probable |
 |---|---|
-| 401 en producción | sin token, token caducado, o **audiencia** distinta de `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; o `GLUONIFY_ZZZNONE_OIDC_ISSUER` no coincide con el `iss` del token |
+| 401 en producción | sin token, token caducado, o **audiencia** distinta de `GLUONIFY_SOURCE_OIDC_AUDIENCE`; o `GLUONIFY_SOURCE_OIDC_ISSUER` no coincide con el `iss` del token |
 | 403 | token válido pero sin el rol (`source:read` / `source:write`) |
 | La aplicación no recibe tráfico | `/q/health/ready` no responde 200 (¿almacenamiento inaccesible?): `GET /apps/<nombre>` muestra las instancias listas |
 | `store=gdown`: «source.graph.url is empty» | la aplicación no está desplegada con `"uses": ["gdown"]` |

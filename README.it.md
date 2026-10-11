@@ -160,8 +160,8 @@ Il servizio non **crea** mai token: ne **verifica** (modalità `quarkus.oidc.app
 | Controllo | Impostazione | Valore |
 |---|---|---|
 | Firma | chiavi di Charm, lette da `${GLUONIFY_SERVICE_CHARM_URL}/realms/gluonify` | `GLUONIFY_SERVICE_CHARM_URL` è fornita dalla piattaforma se l'applicazione è distribuita con `"uses": ["charm"]` |
-| Emittente (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_ZZZNONE_OIDC_ISSUER` = `https://id.<la Sua zona>/realms/gluonify` (stabile: non è l'indirizzo dell'istanza di Charm) |
-| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`, per impostazione predefinita il nome del progetto (`gluonify-source`) |
+| Emittente (`iss`) | `quarkus.oidc.token.issuer` | `GLUONIFY_SOURCE_OIDC_ISSUER` = `https://id.<la Sua zona>/realms/gluonify` (stabile: non è l'indirizzo dell'istanza di Charm) |
+| Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_SOURCE_OIDC_AUDIENCE`, per impostazione predefinita il nome del progetto (`gluonify-source`) |
 | Scadenza | automatica | token di breve durata |
 | Ruoli | claim `roles` | `source:read` (leggere), `source:write` (scrivere): vedere `@RolesAllowed`; il prefisso `gluonify:` è riservato alla piattaforma (Charm lo rifiuta per i ruoli di un’applicazione) |
 
@@ -440,7 +440,7 @@ Un test d'API si copia da `NotesResourceTest`; un test di archiviazione da `File
 
 | Sintomo | Causa probabile |
 |---|---|
-| 401 in produzione | nessun token, token scaduto, o **audience** diversa da `GLUONIFY_ZZZNONE_OIDC_AUDIENCE`; oppure `GLUONIFY_ZZZNONE_OIDC_ISSUER` non corrisponde all'`iss` del token |
+| 401 in produzione | nessun token, token scaduto, o **audience** diversa da `GLUONIFY_SOURCE_OIDC_AUDIENCE`; oppure `GLUONIFY_SOURCE_OIDC_ISSUER` non corrisponde all'`iss` del token |
 | 403 | token valido ma senza il ruolo (`source:read` / `source:write`) |
 | L'applicazione non riceve traffico | `/q/health/ready` non risponde 200 (archiviazione irraggiungibile?): `GET /apps/<nome>` mostra le istanze pronte |
 | `store=gdown`: «source.graph.url is empty» | l'applicazione non è distribuita con `"uses": ["gdown"]` |
