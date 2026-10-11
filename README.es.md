@@ -65,6 +65,7 @@ curl -s localhost:8080/api/notes
 ```
 pom.xml                         proyecto Maven AUTÓNOMO (Quarkus 4.0.0.Beta1, Java 25): sin padre Gluonify
 gluonify.json                   lo lee el builder de Gluonify (Bup): solo los servicios que el SDK no detecta (`uses`: charm, gdown); Bup deduce el resto
+crystallon/templates/           la plantilla Crystallon del ejemplo, tal como la exporta la consola; el builder la instala al desplegar
 Dockerfile.build                construye el ejecutable nativo en Docker
 src/main/resources/
   application.properties        TODA la configuración, comentada línea por línea
@@ -92,7 +93,7 @@ src/main/java/io/gluonify/source/
     generated/                  código generado por la pestaña «Código» de Crystallon (no editar a mano)
   security/DevAuthentication.java   identidad de desarrollo (solo perfil dev)
 src/main/webui/                 la interfaz Vue 3 (Vite + vitest), construida por Quinoa
-src/test/java/…                 63 pruebas Java; src/main/webui/src/App.test.js: 31 pruebas de interfaz
+src/test/java/…                 64 pruebas Java; src/main/webui/src/App.test.js: 31 pruebas de interfaz
 deploy/                         ejemplos: AppSpec, dominio, webhook de Photon, base Gdown
 scripts/rename.py               renombra el proyecto
 ```
@@ -273,7 +274,7 @@ El SDK lo sirve el repositorio Maven de **gluonify-sea** (lectura pública: ning
 
 **3. El token y el rol.** Crystallon exige un token de Charm de audiencia `gluonify-crystallon`; el rol **`gluonify:crystallon:render`** basta para renderizar y validar (`convert` y `templates` no hacen falta para producir documentos). Por defecto la aplicación llama a Crystallon **con su propio token** (token de Charm, sujeto `app:<nombre>`, audiencia `gluonify-crystallon`, rol `gluonify:crystallon:render`), que nadie emite a mano: con `crystallon` en `uses` (deducido o declarado), el plano de control (Higgs) hace que Charm lo emita, y el agente del nodo (Strange) lo escribe en `/run/gluonify-tokens/crystallon.token` (solo lectura dentro del sandbox de la instancia) y lo renueva antes de que caduque (900 s por defecto). El SDK relee ese archivo **en cada llamada**: una renovación no exige reiniciar, y la llamada funciona también fuera de una petición (temporizador, webhook, cola de mensajes). El token que envía a `/api/documents/invoice` solo tiene que abrir esta API (`source:read`). Conviene saber:
 
-- el token de la aplicación lleva la organización por defecto de Crystallon (`default`): la plantilla `Gluonify invoice` debe existir en ella;
+- el token de la aplicación lleva la organización de la aplicación (claim `org`), o la organización por defecto de Crystallon (`default`) cuando no tiene ninguna: la plantilla `Gluonify invoice` debe existir allí, y es allí donde el builder la instala (paso 4);
 - cuando Crystallon rechaza el token de la aplicación, la respuesta es un 502 y no un 403: quien llama no puede arreglarlo, el despliegue sí (construir con Bup y el SDK 0.7.1 o posterior, que lo deduce, o declarar `crystallon` en los `uses` de la especificación);
 - con `mvn quarkus:dev` esta API no pide token, pero Crystallon sí: ejecute una vez `gluonify login gluonify.lan` (o su zona), en su navegador, y el SDK usa su token de desarrollador y la dirección pública de Crystallon: ninguna variable que definir.
 
@@ -293,13 +294,15 @@ curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $GLUONIFY_CHARM
   -d '{"sub":"ada","audiences":["gluonify-source","gluonify-crystallon"],"ttlSeconds":3600,"roles":["source:read","gluonify:crystallon:render"]}'
 ```
 
-**4. La plantilla y el código generado.** El ejemplo llama a la plantilla de Crystallon llamada **`Gluonify invoice`**: créela en la consola de Crystallon (`/crystallon/` detrás del orquestador; *Nueva plantilla*, *Empezar desde* la plantilla predefinida `invoice`, con exactamente ese nombre). Crystallon **genera** entonces **el código Java** de una plantilla: records que describen exactamente los datos que lee, y una clase que la llama. Abra la plantilla y su pestaña **Código** (pide guardar antes: el código se genera a partir de la versión guardada), ponga *Paquete Java* a `io.gluonify.source.documents.generated` y *Nombre de la clase* a `GluonifyInvoice`, deje sin marcar *Fijar esta versión* (el código genera entonces la versión actual de la plantilla), y luego *Descargar (zip)* o *Copiar*. Los tres archivos de [`documents/generated/`](src/main/java/io/gluonify/source/documents/generated) son exactamente esa salida (solo se añadió un comentario de cabecera), generada a partir de la versión 1 de la plantilla:
+**4. La plantilla y el código generado.** El ejemplo llama a la plantilla de Crystallon llamada **`Gluonify invoice`**, y **la plantilla vive en este repositorio**: [`crystallon/templates/gluonify-invoice.json`](crystallon/templates/gluonify-invoice.json) es la plantilla exactamente como la escribe el botón *Exportar* del editor de Crystallon (la plantilla predefinida `invoice`, con su `name` exacto y su `description` en la raíz). **Nada que crear a mano**: cuando el builder (Bup) despliega una aplicación que usa Crystallon, instala cada `crystallon/templates/*.json` en la organización en la que genera el token de la aplicación (`PUT /v1/templates/by-name/{name}` de Crystallon): creada la primera vez, sin cambios si es idéntica, guardada como nueva versión cuando el contenido cambia pero los datos esperados siguen siendo los mismos, y **nunca sobrescrita** cuando esperaría otros datos (`differs`). El build informa de cada plantilla en su campo `templates` y en su registro; un fallo en este paso es un aviso, nunca un despliegue fallido. Sin el builder (despliegue a mano, `mvn quarkus:dev` contra un clúster), cree la plantilla en la consola de Crystallon (`/crystallon/`; *Nueva plantilla* llamada exactamente `Gluonify invoice`), *Importe* el archivo y guarde. **La consola sigue siendo el lugar donde se edita**: cambie allí la plantilla, *Expórtela*, sustituya el archivo y haga commit. Crystallon **genera** entonces **el código Java** de una plantilla: records que describen exactamente los datos que lee, y una clase que la llama. Abra la plantilla y su pestaña **Código** (pide guardar antes: el código se genera a partir de la versión guardada), ponga *Paquete Java* a `io.gluonify.source.documents.generated` y *Nombre de la clase* a `GluonifyInvoice`, deje sin marcar *Fijar esta versión* (el código genera entonces la versión actual de la plantilla), y luego *Descargar (zip)* o *Copiar*. Los tres archivos de [`documents/generated/`](src/main/java/io/gluonify/source/documents/generated) son exactamente esa salida (solo se añadió un comentario de cabecera), generada a partir de la versión 0 de la plantilla (la que el builder crea a partir del archivo):
 
 - `GluonifyInvoicePayload`: un record por objeto de los datos (`Sender`, `Recipient`, `Invoice`, `Item`, `Payment`); el Javadoc de cada componente indica si es obligatorio;
 - `GluonifyInvoiceDocument`: la fachada, con `render(payload)`, `render(payload, RenderOptions)` y `validate(payload)`; llama a la plantilla **por su nombre** (el mismo en cada entorno) y lleva las constantes `TEMPLATE_NAME`, `TEMPLATE_VERSION` y `SCHEMA_SHA256`;
 - `package-info`.
 
-**Para regenerarlos** (la plantilla cambió y ahora espera otros datos: su `SCHEMA_SHA256` ya no es el de la fachada), genere de nuevo en la pestaña Código con los mismos dos campos y sustituya los tres archivos; no los edite nunca a mano. El compilador muestra entonces qué adaptar en [`InvoiceMapping`](src/main/java/io/gluonify/source/documents/InvoiceMapping.java), la única clase que conoce la forma de los datos. Sin la consola, el mismo código viene de la API (rol `gluonify:crystallon:templates`, no `render`): `GET /v1/templates/<id>/code?lang=java&package=io.gluonify.source.documents.generated&name=GluonifyInvoice`.
+**Para regenerarlos** (la plantilla cambió y ahora espera otros datos: su `SCHEMA_SHA256` ya no es el de la fachada), genere de nuevo en la pestaña Código con los mismos dos campos y sustituya los tres archivos; no los edite nunca a mano. El compilador muestra entonces qué adaptar en [`InvoiceMapping`](src/main/java/io/gluonify/source/documents/InvoiceMapping.java), la única clase que conoce la forma de los datos. Sin la consola, el mismo código viene de la API (rol `gluonify:crystallon:templates`, no `render`): `GET /v1/templates/<id>/code?lang=java&package=io.gluonify.source.documents.generated&name=GluonifyInvoice`. Haga commit a la vez de la plantilla exportada y del código regenerado, para que describan siempre los mismos datos. Una plantilla ya presente en Crystallon que espera otros datos queda intacta para el builder (`differs`): modifíquela en la consola, o bórrela para que el siguiente despliegue la cree de nuevo.
+
+**Estado.** Verificado el 2026-10-11 en el clúster de desarrollo: la aplicación (SDK 0.7.1) generó la factura 2026-0042 a través del Crystallon real con su propio token (200, `application/pdf`, PDF/A-1B, una página), con una plantilla creada a mano en la consola. **Todavía no** verificado por un build real: la instalación automática de la plantilla por el builder (cubierta por pruebas contra un Crystallon falso en gluonify-bup y gluonify-crystallon).
 
 **Imagen nativa.** El SDK declara para la reflexión sus propios records; **los de los datos son cosa de la aplicación**. El record raíz Y cada record anidado de cada payload generado figuran en [`DocumentsReflection`](src/main/java/io/gluonify/source/documents/DocumentsReflection.java) (`@RegisterForReflection`). Olvidar uno solo rompe el ejecutable nativo, en la primera llamada: `DocumentsReflectionTest` lo comprueba.
 
@@ -338,7 +341,7 @@ Declárela en `"uses"`: la plataforma proporciona `GLUONIFY_SERVICE_<APP>_URL` *
 ## 8. Construir
 
 ```bash
-mvn test                       # pruebas Java (86)
+mvn test                       # pruebas Java (64)
 mvn package                    # JVM: target/quarkus-app/; construye también la interfaz (Quinoa)
 ```
 
@@ -399,7 +402,7 @@ Actualizar: el mismo `PUT` (o un nuevo build); las réplicas se sustituyen **una
 ## 10. Probar
 
 ```bash
-mvn test                                 # 63 pruebas Java
+mvn test                                 # 64 pruebas Java
 cd src/main/webui && npm install && npm test   # 31 pruebas de interfaz
 ```
 
@@ -416,6 +419,7 @@ cd src/main/webui && npm install && npm test   # 31 pruebas de interfaz
 | `DocumentsDisabledTest` | 3 | Crystallon no disponible: 404 con el motivo, `"documents": false`, el resto no se ve afectado |
 | `InvoiceMappingTest` / `DocumentErrorsTest` | 3 + 7 | su factura → la carga útil de la plantilla (importes, valores por defecto, nombre de archivo seguro); cada fallo de Crystallon → un estado |
 | `DocumentsReflectionTest` | 1 | salvaguarda nativa: cada record de los datos generados está declarado para la reflexión |
+| `CrystallonTemplateFileTest` | 1 | la plantilla Crystallon del repositorio (`crystallon/templates/gluonify-invoice.json`): JSON válido, el nombre exacto que llama el código generado, los mismos campos de primer nivel que los datos generados (la huella `SCHEMA_SHA256` solo la calcula Crystallon) |
 | `DeploySpecsTest` | 2 | las especificaciones de `deploy/` usan los nombres actuales (`uses`, `SOURCE_STORE`); `gluonify.json` (leído por el builder) solo declara lo que el SDK no detecta (`charm`, `gdown`) y, con `crystallon` deducido (marcador en el classpath), da los mismos `uses` que `deploy/appspec.json` |
 
 Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento, de `FileNoteStoreTest` (sin arrancar Quarkus: rápida).
@@ -447,7 +451,8 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 | El nativo falla al arrancar pero no en JVM | un estado congelado en la compilación (`static`) o una reflexión que falta (§11) |
 | `POST /api/documents/invoice`: 404 «documents are off» | Crystallon no está disponible: la aplicación no está desplegada con `"uses": ["crystallon"]` (por el builder: SDK anterior a la 0.7.1, o deducción desactivada) o, en su equipo, falta `gluonify login <zona>` |
 | Documentos: 502 «did not accept the token of the application» | la aplicación no está desplegada con `"uses": ["crystallon"]`, la plataforma aún no emite tokens de aplicación, o el archivo del token falta, está vacío o caducado; en su equipo, vuelva a ejecutar `gluonify login <zona>` |
-| Documentos: 502 «does not know the template» | no hay plantilla llamada `Gluonify invoice` en la organización del token (token de la aplicación: la organización por defecto de Crystallon): créela en la consola de Crystallon |
+| Documentos: 502 «does not know the template» | no hay plantilla llamada `Gluonify invoice` en la organización del token (token de la aplicación: la organización de la aplicación, o la de por defecto de Crystallon): lea `templates` en el build del builder (`GET /v1/builds/<id>`: `failed` con su motivo; ausente cuando la aplicación no usa Crystallon o falta el archivo); sin el builder, importe `crystallon/templates/gluonify-invoice.json` en la consola de Crystallon |
+| Builder: plantilla `Gluonify invoice` señalada `differs` | la plantilla de Crystallon espera otros datos que el archivo: no se ha escrito nada; modifíquela en la consola (o bórrela), expórtela, regenere el código y haga commit de ambos |
 | Documentos: 422 con `code` y `path` | la plantilla no puede generar estos datos: `path` es el lugar del problema en la plantilla |
 | Los documentos funcionan en JVM pero fallan en la primera llamada del ejecutable nativo | falta un record de los datos generados en `DocumentsReflection` |
 

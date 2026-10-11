@@ -1,0 +1,420 @@
+{
+  "name": "Gluonify invoice",
+  "description": "Invoice of the gluonify-source sample application (the invoice preset of Crystallon).",
+  "schema": 1,
+  "title": "{{$t.invoice}} {{ invoice.number }}",
+  "params": {
+    "lang": "en",
+    "country": "CH",
+    "currency": "CHF",
+    "timezone": "Europe/Zurich"
+  },
+  "page": {
+    "size": "A4",
+    "margins": {
+      "top": 15,
+      "right": 20,
+      "bottom": 15,
+      "left": 20
+    }
+  },
+  "theme": {
+    "primary": "#1F4E79",
+    "secondary": "#6B7280",
+    "text": "#111111",
+    "font": "sans"
+  },
+  "labels": {
+    "invoice": {
+      "en": "Invoice",
+      "fr": "Facture",
+      "es": "Factura",
+      "it": "Fattura",
+      "de": "Rechnung"
+    },
+    "number": {
+      "en": "No.",
+      "fr": "N°",
+      "es": "N.º",
+      "it": "N.",
+      "de": "Nr."
+    },
+    "date": {
+      "en": "Date",
+      "fr": "Date",
+      "es": "Fecha",
+      "it": "Data",
+      "de": "Datum"
+    },
+    "dueDate": {
+      "en": "Due date",
+      "fr": "Échéance",
+      "es": "Vencimiento",
+      "it": "Scadenza",
+      "de": "Fällig am"
+    },
+    "description": {
+      "en": "Description",
+      "fr": "Description",
+      "es": "Descripción",
+      "it": "Descrizione",
+      "de": "Beschreibung"
+    },
+    "quantity": {
+      "en": "Qty",
+      "fr": "Qté",
+      "es": "Cant.",
+      "it": "Qtà",
+      "de": "Menge"
+    },
+    "unitPrice": {
+      "en": "Unit price",
+      "fr": "Prix unitaire",
+      "es": "Precio unitario",
+      "it": "Prezzo unitario",
+      "de": "Einzelpreis"
+    },
+    "amount": {
+      "en": "Amount",
+      "fr": "Montant",
+      "es": "Importe",
+      "it": "Importo",
+      "de": "Betrag"
+    },
+    "subtotal": {
+      "en": "Subtotal",
+      "fr": "Sous-total",
+      "es": "Subtotal",
+      "it": "Subtotale",
+      "de": "Zwischensumme"
+    },
+    "vat": {
+      "en": "VAT",
+      "fr": "TVA",
+      "es": "IVA",
+      "it": "IVA",
+      "de": "MwSt."
+    },
+    "total": {
+      "en": "Total",
+      "fr": "Total",
+      "es": "Total",
+      "it": "Totale",
+      "de": "Total"
+    },
+    "payBefore": {
+      "en": "Please pay by",
+      "fr": "Merci de régler avant le",
+      "es": "Por favor, pague antes del",
+      "it": "Si prega di pagare entro il",
+      "de": "Bitte zahlen Sie bis zum"
+    },
+    "vatNo": {
+      "en": "VAT no.",
+      "fr": "N° TVA",
+      "es": "N.º IVA",
+      "it": "N. IVA",
+      "de": "MwSt-Nr."
+    }
+  },
+  "header": [
+    {
+      "type": "row",
+      "gap": 6,
+      "blocks": [
+        {
+          "type": "column",
+          "width": "1",
+          "blocks": [
+            {
+              "type": "image",
+              "source": "logo",
+              "width": 40
+            }
+          ]
+        },
+        {
+          "type": "column",
+          "width": "1",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "{{ sender | address }}",
+              "align": "right",
+              "size": 9,
+              "color": "secondary"
+            },
+            {
+              "type": "text",
+              "text": "{{ sender.email | default:'' }}   {{ sender.phone | default:'' }}",
+              "align": "right",
+              "size": 8,
+              "color": "secondary"
+            },
+            {
+              "type": "text",
+              "text": "{{$t.vatNo}} {{ sender.vatNumber }}",
+              "align": "right",
+              "size": 8,
+              "color": "secondary",
+              "when": "sender.vatNumber"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "line",
+      "color": "primary",
+      "thickness": 1,
+      "margin": 2
+    }
+  ],
+  "footer": [
+    {
+      "type": "line",
+      "color": "muted",
+      "thickness": 0.5,
+      "margin": 1
+    },
+    {
+      "type": "row",
+      "gap": 4,
+      "blocks": [
+        {
+          "type": "column",
+          "width": "3",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "{{ sender.name }} - {{ sender.website | default:'' }}",
+              "size": 8,
+              "color": "secondary"
+            }
+          ]
+        },
+        {
+          "type": "column",
+          "width": "1",
+          "blocks": [
+            {
+              "type": "pageNumber",
+              "align": "right",
+              "size": 8,
+              "color": "secondary"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "body": [
+    {
+      "type": "row",
+      "gap": 10,
+      "marginTop": 6,
+      "blocks": [
+        {
+          "type": "column",
+          "width": "1.2",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "{{ recipient | address }}",
+              "size": 10
+            }
+          ]
+        },
+        {
+          "type": "column",
+          "width": "1",
+          "blocks": [
+            {
+              "type": "text",
+              "text": "{{$t.invoice}} {{$t.number}} {{ invoice.number }}",
+              "bold": true,
+              "size": 11,
+              "align": "right",
+              "color": "primary"
+            },
+            {
+              "type": "text",
+              "text": "{{$t.date}}: {{ invoice.date | date }}",
+              "size": 9,
+              "align": "right"
+            },
+            {
+              "type": "text",
+              "text": "{{$t.dueDate}}: {{ invoice.dueDate | date }}",
+              "size": 9,
+              "align": "right",
+              "when": "invoice.dueDate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "spacer",
+      "height": 8
+    },
+    {
+      "type": "text",
+      "text": "{{ invoice.subject }}",
+      "bold": true,
+      "size": 12,
+      "color": "primary",
+      "when": "invoice.subject",
+      "marginBottom": 3
+    },
+    {
+      "type": "text",
+      "text": "{{ invoice.intro }}",
+      "size": 10,
+      "when": "invoice.intro",
+      "marginBottom": 4
+    },
+    {
+      "type": "table",
+      "rows": "items",
+      "size": 9,
+      "zebra": false,
+      "columns": [
+        {
+          "header": "{{$t.description}}",
+          "value": "{{ row.description }}",
+          "width": "5"
+        },
+        {
+          "header": "{{$t.quantity}}",
+          "value": "{{ row.quantity }} {{ row.unit }}",
+          "width": "1.2",
+          "align": "right"
+        },
+        {
+          "header": "{{$t.unitPrice}}",
+          "value": "{{ row.unitPrice | money }}",
+          "width": "1.6",
+          "align": "right"
+        },
+        {
+          "header": "{{$t.amount}}",
+          "value": "{{ row.amount | money }}",
+          "width": "1.6",
+          "align": "right"
+        }
+      ],
+      "totals": [
+        {
+          "label": "{{$t.subtotal}}",
+          "value": "{{ round(sum(items.amount), 2) | money }}",
+          "bold": false
+        },
+        {
+          "label": "{{$t.vat}} {{ vatRate | percent }}",
+          "value": "{{ round(sum(items.amount) * vatRate / 100, 2) | money }}",
+          "bold": false
+        },
+        {
+          "label": "{{$t.total}}",
+          "value": "{{ round(sum(items.amount), 2) + round(sum(items.amount) * vatRate / 100, 2) | money }}",
+          "bold": true,
+          "color": "primary"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "{{$t.payBefore}} {{ invoice.dueDate | date }}",
+      "size": 9,
+      "marginTop": 6,
+      "when": "invoice.dueDate"
+    },
+    {
+      "type": "swissQrBill",
+      "when": "payment.iban",
+      "iban": "{{ payment.iban }}",
+      "creditor": {
+        "name": "{{ sender.name }}",
+        "street": "{{ sender.street }}",
+        "houseNumber": "{{ sender.houseNumber }}",
+        "postalCode": "{{ sender.postalCode }}",
+        "city": "{{ sender.city }}",
+        "country": "{{ sender.country }}"
+      },
+      "amount": "{{ round(sum(items.amount), 2) + round(sum(items.amount) * vatRate / 100, 2) | fixed:2 }}",
+      "currency": "{{ $currency }}",
+      "debtor": {
+        "name": "{{ recipient.name }}",
+        "street": "{{ recipient.street }}",
+        "houseNumber": "{{ recipient.houseNumber }}",
+        "postalCode": "{{ recipient.postalCode }}",
+        "city": "{{ recipient.city }}",
+        "country": "{{ recipient.country }}"
+      },
+      "referenceType": "{{ payment.referenceType | default:'' }}",
+      "reference": "{{ payment.reference | default:'' }}",
+      "message": "{{$t.invoice}} {{ invoice.number }}",
+      "ebill": "{{ payment.ebill | default:'' }}"
+    }
+  ],
+  "samplePayload": {
+    "sender": {
+      "name": "Alpine Studio AG",
+      "street": "Bahnhofstrasse",
+      "houseNumber": "12",
+      "postalCode": "8001",
+      "city": "Zurich",
+      "country": "CH",
+      "email": "billing@alpine.example",
+      "phone": "+41 44 000 00 00",
+      "website": "alpine.example",
+      "vatNumber": "CHE-000.000.000 MWST"
+    },
+    "recipient": {
+      "name": "Example Customer SA",
+      "line2": "Accounts payable",
+      "street": "Rue du Lac",
+      "houseNumber": "7",
+      "postalCode": "1003",
+      "city": "Lausanne",
+      "country": "CH"
+    },
+    "invoice": {
+      "number": "2026-0042",
+      "date": "2026-10-09",
+      "dueDate": "2026-11-08",
+      "subject": "Website relaunch",
+      "intro": "Thank you for your trust. We invoice the following services."
+    },
+    "items": [
+      {
+        "description": "Website redesign (fixed price)",
+        "quantity": 1,
+        "unit": "pce",
+        "unitPrice": 4800,
+        "amount": 4800
+      },
+      {
+        "description": "Consulting, 12 hours",
+        "quantity": 12,
+        "unit": "h",
+        "unitPrice": 160,
+        "amount": 1920
+      },
+      {
+        "description": "Hosting, annual plan",
+        "quantity": 1,
+        "unit": "pce",
+        "unitPrice": 480,
+        "amount": 480
+      }
+    ],
+    "vatRate": 8.1,
+    "payment": {
+      "iban": "CH44 3199 9123 0008 8901 2",
+      "referenceType": "QRR",
+      "reference": "21 00000 00003 13947 14300 09017"
+    }
+  }
+}
