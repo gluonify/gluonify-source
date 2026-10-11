@@ -12,6 +12,6 @@ COPY src src
 #   --build-arg MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=VFORK
 ARG MAVEN_OPTS=
 ENV MAVEN_OPTS=${MAVEN_OPTS}
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests -Pnative -Dquarkus.quinoa.package-manager-install=false package
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests -Pnative -Dquarkus.quinoa.package-manager-install=false -Dquarkus.quinoa.run-tests=false package
 FROM scratch AS out
 COPY --from=build /src/target/*-runner /gluonify-source
