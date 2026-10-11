@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from 'vue'
-import { api, token } from './api.js'
+import { api, token, SAMPLE_INVOICE } from './api.js'
 import { useI18n } from './i18n/index.js'
 import BrandLogo from './BrandLogo.vue'
 
@@ -15,6 +15,7 @@ const jwt = ref(token.get())
 // Error shown: { key, params } (translated at display time, so a language change applies) or { text } (API message shown as returned).
 const error = ref(null)
 const loading = ref(false)
+const documentWorking = ref(false)
 const SEP = '\u00b7' // separator between the name and the role of the header
 const year = new Date().getFullYear()
 
@@ -50,6 +51,32 @@ async function remove(id) {
     await refresh()
   } catch (e) {
     error.value = { text: e.message }
+  }
+}
+
+// Hands a downloaded file to the browser (a temporary link to the blob).
+function saveFile(blob, name) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
+// The sample invoice: POST /api/documents/invoice (the API forwards the token to Crystallon). A 403 without a message is the API's own role check; with a message it is
+// Crystallon's refusal, shown as received like every API message.
+async function downloadInvoice() {
+  error.value = null
+  documentWorking.value = true
+  try {
+    saveFile(await api.invoice(), `invoice-${SAMPLE_INVOICE.number}.pdf`)
+  } catch (e) {
+    error.value = e.status === 401 ? { key: 'errUnauthenticated' } : e.status === 403 && !e.apiMessage ? { key: 'errForbiddenRead', params: { role: 'source:read' } } : { text: e.message }
+  } finally {
+    documentWorking.value = false
   }
 }
 
@@ -105,6 +132,12 @@ onMounted(refresh)
       </ul>
       <p v-if="!loading && !notes.length && !error" class="hint">{{ t('empty', { store: 'source.store=files' }) }}</p>
       <button type="button" @click="refresh">{{ t('refresh') }}</button>
+    </section>
+
+    <section v-if="platform && platform.documents">
+      <h2>{{ t('documentsTitle') }}</h2>
+      <p class="hint">{{ t('documentsHint', { audience: 'gluonify-crystallon', role: 'gluonify:crystallon:render' }) }}</p>
+      <button type="button" :disabled="documentWorking" @click="downloadInvoice">{{ documentWorking ? t('documentsWorking') : t('documentsDownload') }}</button>
     </section>
 
     <section v-if="platform">

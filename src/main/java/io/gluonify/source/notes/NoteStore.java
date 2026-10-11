@@ -8,7 +8,7 @@ import java.util.Optional;
  * <ul>
  *   <li>{@code memory} : in memory, for local development and tests (lost on restart);</li>
  *   <li>{@code files} : files in {@code /distributed/std}, shared by all replicas and durable;</li>
- *   <li>{@code graph} : in Gdown, the platform's graph database.</li>
+ *   <li>{@code gdown} : in Gdown, the platform's graph database.</li>
  * </ul>
  * To add your own storage: implement this interface, annotate it {@code @ApplicationScoped}, and wire it in {@link NoteStores}.
  */

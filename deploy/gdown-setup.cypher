@@ -5,7 +5,7 @@ GRANT ACCESS ON DATABASE source TO source_rw;
 GRANT MATCH {*} ON GRAPH source TO source_rw;
 GRANT WRITE ON GRAPH source TO source_rw;
 GRANT INDEX MANAGEMENT ON DATABASE source TO source_rw;
-// needed by the webhook ledger (graph mode): uniqueness constraint on (:Event {id}), created by the application on first use
+// needed by the webhook ledger (store=gdown): uniqueness constraint on (:Event {id}), created by the application on first use
 GRANT CONSTRAINT MANAGEMENT ON DATABASE source TO source_rw;
 CREATE USER notes IF NOT EXISTS SET PASSWORD 'REPLACE-WITH-A-LONG-PASSWORD';
 GRANT ROLE source_rw TO notes;

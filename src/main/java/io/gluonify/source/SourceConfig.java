@@ -10,7 +10,7 @@ import java.util.Optional;
  */
 @ConfigMapping(prefix = "source")
 public interface SourceConfig {
-    /** memory (default, development), files (/distributed/std) or graph (Gdown). */
+    /** memory (default, development), files (/distributed/std) or gdown (Gdown). */
     @WithDefault("memory")
     String store();
 
@@ -19,6 +19,8 @@ public interface SourceConfig {
     Graph graph();
 
     Webhook webhook();
+
+    Crystallon crystallon();
 
     interface Files {
         @WithDefault("/distributed/std/notes")
@@ -41,5 +43,13 @@ public interface SourceConfig {
     interface Webhook {
         /** Key that Photon sends in the X-Api-Key header (configured in the webhook target). Absent: the receiver is closed (404). */
         Optional<String> key();
+    }
+
+    interface Crystallon {
+        /**
+         * Address of Crystallon (PDF documents), provided by the platform as GLUONIFY_SERVICE_CRYSTALLON_URL when the application is deployed with "uses": ["crystallon"].
+         * Absent or blank: the documents feature is off ({@code POST /api/documents/invoice} answers 404) and the rest of the application is not affected.
+         */
+        Optional<String> url();
     }
 }

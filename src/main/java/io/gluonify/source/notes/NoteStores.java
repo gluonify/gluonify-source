@@ -14,16 +14,16 @@ public class NoteStores {
             case "memory" -> new MemoryNoteStore();
             case "files" -> new FileNoteStore(Path.of(cfg.files().dir()));
             case "gdown" -> graph(cfg);
-            default -> throw new IllegalStateException("unknown source.store: \"" + cfg.store() + "\" (memory, files or graph)");
+            default -> throw new IllegalStateException("unknown source.store: \"" + cfg.store() + "\" (memory, files or gdown)");
         };
     }
 
-    /** The Gdown connection built from the configuration (also used by the webhook ledger in graph mode). */
+    /** The Gdown connection built from the configuration (also used by the webhook ledger when source.store=gdown). */
     public static GraphNoteStore graph(SourceConfig cfg) {
         return new GraphNoteStore(
-                    cfg.graph().url().filter(u -> !u.isBlank()).orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.url is empty (deploy with \"uses\": [\"graphdb\"])")),
+                    cfg.graph().url().filter(u -> !u.isBlank()).orElseThrow(() -> new IllegalStateException("source.store=gdown : source.graph.url is empty (deploy with \"uses\": [\"gdown\"])")),
                     cfg.graph().database(),
-                    cfg.graph().user().orElseThrow(() -> new IllegalStateException("source.store=graph : source.graph.user is missing")),
-                    cfg.graph().password().orElseThrow(() -> new IllegalStateException("source.store=graph : password is missing (vault key GLUONIFY_GDOWN_PASSWORD)")));
+                    cfg.graph().user().orElseThrow(() -> new IllegalStateException("source.store=gdown : source.graph.user is missing")),
+                    cfg.graph().password().orElseThrow(() -> new IllegalStateException("source.store=gdown : password is missing (vault key GLUONIFY_GDOWN_PASSWORD)")));
     }
 }

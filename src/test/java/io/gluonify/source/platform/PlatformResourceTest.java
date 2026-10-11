@@ -11,7 +11,7 @@ import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-/** What the platform provides: GLUONIFY_ENVIRONMENT, GLUONIFY_REPLICA, declared services (SERVICE_*_URL), never a secret; service-to-service call. */
+/** What the platform provides: GLUONIFY_ENVIRONMENT, GLUONIFY_REPLICA, declared services (GLUONIFY_SERVICE_*_URL), never a secret; service-to-service call. */
 @QuarkusTest
 class PlatformResourceTest {
     @Inject
@@ -20,7 +20,7 @@ class PlatformResourceTest {
     @Test
     @TestSecurity(user = "ada", roles = {"source:read"})
     void forme() {
-        given().when().get("/api/platform").then().statusCode(200).body("store", is("memory")).body("storeReady", is(true)).body("webhookOpen", is(false))
+        given().when().get("/api/platform").then().statusCode(200).body("store", is("memory")).body("storeReady", is(true)).body("webhookOpen", is(false)).body("documents", is(false))
                 .body("webhooks.accepted", is(0)).body("webhooks.duplicates", is(0));
     }
 
