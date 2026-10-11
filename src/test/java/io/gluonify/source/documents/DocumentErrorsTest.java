@@ -63,6 +63,47 @@ class DocumentErrorsTest {
     }
 
     @Test
+    void withTheApplicationsOwnTokenARefusalIsNotTheCallersFault() {
+        for (int status : new int[] {401, 403}) {
+            Response r = DocumentErrors.toResponse(new CrystallonException(status, null, "Crystallon refused the call", null, null), TokenMode.PLATFORM);
+            assertEquals(502, r.getStatus(), "the caller cannot fix the token of the application: not a 403");
+            String message = body(r).get("error").toString();
+            assertTrue(message.contains("token of the application") && message.contains("\"uses\": [\"crystallon\"]") && message.contains("gluonify:crystallon:render")
+                    && message.contains("GLUONIFY_CRYSTALLON_TOKEN_FILE") && message.contains("HTTP " + status), message);
+            assertFalse(message.contains("your token"), message);
+        }
+        // the same status with the caller's token is still the caller's business
+        assertEquals(403, DocumentErrors.toResponse(new CrystallonException(401, null, "m", null, null), TokenMode.FORWARDING).getStatus());
+    }
+
+    @Test
+    void withTheApplicationsOwnTokenTheTemplateIsLookedUpInTheOrganizationOfThatToken() {
+        Response r = DocumentErrors.toResponse(new CrystallonException(404, "CRYSTALLON-0028", "No such template", null, null), TokenMode.PLATFORM);
+        assertEquals(502, r.getStatus());
+        assertTrue(body(r).get("error").toString().contains("organization of the application's token (default)"));
+        assertTrue(body(map(404, null, "m", null, null)).get("error").toString().contains("your organization"), "the caller's own organization otherwise");
+    }
+
+    @Test
+    void anUnreadableTokenFileIsNotReportedAsAnUnreachableCrystallon() {
+        CrystallonException unreadable = new CrystallonException(0, null, "cannot read the Crystallon token file /run/gluonify-tokens/crystallon.token (AccessDeniedException)", null, new java.io.IOException("denied"));
+        Response r = DocumentErrors.toResponse(unreadable, TokenMode.PLATFORM);
+        assertEquals(502, r.getStatus());
+        assertTrue(body(r).get("error").toString().contains("GLUONIFY_CRYSTALLON_TOKEN_FILE"));
+        assertFalse(body(r).get("error").toString().contains("unreachable"));
+    }
+
+    @Test
+    void theOtherFailuresDoNotDependOnTheTokenMode() {
+        Response forwarding = DocumentErrors.toResponse(new CrystallonException(422, "CRYSTALLON-0015", "Invalid template", "body[1]", null), TokenMode.FORWARDING);
+        Response platform = DocumentErrors.toResponse(new CrystallonException(422, "CRYSTALLON-0015", "Invalid template", "body[1]", null), TokenMode.PLATFORM);
+        assertEquals(forwarding.getStatus(), platform.getStatus());
+        assertEquals(body(forwarding), body(platform));
+        assertEquals(502, DocumentErrors.toResponse(new CrystallonException(0, null, "Crystallon is unreachable (ConnectException)", null, new ConnectException("refused")), TokenMode.PLATFORM).getStatus());
+        assertEquals(504, DocumentErrors.toResponse(new CrystallonException(0, null, "m", null, new HttpTimeoutException("t")), TokenMode.PLATFORM).getStatus());
+    }
+
+    @Test
     void theBodyIsJson() {
         assertEquals("application/json", map(500, null, "x", null, null).getMediaType().toString());
     }

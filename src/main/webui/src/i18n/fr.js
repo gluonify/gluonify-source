@@ -29,6 +29,7 @@ export default {
   errForbiddenWrite: 'Il faut le rôle {role} pour créer une note.',
   documentsTitle: 'Documents',
   documentsHint: "Génère une facture PDF avec Crystallon à partir de données d'exemple. Votre jeton Charm est transmis à Crystallon : il doit porter l'audience {audience} et le rôle {role}.",
+  documentsHintPlatform: "Génère une facture PDF avec Crystallon à partir de données d'exemple. Crystallon est appelé avec le jeton propre à l'application, fourni par la plateforme : votre jeton n'a qu'à ouvrir cette API.",
   documentsDownload: "Télécharger une facture d'exemple",
   documentsWorking: 'Génération du PDF…',
   platformTitle: 'Ce que la plateforme fournit',

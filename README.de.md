@@ -64,6 +64,7 @@ curl -s localhost:8080/api/notes
 
 ```
 pom.xml                         EIGENSTÄNDIGES Maven-Projekt (Quarkus 4.0.0.Beta1, Java 25): kein Gluonify-Parent
+gluonify.json                   vom Builder von Gluonify (Bup) gelesen: die Dienste, die er beim Deployen deklariert (`uses`), wie in deploy/appspec.json
 Dockerfile.build                baut die native ausführbare Datei in Docker
 src/main/resources/
   application.properties        die GESAMTE Konfiguration, Zeile für Zeile kommentiert
@@ -85,14 +86,15 @@ src/main/java/io/gluonify/source/
     DocumentsResource.java      POST /api/documents/invoice: Ihre Rechnung hinein, ein PDF heraus
     InvoiceRequest.java         die Rechnung IHRER Domäne (validierter Body)
     InvoiceMapping.java         Ihre Rechnung -> die Daten der Vorlage (die einzige Klasse, die ihre Form kennt)
-    CrystallonClients.java      baut den SDK-Client aus der Konfiguration (keine Adresse = Funktion aus)
-    ForwardedToken.java         das Bearer-Token des Aufrufers, an Crystallon weitergeleitet
+    CrystallonClients.java      baut den SDK-Client aus der Konfiguration (keine Adresse = Funktion aus) und wählt das Token
+    TokenMode.java              welches Token Crystallon erhält: das des Aufrufers (forwarding) oder das der Anwendung selbst (platform)
+    ForwardedToken.java         das Bearer-Token des Aufrufers, an Crystallon weitergeleitet (Modus forwarding)
     DocumentErrors.java         Fehler von Crystallon -> 403 / 422 / 502 / 504
     DocumentsReflection.java    Native Image: die Records der generierten Daten
     generated/                  vom Tab „Code“ von Crystallon generierter Code (nicht von Hand ändern)
   security/DevAuthentication.java   Entwicklungsidentität (nur Profil dev)
 src/main/webui/                 die Vue-3-Oberfläche (Vite + vitest), von Quinoa gebaut
-src/test/java/…                 64 Java-Tests; src/main/webui/src/App.test.js: 32 Oberflächentests
+src/test/java/…                 86 Java-Tests; src/main/webui/src/App.test.js: 33 Oberflächentests
 deploy/                         Beispiele: AppSpec, Domain, Photon-Webhook, Gdown-Datenbank
 scripts/rename.py               benennt das Projekt um
 ```
@@ -189,7 +191,7 @@ Eine Anwendung auf Gluonify ist **isoliert**: eigenes Konto, eigenes Netzwerk, e
 | **Verteilte Dateien** | `/distributed/std`: dauerhaft, von allen Replikaten geteilt, 2 Kopien | `"distributed": ["std"]` beim Deployment | [`FileNoteStore`](src/main/java/io/gluonify/source/notes/FileNoteStore.java) |
 | **Andere Anwendungen** | Dienst-zu-Dienst-Aufruf | `"uses": ["other"]` → `GLUONIFY_SERVICE_OTHER_URL` | [`PlatformResource.ping`](src/main/java/io/gluonify/source/platform/PlatformResource.java) |
 | **Photon** (API-Gateway) | signierte Webhooks, Umwandlung XML / SOAP / Formular → JSON, Wiederholung | Photon liefert an `…/hooks/events`; Ihr Dienst bestätigt mit 2XX | [`WebhookResource`](src/main/java/io/gluonify/source/platform/WebhookResource.java) |
-| **Crystallon** (PDF-Dokumente) | Rechnungen, Angebote und Briefe als PDF/A aus Vorlagen, die in seinem Editor gestaltet werden; Java-Client des SDK, generierter Code | optional: `"uses": ["crystallon"]` → `GLUONIFY_SERVICE_CRYSTALLON_URL`; das Token des Aufrufers wird weitergeleitet (Rolle `gluonify:crystallon:render`) | [`DocumentsResource`](src/main/java/io/gluonify/source/documents/DocumentsResource.java), [Details](#dokumente-crystallon) |
+| **Crystallon** (PDF-Dokumente) | Rechnungen, Angebote und Briefe als PDF/A aus Vorlagen, die in seinem Editor gestaltet werden; Java-Client des SDK, generierter Code | optional: `"uses": ["crystallon"]` → `GLUONIFY_SERVICE_CRYSTALLON_URL` und die Token-Datei der Anwendung (`GLUONIFY_CRYSTALLON_TOKEN_FILE`); das Token des Aufrufers wird weitergeleitet (Standard) oder das eigene Token der Anwendung verwendet (`source.crystallon.token=platform`), Rolle `gluonify:crystallon:render` | [`DocumentsResource`](src/main/java/io/gluonify/source/documents/DocumentsResource.java), [Details](#dokumente-crystallon) |
 | **Field** | statische Sites (ZIP), auf Ihrer Domain ausgeliefert | nichts zu programmieren: Eine Site wird als ZIP hochgeladen | — |
 | **Higgs** (Orchestrator) | Domains, automatische HTTPS-Zertifikate, Routen, Richtlinien (Token, Limits, CORS, Adressen) | `PUT /domains/<name>` | `deploy/domain.json` |
 
@@ -263,14 +265,28 @@ Das Repository wird zu Maven Central hinzugefügt, nicht an seiner Stelle. Die V
 
 **2. Die Nutzung deklarieren.** `"uses": ["charm", "crystallon"]` in der Spezifikation der Anwendung ([`deploy/appspec.json`](deploy/appspec.json)): Die Plattform stellt `GLUONIFY_SERVICE_CRYSTALLON_URL` bereit **und öffnet das Netzwerk** zu Crystallon, und nur zu ihm; [`CrystallonClients`](src/main/java/io/gluonify/source/documents/CrystallonClients.java) liest sie (`source.crystallon.url`) und baut den Client. **Ohne sie ist die Funktion aus und nichts sonst ändert sich**: Der Endpunkt antwortet 404 und nennt den Grund, `GET /api/platform` meldet `"documents": false`, die Oberfläche blendet den Abschnitt aus, die Anwendung startet und alle anderen Tests laufen ohne Crystallon.
 
-**3. Das Token und die Rolle.** Crystallon verlangt ein Charm-Token mit der Audience `gluonify-crystallon`; die Rolle **`gluonify:crystallon:render`** genügt zum Erzeugen und Validieren (`convert` und `templates` braucht man nicht, um Dokumente zu erzeugen). Die Vorlagen sind die der **Organisation**, die das Token trägt. Dieses Beispiel **leitet das Token der Person weiter, die es aufruft** ([`ForwardedToken`](src/main/java/io/gluonify/source/documents/ForwardedToken.java), `CrystallonTokens.forwarding`): Crystallon sieht diese Person, nicht eine Identität der Anwendung. Das Token, das Sie an `/api/documents/invoice` senden, muss daher außer der Audience und der Rolle dieser Anwendung (`gluonify-source`, `source:read`) auch die Audience `gluonify-crystallon` und die Rolle `gluonify:crystallon:render` tragen. Charm legt mehrere Audiences in ein Token (`audiences`, höchstens 8); da das Präfix `gluonify:` der Plattform vorbehalten ist, stellt es der Administrator aus:
+**3. Das Token und die Rolle.** Crystallon verlangt ein Charm-Token mit der Audience `gluonify-crystallon`; die Rolle **`gluonify:crystallon:render`** genügt zum Rendern und Validieren (`convert` und `templates` werden zum Erzeugen von Dokumenten nicht gebraucht). Die Vorlagen sind die der **Organisation**, die das Token trägt. Die Einstellung **`source.crystallon.token`** (Umgebungsvariable `SOURCE_CRYSTALLON_TOKEN`) wählt, **welches** Token Crystallon erhält. Sie benennt einen Modus; sie enthält nie ein Token:
+
+| `source.crystallon.token` | Crystallon sieht | Wählen, wenn |
+|---|---|---|
+| `forwarding` (Standard) | die **Person**, die diese Anwendung aufruft: deren Token wird unverändert weitergeleitet ([`ForwardedToken`](src/main/java/io/gluonify/source/documents/ForwardedToken.java), `CrystallonTokens.forwarding`) | Crystallon wissen muss, wer fragt (Rollen, Organisation). Ein Aufruf außerhalb einer Anfrage hat kein Token zum Weiterleiten |
+| `platform` | die **Anwendung**: ihr eigenes Token, das die Plattform für eine mit `"uses": ["crystallon"]` bereitgestellte Anwendung ausstellt (Charm-Token, Subject `app:<Name>`, Audience `gluonify-crystallon`, Rolle `gluonify:crystallon:render`) | der Aufruf im Namen der Anwendung erfolgt (ein Timer, ein Webhook, eine Nachrichtenwarteschlange) oder die Aufrufer kein Crystallon-Token haben. Nichts von Hand auszustellen |
+
+**Weiterleitung (Standard).** Das Token, das Sie an `/api/documents/invoice` senden, muss außer Audience und Rolle dieser Anwendung (`gluonify-source`, `source:read`) die Audience `gluonify-crystallon` und die Rolle `gluonify:crystallon:render` tragen. Charm legt mehrere Audiences in ein Token (`audiences`, höchstens 8); da das Präfix `gluonify:` der Plattform vorbehalten ist, stellt es der Administrator aus:
 
 ```bash
 curl -s -X POST "$CHARM_URL/v1/tokens" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \
   -d '{"sub":"ada","audiences":["gluonify-source","gluonify-crystallon"],"ttlSeconds":3600,"roles":["source:read","gluonify:crystallon:render"]}'
 ```
 
-**Ehrlich gesagt: Die Plattform stellt noch keine Dienst-Tokens („Anwendung an Dienst“) aus.** Ein Aufruf außerhalb einer Anfrage (ein Timer, ein Webhook) hat kein Token zum Weiterleiten, und Crystallon lehnt ihn ab (401). Sobald die Plattform solche Tokens liefert, ändert sich nur [`CrystallonClients`](src/main/java/io/gluonify/source/documents/CrystallonClients.java). Unter `mvn quarkus:dev` verlangt diese API kein Token, Crystallon aber schon: Setzen Sie `GLUONIFY_SERVICE_CRYSTALLON_URL` auf seine Adresse und senden Sie (oder fügen Sie in der Oberfläche ein) ein Charm-Token, das die obigen Bedingungen erfüllt; es wird unverändert weitergeleitet.
+**Plattform.** Nichts auszustellen: Das Token, das Sie senden, muss nur diese API öffnen (`source:read`). Mit `"uses": ["crystallon"]` lässt die Steuerungsebene (Higgs) von Charm das Token der Anwendung ausstellen, und der Agent des Knotens (Strange) schreibt es in die Datei `/run/gluonify-tokens/crystallon.token` (schreibgeschützt in der Sandbox der Instanz) und erneuert es vor Ablauf (standardmäßig 900 s). Die Plattform stellt die Variable `GLUONIFY_CRYSTALLON_TOKEN_FILE` mit diesem Pfad bereit (Einstellung `source.crystallon.token-file`). [`CrystallonClients`](src/main/java/io/gluonify/source/documents/CrystallonClients.java) liest die Datei **bei jedem Aufruf** neu: Eine Erneuerung braucht keinen Neustart. Zu wissen:
+
+- das Token der Anwendung trägt die Standardorganisation von Crystallon (`default`): Die Vorlage `Gluonify invoice` muss dort existieren;
+- ohne die Variable (die Anwendung ist nicht mit `"uses": ["crystallon"]` bereitgestellt, oder die Plattform stellt noch keine Anwendungstoken aus) **beendet `platform` die Anwendung beim Start** mit einer Meldung, die den Grund nennt, statt erst bei der ersten Anfrage zu scheitern;
+- lehnt Crystallon das Token der Anwendung ab, ist die Antwort ein 502 und kein 403: Der Aufrufer kann nichts daran ändern, das Deployment schon;
+- das veröffentlichte SDK (0.6.0) hat `CrystallonTokens.platform()` noch nicht (es steht in den SDK-Quellen, für eine spätere Version): `CrystallonClients.platform` tut dasselbe mit `CrystallonTokens.file(…)`. Ersetzen Sie es bei einem neueren SDK durch diesen Aufruf.
+
+Wo `SOURCE_CRYSTALLON_TOKEN=platform` gesetzt wird: in `"env"` bei `PUT /apps/<Name>` (Weg B in [§9](#9-deployen)); beim Builder (Weg A), der kein Feld `env` hat, im Tresor-Namensraum von `topNamespace` (die Schlüssel kommen ohne Präfix an). Unter `mvn quarkus:dev` verlangt diese API kein Token, Crystallon aber schon: Setzen Sie `GLUONIFY_SERVICE_CRYSTALLON_URL` auf dessen Adresse und senden Sie (oder fügen Sie in der Oberfläche ein) ein Charm-Token, das die obigen Bedingungen erfüllt und unverändert weitergeleitet wird, oder probieren Sie `platform` mit einem in eine Datei geschriebenen Charm-Token (`SOURCE_CRYSTALLON_TOKEN=platform` und `GLUONIFY_CRYSTALLON_TOKEN_FILE=<diese Datei>`).
 
 **4. Die Vorlage und der generierte Code.** Das Beispiel ruft die Crystallon-Vorlage namens **`Gluonify invoice`** auf: Legen Sie sie in der Konsole von Crystallon an (`/crystallon/` hinter dem Orchestrator; *Neue Vorlage*, *Ausgehen von* der vordefinierten Vorlage `invoice`, mit genau diesem Namen). Crystallon **generiert** dann **den Java-Code** einer Vorlage: Records, die genau die Daten beschreiben, die sie liest, und eine Klasse, die sie aufruft. Öffnen Sie die Vorlage und ihren Tab **Code** (er verlangt zuerst das Speichern: Der Code wird aus der gespeicherten Version erzeugt), setzen Sie *Java-Paket* auf `io.gluonify.source.documents.generated` und *Klassenname* auf `GluonifyInvoice`, lassen Sie *Diese Version festlegen* ausgeschaltet (der Code rendert dann die aktuelle Version der Vorlage), dann *Herunterladen (zip)* oder *Kopieren*. Die drei Dateien in [`documents/generated/`](src/main/java/io/gluonify/source/documents/generated) sind genau diese Ausgabe (nur ein Kopfkommentar wurde ergänzt), erzeugt aus Version 1 der Vorlage:
 
@@ -297,13 +313,13 @@ curl -s -X POST localhost:8080/api/documents/invoice -H "Authorization: Bearer $
 |---|---|
 | ungültige Anfrage (leere Nummer, keine Zeile, unbekanntes `lang`…) | 400; Crystallon wird nicht aufgerufen |
 | kein Token, oder ohne `source:read` | 401 / 403 |
-| Crystallon lehnt das Token ab (Audience oder Rolle `gluonify:crystallon:render` fehlt, abgelaufen) | 403, mit dem Grund |
+| Crystallon lehnt das Token ab (Audience oder Rolle `gluonify:crystallon:render` fehlt, abgelaufen) | `forwarding`: 403, mit dem Grund (das Token des Aufrufers genügt nicht); `platform`: 502 (das Token der Anwendung: der Aufrufer kann nichts daran ändern) |
 | die Vorlage kann diese Daten nicht rendern (Crystallon 400 / 422) | 422, mit `code` und `path` |
-| keine Vorlage dieses Namens für die Organisation des Tokens (Crystallon 404), Crystallon fehlerhaft (5XX), unerwartete Antwort, nicht erreichbar | 502 |
+| keine Vorlage dieses Namens für die Organisation des Tokens (Crystallon 404), Crystallon fehlerhaft (5XX), unerwartete Antwort, nicht erreichbar, unlesbare Token-Datei (`platform`) | 502 |
 | Crystallon zu langsam (30 s) | 504 |
 | Crystallon nicht konfiguriert | 404 |
 
-**In der Oberfläche**: Ein Button *Beispielrechnung herunterladen* im Abschnitt *Dokumente* (nur sichtbar, wenn `GET /api/platform` `"documents": true` meldet) sendet das eingefügte Token und eine Beispielrechnung. [`DocumentsResourceTest`](src/test/java/io/gluonify/source/documents/DocumentsResourceTest.java) prüft das alles gegen ein simuliertes Crystallon (ein `HttpServer` des JDK): den aufgerufenen Pfad (`/v1/templates/by-name/Gluonify%20invoice/render`), das weitergeleitete Token, die gesendeten Daten und jeden obigen Fehler.
+**In der Oberfläche**: Ein Button *Beispielrechnung herunterladen* im Abschnitt *Dokumente* (nur sichtbar, wenn `GET /api/platform` `"documents": true` meldet) sendet das eingefügte Token und eine Beispielrechnung; sein Hinweis nennt, welches Token Crystallon erhält (`GET /api/platform` antwortet `"documentsToken": "forwarding"` oder `"platform"`). [`DocumentsResourceTest`](src/test/java/io/gluonify/source/documents/DocumentsResourceTest.java) und [`DocumentsPlatformTokenTest`](src/test/java/io/gluonify/source/documents/DocumentsPlatformTokenTest.java) prüfen das alles gegen ein simuliertes Crystallon (ein `HttpServer` des JDK): den aufgerufenen Pfad (`/v1/templates/by-name/Gluonify%20invoice/render`), das weitergeleitete Token oder das der Token-Datei (nach einer Erneuerung neu gelesen), die gesendeten Daten und jeden obigen Fehler.
 
 ### Eine andere Anwendung aufrufen
 
@@ -317,7 +333,7 @@ Deklarieren Sie sie in `"uses"`: Die Plattform stellt `GLUONIFY_SERVICE_<APP>_UR
 ## 8. Bauen
 
 ```bash
-mvn test                       # Java-Tests (64)
+mvn test                       # Java-Tests (86)
 mvn package                    # JVM: target/quarkus-app/; baut auch die Oberfläche (Quinoa)
 ```
 
@@ -347,6 +363,8 @@ curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-
 
 Der Builder klont, prüft die Konformität, kompiliert nativ, veröffentlicht die ausführbare Datei und deployt sie. Verfolgen Sie ihn: `GET /v1/builds/<id>` und `/logs`. (Ein Git-Push kann den Build auch per Webhook auslösen: `POST /v1/webhooks/git`.) Hinweis: Der Builder kennt nur `topNamespace`, daher kommen die Tresor-Schlüssel damit ohne Präfix an.
 
+**Die Dienste, die der Builder deklariert.** Der Builder sendet `uses` und `gdownDatabase` an `PUT /apps/<Name>`, entnommen der Build-Anfrage (`"uses": ["charm","gdown","crystallon"]`) oder, wenn die Anfrage keine enthält, der [`gluonify.json`](gluonify.json) im Wurzelverzeichnis des Repositorys (die Anfrage hat Vorrang; eine leere Liste in der Anfrage heißt „kein Dienst“). Die Datei dieses Repositorys lautet `{"uses": ["charm", "gdown", "crystallon"]}`: dieselben Dienste wie [`deploy/appspec.json`](deploy/appspec.json), was `DeploySpecsTest` prüft. Das ist wichtig, weil `PUT /apps/<Name>` **die gesamte Spezifikation ersetzt**: Ein Build ohne `uses` würde die Anwendung ohne `GLUONIFY_SERVICE_*_URL`, ohne Netzwerk zu Charm, Gdown und Crystallon und ohne das Crystallon-Token der Anwendung bereitstellen (`source.crystallon.token=platform` würde sie dann beim Start beenden). Fügen Sie für die dedizierte Datenbank `"gdownDatabase": true` hinzu; ein vorangestelltes `?` (`"?crystallon"`) kennzeichnet einen optionalen Dienst. Deklarieren Sie `uses` immer in `gluonify.json` oder in der Build-Anfrage.
+
 **B. Sie veröffentlichen die ausführbare Datei** selbst und deployen dann:
 
 ```bash
@@ -363,7 +381,7 @@ Die Anwendung ist dann unter `https://gluonify-source.<zone>` erreichbar (automa
 | `artifacts` | die ausführbare Datei pro Architektur: `URL#sha256=…` (der Fingerabdruck ist **Pflicht**, vom Knoten geprüft) |
 | `replicas` | Anzahl der Instanzen (2 oder mehr: Updates ohne Unterbrechung) |
 | `memoryMb` | Speicherobergrenze pro Instanz (eine native Anwendung kommt mit 64 bis 128 MB aus) |
-| `uses` | erreichbare Dienste, nach Anwendungsname (`charm`, `gdown`, `crystallon`…): `GLUONIFY_SERVICE_<APP>_URL` bereitgestellt, Netzwerk geöffnet |
+| `uses` | erreichbare Dienste, nach Anwendungsname (`charm`, `gdown`, `crystallon`…): `GLUONIFY_SERVICE_<APP>_URL` bereitgestellt, Netzwerk geöffnet; für `crystallon` auch das Token der Anwendung (`GLUONIFY_CRYSTALLON_TOKEN_FILE`). Beim Builder: in `gluonify.json` oder in der Build-Anfrage |
 | `distributed` | `["std"]` für `/distributed/std` |
 | `env` | **nicht geheime** Variablen; `${NAME}` und `${NAME:-default}` werden aufgelöst |
 | `top` | `true`: Die Steuerungsebene weist der Anwendung ihren eigenen Tresor-Namensraum `<uuid>.app` zu, dessen Schlüssel als `APP_<SCHLÜSSEL>` ankommen |
@@ -376,8 +394,8 @@ Aktualisieren: dasselbe `PUT` (oder ein neuer Build); die Replikate werden **nac
 ## 10. Testen
 
 ```bash
-mvn test                                 # 64 Java-Tests
-cd src/main/webui && npm install && npm test   # 32 Oberflächentests
+mvn test                                 # 86 Java-Tests
+cd src/main/webui && npm install && npm test   # 33 Oberflächentests
 ```
 
 | Test | Anzahl | Was er prüft |
@@ -390,11 +408,12 @@ cd src/main/webui && npm install && npm test   # 32 Oberflächentests
 | `ConformityTest` | 4 | die Normen des Builders, bei Ihnen |
 | `EventLedgerTest` | 4 | Idempotenz-Register: genau ein Gewinner pro Ereignis (Speicher, Dateien mit zwei Replikaten, Eindeutigkeitsbedingung des Graphen, Graph-Fehler außer einem Duplikat weitergegeben) |
 | `DocumentsResourceTest` | 13 | gegen ein **simuliertes Crystallon**: PDF zurückgegeben, aufgerufener Pfad (`/v1/templates/by-name/Gluonify%20invoice/render`), **weitergeleitetes Token**, gesendete Daten, Abbildung von 422 / 403 / 502, eigene Validierung (400), Rollen, OpenAPI |
-| `DocumentsDisabledTest` | 3 | Crystallon nicht konfiguriert: 404 mit dem Grund, `"documents": false`, der Rest unberührt |
-| `CrystallonClientsTest` | 3 | keine Adresse = kein Client, eine falsche Adresse benannt, das Token bei jedem Aufruf angefragt |
-| `InvoiceMappingTest` / `DocumentErrorsTest` / `ForwardedTokenTest` | 3 + 5 + 1 | Ihre Rechnung → die Daten der Vorlage (Beträge, Standardwerte, sicherer Dateiname); jeder Fehler von Crystallon → ein Status; welche Header ein Token liefern |
+| `DocumentsDisabledTest` | 4 | Crystallon nicht konfiguriert: 404 mit dem Grund, `"documents": false`, der Rest unberührt, Token-Einstellungen standardmäßig leer |
+| `DocumentsPlatformTokenTest` | 8 | `source.crystallon.token=platform` gegen das simulierte Crystallon: Das **Token der Anwendung** (nicht das des Aufrufers) wird gesendet, auch außerhalb einer Anfrage, die Datei wird **nach einer Erneuerung neu gelesen**, eine Ablehnung ergibt ein 502, `"documentsToken"` |
+| `CrystallonClientsTest` | 11 | keine Adresse = kein Client, eine falsche Adresse benannt, das Token des Aufrufers bei jedem Aufruf angefragt; die beiden Modi: unbekannter Modus (Wert nie wiederholt), `platform` ohne seine Datei, Token der Datei neu gelesen, bei `forwarding` ignoriert |
+| `InvoiceMappingTest` / `DocumentErrorsTest` / `ForwardedTokenTest` | 3 + 9 + 1 | Ihre Rechnung → die Daten der Vorlage (Beträge, Standardwerte, sicherer Dateiname); jeder Fehler von Crystallon → ein Status, in jedem Token-Modus; welche Header ein Token liefern |
 | `DocumentsReflectionTest` | 1 | Schutz für Native: jeder Record der generierten Daten ist für die Reflection registriert |
-| `DeploySpecsTest` | 1 | die Spezifikationen in `deploy/` verwenden die aktuellen Namen (`uses`, `SOURCE_STORE`) |
+| `DeploySpecsTest` | 2 | die Spezifikationen in `deploy/` verwenden die aktuellen Namen (`uses`, `SOURCE_STORE`); `gluonify.json` (vom Builder gelesen) deklariert dasselbe `uses` wie `deploy/appspec.json` |
 
 Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNoteStoreTest` (ohne Quarkus zu starten: schnell).
 
@@ -406,6 +425,7 @@ Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNot
 - **Verteilte Dateien**: siehe die Regeln in [§7](#verteilte-dateien-sourcestorefiles) (niemals neu schreiben, ~3 s Verzögerung).
 - **Webhooks**: schnell mit 2XX antworten, idempotent sein, mit einem Schlüssel schützen.
 - **Generierter Code**: Die Dateien in `documents/generated/` stammen aus dem Tab *Code* von Crystallon: neu generieren, niemals von Hand ändern; und jeden Record eines generierten Payloads in `DocumentsReflection` eintragen (ein Fehler, der nur in Native auftritt).
+- **Namen, die nach Geheimnissen aussehen**: Die Regel R-SECRET des Builders weist einen Klartextwert bei einer Einstellung zurück, deren Name `token`, `password`, `secret` oder `key` enthält. `source.crystallon.token` enthält einen Modus, kein Token, und wird dennoch `${SOURCE_CRYSTALLON_TOKEN:}` geschrieben; heute akzeptiert der Builder dort `${VARIABLE}` und `${VARIABLE:}` (leerer Standardwert), **nicht** `${VARIABLE:forwarding}`: Der Standardwert steht im Code (`TokenMode`). `ConformityTest` ist hier nachsichtiger als der Builder (er akzeptiert jedes `${…}`): Lassen Sie den Standardwert leer.
 - **Eine Entwicklungsidentität hat in der Produktion nichts verloren**: Behalten Sie `@IfBuildProfile("dev")`.
 - **Quinoa und die API-Adressen**: Tragen Sie jedes neue API-Präfix in `quarkus.quinoa.ignored-path-prefixes` ein.
 - **Unter x86_64-Emulation** (Docker auf Apple Silicon): Bauen Sie mit `--build-arg MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=VFORK`.
@@ -424,8 +444,10 @@ Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNot
 | `mvn package` findet Node nicht | Netzwerkzugriff zum Herunterladen, oder `-Dquarkus.quinoa=false`, um ohne Oberfläche zu bauen |
 | Die native Anwendung stürzt beim Start ab, in der JVM aber nicht | ein zur Kompilierzeit eingefrorener Zustand (`static`) oder fehlende Reflexion (§11) |
 | `POST /api/documents/invoice`: 404 „documents are off“ | die Anwendung ist nicht mit `"uses": ["crystallon"]` deployt (kein `GLUONIFY_SERVICE_CRYSTALLON_URL`) |
-| Dokumente: 403 „Crystallon did not accept your token“ | dem Token fehlt die Audience `gluonify-crystallon` oder die Rolle `gluonify:crystallon:render`, oder es ist abgelaufen (siehe [§7](#dokumente-crystallon)) |
-| Dokumente: 502 „does not know the template“ | keine Vorlage namens `Gluonify invoice` in der Organisation des Tokens: In der Konsole von Crystallon anlegen |
+| Dokumente: 403 „Crystallon did not accept your token“ | Modus `forwarding`: dem Token fehlt die Audience `gluonify-crystallon` oder die Rolle `gluonify:crystallon:render`, oder es ist abgelaufen (siehe [§7](#dokumente-crystallon)); oder wählen Sie `source.crystallon.token=platform` |
+| Dokumente: 502 „did not accept the token of the application“ | Modus `platform`: Die Anwendung ist nicht mit `"uses": ["crystallon"]` bereitgestellt, die Plattform stellt noch keine Anwendungstoken aus, oder `GLUONIFY_CRYSTALLON_TOKEN_FILE` fehlt, ist leer oder veraltet |
+| Die Anwendung startet nicht: „source.crystallon.token=platform needs the file of the application token“ | `platform` ohne `GLUONIFY_CRYSTALLON_TOKEN_FILE`: Deklarieren Sie `"uses": ["crystallon"]` (auch in `gluonify.json` für einen Build durch den Builder) oder nutzen Sie `forwarding` |
+| Dokumente: 502 „does not know the template“ | keine Vorlage namens `Gluonify invoice` in der Organisation des Tokens (`platform`: die Standardorganisation von Crystallon): In der Konsole von Crystallon anlegen |
 | Dokumente: 422 mit `code` und `path` | die Vorlage kann diese Daten nicht rendern: `path` ist die Stelle des Problems in der Vorlage |
 | Die Dokumente funktionieren auf der JVM, scheitern aber beim ersten Aufruf in der nativen Datei | ein Record der generierten Daten fehlt in `DocumentsReflection` |
 

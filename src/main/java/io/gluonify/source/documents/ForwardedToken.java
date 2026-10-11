@@ -8,13 +8,14 @@ import jakarta.inject.Inject;
 import java.util.function.Supplier;
 
 /**
- * The bearer token of the request being served, handed to the Crystallon client ({@code CrystallonTokens.forwarding}): Crystallon sees the person who called this
- * application, with the audience and the roles of THEIR token, not an identity of the application.
+ * The bearer token of the request being served, handed to the Crystallon client ({@code CrystallonTokens.forwarding}) when {@code source.crystallon.token} is
+ * {@code forwarding} (the default, see {@link TokenMode}): Crystallon sees the person who called this application, with the audience and the roles of THEIR token, not an
+ * identity of the application.
  *
- * <p>Honestly: the platform does not issue "application to service" tokens yet. Until it does, the caller's token must itself carry the audience {@code gluonify-crystallon}
- * and the role {@code gluonify:crystallon:render} (Charm can put several audiences in one token), and a call made outside a request (a timer, a webhook...) has no token and is
- * refused by Crystallon with a 401. The token is read from the {@code Authorization} header, so it works the same under {@code mvn quarkus:dev}, in tests and in production.
- * It is never logged and never copied anywhere else.
+ * <p>The caller's token must itself carry the audience {@code gluonify-crystallon} and the role {@code gluonify:crystallon:render} (Charm can put several audiences in one
+ * token), and a call made outside a request (a timer, a webhook...) has no token to forward, so Crystallon refuses it with a 401. For those calls, and when the callers have no
+ * Crystallon token, use {@code source.crystallon.token=platform}: the application's own token, provided by the platform. The token is read from the {@code Authorization}
+ * header, so it works the same under {@code mvn quarkus:dev}, in tests and in production. It is never logged and never copied anywhere else.
  */
 @ApplicationScoped
 public class ForwardedToken implements Supplier<String> {

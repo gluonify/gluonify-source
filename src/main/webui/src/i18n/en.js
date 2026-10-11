@@ -29,6 +29,7 @@ export default {
   errForbiddenWrite: 'The {role} role is required to create a note.',
   documentsTitle: 'Documents',
   documentsHint: 'Generates a PDF invoice with Crystallon from sample data. Your Charm token is forwarded to Crystallon: it must carry the audience {audience} and the role {role}.',
+  documentsHintPlatform: "Generates a PDF invoice with Crystallon from sample data. Crystallon is called with the application's own token, provided by the platform: your token only has to open this API.",
   documentsDownload: 'Download sample invoice',
   documentsWorking: 'Generating the PDF…',
   platformTitle: 'What the platform provides',

@@ -2,6 +2,7 @@ package io.gluonify.source.platform;
 
 import io.gluonify.plasma.crystallon.client.CrystallonClient;
 import io.gluonify.source.SourceConfig;
+import io.gluonify.source.documents.TokenMode;
 import io.gluonify.source.notes.NoteStore;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -69,6 +70,7 @@ public class PlatformResource {
         out.put("webhooks", webhooks.counters());
         out.put("webhookOpen", config.webhook().key().filter(k -> !k.isBlank()).isPresent());
         out.put("documents", crystallon.isPresent());
+        out.put("documentsToken", crystallon.isPresent() ? TokenMode.of(config.crystallon().token()).id() : ""); // which token Crystallon receives; a mode, never a token
         return out;
     }
 

@@ -29,6 +29,7 @@ export default {
   errForbiddenWrite: 'Se necesita el rol {role} para crear una nota.',
   documentsTitle: 'Documentos',
   documentsHint: 'Genera una factura en PDF con Crystallon a partir de datos de ejemplo. Su token de Charm se transmite a Crystallon: debe llevar la audiencia {audience} y el rol {role}.',
+  documentsHintPlatform: 'Genera una factura en PDF con Crystallon a partir de datos de ejemplo. Crystallon se llama con el token propio de la aplicación, proporcionado por la plataforma: su token solo debe abrir esta API.',
   documentsDownload: 'Descargar una factura de ejemplo',
   documentsWorking: 'Generando el PDF…',
   platformTitle: 'Lo que ofrece la plataforma',

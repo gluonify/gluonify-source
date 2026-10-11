@@ -171,7 +171,7 @@ class DocumentsResourceTest {
     @Test
     @TestSecurity(user = "ada", roles = {"source:read"})
     void platformInfoSaysDocumentsAreOn() {
-        given().when().get("/api/platform").then().statusCode(200).body("documents", is(true));
+        given().when().get("/api/platform").then().statusCode(200).body("documents", is(true)).body("documentsToken", is("forwarding"));
     }
 
     @Test
