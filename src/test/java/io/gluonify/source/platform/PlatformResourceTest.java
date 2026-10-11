@@ -20,7 +20,7 @@ class PlatformResourceTest {
     @Test
     @TestSecurity(user = "ada", roles = {"source:read"})
     void forme() {
-        given().when().get("/api/platform").then().statusCode(200).body("store", is("memory")).body("storeReady", is(true)).body("webhookOpen", is(false)).body("documents", is(false)).body("documentsToken", is(""))
+        given().when().get("/api/platform").then().statusCode(200).body("store", is("memory")).body("storeReady", is(true)).body("webhookOpen", is(false)).body("documents", is(false))
                 .body("webhooks.accepted", is(0)).body("webhooks.duplicates", is(0));
     }
 

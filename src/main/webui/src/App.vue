@@ -66,7 +66,7 @@ function saveFile(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
-// The sample invoice: POST /api/documents/invoice (the API forwards the token to Crystallon, or uses the application's own token: platform.documentsToken says which).
+// The sample invoice: POST /api/documents/invoice (the API calls Crystallon with the application's own token; the token pasted here only has to open this API).
 // A 403 without a message is the API's own role check; with a message it is Crystallon's refusal, shown as received like every API message.
 async function downloadInvoice() {
   error.value = null
@@ -136,7 +136,7 @@ onMounted(refresh)
 
     <section v-if="platform && platform.documents">
       <h2>{{ t('documentsTitle') }}</h2>
-      <p class="hint">{{ t(platform.documentsToken === 'platform' ? 'documentsHintPlatform' : 'documentsHint', { audience: 'gluonify-crystallon', role: 'gluonify:crystallon:render' }) }}</p>
+      <p class="hint">{{ t('documentsHint') }}</p>
       <button type="button" :disabled="documentWorking" @click="downloadInvoice">{{ documentWorking ? t('documentsWorking') : t('documentsDownload') }}</button>
     </section>
 

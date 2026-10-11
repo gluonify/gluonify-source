@@ -4,30 +4,14 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import io.gluonify.source.SourceConfig;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.http.ContentType;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-/** Crystallon NOT configured (the default: no "uses": ["crystallon"]): the application starts and works, the documents endpoint is off (404 with the reason). */
+/** Crystallon NOT available (no fake services, no cluster known: the pom points GLUONIFY_HOME at an empty folder; on the platform: no "uses": ["crystallon"]): the application starts and works, the documents endpoint is off (404 with the reason). */
 @QuarkusTest
 class DocumentsDisabledTest {
-    @Inject
-    SourceConfig config;
-
-    @Test
-    void theTokenSettingsHaveSafeDefaults() {
-        // application.properties writes both as ${ENVIRONMENT_VARIABLE:} (empty): no value, and the mode then is the caller's token
-        assertTrue(config.crystallon().token().isEmpty());
-        assertTrue(config.crystallon().tokenFile().isEmpty());
-        assertEquals(TokenMode.FORWARDING, TokenMode.of(config.crystallon().token()));
-    }
-
     @Test
     @TestSecurity(user = "ada", roles = {"source:read"})
     void theEndpointIsOffWithAClearReason() {
@@ -38,7 +22,7 @@ class DocumentsDisabledTest {
     @Test
     @TestSecurity(user = "ada", roles = {"source:read"})
     void platformInfoSaysDocumentsAreOff() {
-        given().when().get("/api/platform").then().statusCode(200).body("documents", is(false)).body("documentsToken", is(""));
+        given().when().get("/api/platform").then().statusCode(200).body("documents", is(false));
     }
 
     @Test

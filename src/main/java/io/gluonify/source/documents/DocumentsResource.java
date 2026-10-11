@@ -3,7 +3,7 @@ package io.gluonify.source.documents;
 import io.gluonify.plasma.crystallon.client.CrystallonClient;
 import io.gluonify.plasma.crystallon.client.CrystallonException;
 import io.gluonify.plasma.crystallon.client.RenderedPdf;
-import io.gluonify.source.SourceConfig;
+import io.gluonify.plasma.services.GluonifyServicesException;
 import io.gluonify.source.documents.generated.GluonifyInvoiceDocument;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -31,9 +31,10 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
  * <ul>
  *   <li>the request is the application's own {@link InvoiceRequest}; {@link InvoiceMapping} turns it into the generated payload and the generated
  *       {@link GluonifyInvoiceDocument} calls the template by name: no JSON and no HTTP here;</li>
- *   <li>without {@code source.crystallon.url} (application not deployed with {@code "uses": ["crystallon"]}) the endpoint answers 404 and nothing else is affected;</li>
- *   <li>Crystallon is called with the caller's own token ({@link ForwardedToken}, the default) or with the application's own token provided by the platform
- *       ({@code source.crystallon.token=platform}, see {@link TokenMode}); a {@link CrystallonException} becomes a clean 4XX/5XX ({@link DocumentErrors}).</li>
+ *   <li>no configuration: the client comes from {@code gluonify-plasma-quarkus}; when Crystallon is not available (application not deployed with {@code "uses": ["crystallon"]}) the endpoint answers 404
+ *       and nothing else is affected ({@link Documents});</li>
+ *   <li>Crystallon is called with the application's own token, which the platform provides and renews; a {@link CrystallonException} becomes a clean 4XX/5XX ({@link DocumentErrors}).
+ *       To call it as the person who calls this application, see the README (Documents, "Forwarding the caller's token").</li>
  * </ul>
  */
 @Path("/api/documents")
@@ -42,9 +43,7 @@ public class DocumentsResource {
     private static final Logger LOG = Logger.getLogger(DocumentsResource.class);
 
     @Inject
-    Optional<CrystallonClient> crystallon; // empty when Crystallon is not configured
-    @Inject
-    SourceConfig config;
+    Documents documents;
 
     @POST
     @Path("invoice")
@@ -52,18 +51,18 @@ public class DocumentsResource {
     // JSON first: with the default "Accept: */*" an error (validation, 404...) must be JSON, not typed as a PDF. The PDF answer sets its own type.
     @Produces({MediaType.APPLICATION_JSON, "application/pdf"})
     @RolesAllowed("source:read")
-    @Operation(summary = "Renders an invoice as a PDF (PDF/A-1B) with Crystallon; by default your token is forwarded to Crystallon (audience gluonify-crystallon, role gluonify:crystallon:render), "
-            + "with source.crystallon.token=platform the application's own token is used instead")
+    @Operation(summary = "Renders an invoice as a PDF (PDF/A-1B) with Crystallon; Crystallon is called with the application's own token "
+            + "(role gluonify:crystallon:render), provided by the platform")
     @APIResponse(responseCode = "200", description = "The invoice, PDF/A-1B", content = @Content(mediaType = "application/pdf", schema = @Schema(type = SchemaType.STRING, format = "binary")))
-    @APIResponse(responseCode = "403", description = "Crystallon did not accept your token (forwarded token mode)")
     @APIResponse(responseCode = "404", description = "Documents are off: the application is not deployed with \"uses\": [\"crystallon\"]")
     @APIResponse(responseCode = "422", description = "The template cannot render these data (Crystallon's message, code and path)")
-    @APIResponse(responseCode = "502", description = "Crystallon is unreachable or failed, or did not accept the application's own token (platform token mode)")
+    @APIResponse(responseCode = "502", description = "Crystallon is unreachable or failed, or did not accept the application's own token")
     public Response invoice(@Valid InvoiceRequest in) {
-        if (crystallon.isEmpty()) {
-            return Response.status(404).type(MediaType.APPLICATION_JSON).entity(Map.of("error", "documents are off: deploy the application with \"uses\": [\"crystallon\"] (source.crystallon.url is empty)")).build();
+        Optional<CrystallonClient> client = documents.client();
+        if (client.isEmpty()) {
+            return Response.status(404).type(MediaType.APPLICATION_JSON).entity(Map.of("error", "documents are off: Crystallon is not available; deploy the application with \"uses\": [\"crystallon\"] (or run gluonify login <zone> on your machine)")).build();
         }
-        RenderedPdf pdf = new GluonifyInvoiceDocument(crystallon.get()).render(InvoiceMapping.payload(in, LocalDate.now()), InvoiceMapping.options(in));
+        RenderedPdf pdf = new GluonifyInvoiceDocument(client.get()).render(InvoiceMapping.payload(in, LocalDate.now()), InvoiceMapping.options(in));
         return Response.ok(pdf.bytes(), "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"" + InvoiceMapping.fileName(in) + "\"")
                 .header("X-Crystallon-Pages", pdf.pages())
@@ -75,6 +74,13 @@ public class DocumentsResource {
     @ServerExceptionMapper
     public Response crystallonFailed(CrystallonException e) {
         LOG.warnf("Crystallon call failed: status=%d code=%s path=%s: %s", e.status(), e.code(), e.path(), e.getMessage());
-        return DocumentErrors.toResponse(e, TokenMode.of(config.crystallon().token()));
+        return DocumentErrors.toResponse(e);
+    }
+
+    /** Crystallon is available but the SDK cannot get a token or an address (expired developer session...): the message of the SDK says what to do and never holds a token. */
+    @ServerExceptionMapper
+    public Response servicesFailed(GluonifyServicesException e) {
+        LOG.warnf("Gluonify services: %s", e.getMessage());
+        return Response.status(502).type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.getMessage())).build();
     }
 }

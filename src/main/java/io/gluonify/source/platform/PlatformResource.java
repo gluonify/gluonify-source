@@ -1,8 +1,8 @@
 package io.gluonify.source.platform;
 
-import io.gluonify.plasma.crystallon.client.CrystallonClient;
+import io.gluonify.plasma.services.GluonifyServicesException;
 import io.gluonify.source.SourceConfig;
-import io.gluonify.source.documents.TokenMode;
+import io.gluonify.source.documents.Documents;
 import io.gluonify.source.notes.NoteStore;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -45,7 +45,7 @@ public class PlatformResource {
     @Inject
     WebhookResource webhooks;
     @Inject
-    Optional<CrystallonClient> crystallon; // empty when Crystallon is not configured (documents feature off)
+    Documents documents; // is Crystallon available? (documents feature)
 
     /** The environment variables: replaceable in tests. */
     Supplier<Map<String, String>> env = System::getenv;
@@ -69,8 +69,13 @@ public class PlatformResource {
         out.put("storeReady", store.ready());
         out.put("webhooks", webhooks.counters());
         out.put("webhookOpen", config.webhook().key().filter(k -> !k.isBlank()).isPresent());
-        out.put("documents", crystallon.isPresent());
-        out.put("documentsToken", crystallon.isPresent() ? TokenMode.of(config.crystallon().token()).id() : ""); // which token Crystallon receives; a mode, never a token
+        boolean documentsOn;
+        try {
+            documentsOn = documents.enabled();
+        } catch (GluonifyServicesException ex) {
+            documentsOn = false; // e.g. the cluster of your machine is not reachable: this endpoint must still answer
+        }
+        out.put("documents", documentsOn);
         return out;
     }
 

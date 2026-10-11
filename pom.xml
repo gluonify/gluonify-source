@@ -16,8 +16,10 @@
     <quarkus.platform.version>4.0.0.Beta1</quarkus.platform.version>
     <quinoa.version>2.9.2</quinoa.version>
     <surefire.version>3.5.2</surefire.version>
-    <!-- Gluonify SDK (Crystallon client). The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation). -->
-    <gluonify.sdk.version>0.6.0</gluonify.sdk.version>
+    <!-- Gluonify SDK. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
+         gluonify-plasma-quarkus and gluonify-plasma-testing are not in a published release yet (0.6.0 has the Crystallon client only): until the next one, install the
+         SDK sources with "mvn install" in gluonify-plasma (0.1.0-SNAPSHOT), then set this to the release number. -->
+    <gluonify.sdk.version>0.1.0-SNAPSHOT</gluonify.sdk.version>
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
     <gluonify.sea.maven.url>https://images.gluonify.io/maven</gluonify.sea.maven.url>
@@ -60,9 +62,12 @@
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-micrometer-registry-prometheus</artifactId></dependency>
     <!-- Web UI: Quinoa builds and serves the Vue project in src/main/webui -->
     <dependency><groupId>io.quarkiverse.quinoa</groupId><artifactId>quarkus-quinoa</artifactId><version>${quinoa.version}</version></dependency>
-    <!-- PDF documents: the Crystallon client of the Gluonify SDK (Java 17, no CDI; it uses the Jackson of the application, here Jackson 3). Optional at run time: see io.gluonify.source.documents -->
-    <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-crystallon-client</artifactId><version>${gluonify.sdk.version}</version></dependency>
+    <!-- Gluonify SDK, zero configuration: default CDI beans for the services (CrystallonClient, with the address and the token found by the SDK: platform, "gluonify login", fake services in tests);
+         brings gluonify-plasma-services and gluonify-plasma-crystallon-client. Crystallon stays optional at run time: see io.gluonify.source.documents -->
+    <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-quarkus</artifactId><version>${gluonify.sdk.version}</version></dependency>
 
+    <!-- Fake Gluonify services for tests (GluonifyTestServices.start() / close()): a fake Crystallon, nothing to configure -->
+    <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-testing</artifactId><version>${gluonify.sdk.version}</version><scope>test</scope></dependency>
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-junit</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-test-security</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><scope>test</scope></dependency>
@@ -90,6 +95,10 @@
             <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
             <maven.home>${maven.home}</maven.home>
           </systemPropertyVariables>
+          <environmentVariables>
+            <!-- Tests never depend on the machine: no cluster known (an empty folder instead of ~/.gluonify), so Crystallon is available only when a test starts the fake services -->
+            <GLUONIFY_HOME>${project.build.directory}/gluonify-home</GLUONIFY_HOME>
+          </environmentVariables>
         </configuration>
       </plugin>
     </plugins>

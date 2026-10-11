@@ -189,8 +189,7 @@ describe('documents (Crystallon)', () => {
     const w = mount(App)
     await flushPromises()
     expect(w.findAll('h2').map((h) => h.text())).toContain('Documents')
-    expect(w.text()).toContain('gluonify-crystallon')
-    expect(w.text()).toContain('gluonify:crystallon:render')
+    expect(w.text()).toContain('Crystallon')
     await button(w).trigger('click')
     await flushPromises()
     const post = globalThis.fetch.mock.calls.find(([p, i]) => p === '/api/documents/invoice' && i.method === 'POST')
@@ -239,24 +238,6 @@ describe('documents (Crystallon)', () => {
     expect(button(w).attributes('disabled')).toBeUndefined()
   })
 
-  it('says which token Crystallon receives: the hint changes when the application uses its own token (platform)', async () => {
-    const own = { ...on, documentsToken: 'platform' }
-    for (const [code, m] of [['en', en], ['fr', fr], ['es', es], ['it', it_], ['de', de]]) {
-      for (const [mode, key] of [['forwarding', 'documentsHint'], ['platform', 'documentsHintPlatform']]) {
-        mockApi({ 'GET /api/notes': { status: 200, body: [] }, 'GET /api/platform': { status: 200, body: { ...own, documentsToken: mode } } })
-        setLanguage(code)
-        const w = mount(App)
-        await flushPromises()
-        const section = w.findAll('section').find((s) => s.find('h2').text() === m.documentsTitle)
-        expect(section.find('.hint').text(), `${code} ${mode}`).toBe(m[key].replace('{audience}', 'gluonify-crystallon').replace('{role}', 'gluonify:crystallon:render'))
-        w.unmount()
-      }
-    }
-    expect(en.documentsHintPlatform).not.toContain('forwarded')
-    expect(en.documentsHintPlatform).toContain('own token')
-    setLanguage('en')
-  })
-
   it.each([['en', en], ['fr', fr], ['es', es], ['it', it_], ['de', de]])('%s: title, hint and button are translated', async (code, m) => {
     mockApi(notes)
     setLanguage(code)
@@ -264,7 +245,7 @@ describe('documents (Crystallon)', () => {
     await flushPromises()
     const section = w.findAll('section').find((s) => s.find('h2').text() === m.documentsTitle)
     expect(section).toBeDefined()
-    expect(section.find('.hint').text()).toBe(m.documentsHint.replace('{audience}', 'gluonify-crystallon').replace('{role}', 'gluonify:crystallon:render'))
+    expect(section.find('.hint').text()).toBe(m.documentsHint)
     expect(section.find('button').text()).toBe(m.documentsDownload)
     setLanguage('en')
   })

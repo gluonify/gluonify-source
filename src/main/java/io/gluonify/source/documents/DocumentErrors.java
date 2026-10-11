@@ -14,11 +14,10 @@ import java.util.Map;
  *
  * <table>
  *   <caption>Mapping</caption>
- *   <tr><td>Crystallon 401 or 403 (token missing, expired, wrong audience, no {@code render} role), token of the caller ({@link TokenMode#FORWARDING})</td><td>403: the caller's token is not enough for Crystallon</td></tr>
- *   <tr><td>the same, token of the application ({@link TokenMode#PLATFORM})</td><td>502: the caller cannot fix it, the deployment of the application can</td></tr>
+ *   <tr><td>Crystallon 401 or 403 (the application's token is missing, expired, or has no {@code render} role)</td><td>502: the caller cannot fix it, the deployment of the application can</td></tr>
  *   <tr><td>400 or 422 (the data cannot be rendered by the template)</td><td>422 with Crystallon's message, {@code code} and {@code path}</td></tr>
  *   <tr><td>404 (no such template in the organization of the token), other 4XX, 5XX, a 2XX that is not a PDF</td><td>502: the problem is on the Crystallon side</td></tr>
- *   <tr><td>the token file of the application cannot be read ({@link TokenMode#PLATFORM})</td><td>502</td></tr>
+ *   <tr><td>the token of the application cannot be obtained (token file unreadable, developer session expired)</td><td>502</td></tr>
  *   <tr><td>no answer: unreachable</td><td>502</td></tr>
  *   <tr><td>no answer: too slow</td><td>504</td></tr>
  * </table>
@@ -26,33 +25,25 @@ import java.util.Map;
 public final class DocumentErrors {
     private DocumentErrors() {}
 
-    /** With the default token mode ({@link TokenMode#FORWARDING}). */
+    /** @param e the failed call; the token it used is the application's own (a refusal is a deployment problem, not the caller's) */
     public static Response toResponse(CrystallonException e) {
-        return toResponse(e, TokenMode.FORWARDING);
-    }
-
-    /** @param mode where the token of the failed call came from: it decides what a refusal means and who can fix it */
-    public static Response toResponse(CrystallonException e, TokenMode mode) {
         int status = e.status();
-        boolean platform = mode == TokenMode.PLATFORM;
         if (status == 401 || status == 403) {
-            return platform
-                    ? error(502, "Crystallon did not accept the token of the application (HTTP " + status + "): deploy the application with \"uses\": [\"crystallon\"] so that the platform issues one "
-                            + "(audience gluonify-crystallon, role gluonify:crystallon:render), and check that GLUONIFY_CRYSTALLON_TOKEN_FILE holds a current token", null, null)
-                    : error(403, "Crystallon did not accept your token (HTTP " + status + "): it must carry the audience gluonify-crystallon and the role gluonify:crystallon:render", null, null);
+            return error(502, "Crystallon did not accept the token of the application (HTTP " + status + "): deploy the application with \"uses\": [\"crystallon\"] so that the platform issues one "
+                    + "(audience gluonify-crystallon, role gluonify:crystallon:render); on your machine, run gluonify login <zone>", null, null);
         }
         if (status == 400 || status == 422) {
             return error(422, e.getMessage(), e.code(), e.path());
         }
         if (status == 404) {
             return error(502, "Crystallon does not know the template \"" + GluonifyInvoiceDocument.TEMPLATE_NAME
-                    + "\" for " + (platform ? "the organization of the application's token (default)" : "your organization") + ": create it in Crystallon's console (README, Documents)", e.code(), null);
+                    + "\" for the organization of the application's token (default): create it in Crystallon's console (README, Documents)", e.code(), null);
         }
         if (status / 100 == 2) {
             return error(502, "Crystallon answered something that is not a PDF", null, null); // an HTTP proxy page, for instance
         }
-        if (status == 0 && platform && e.getMessage() != null && e.getMessage().contains("token file")) {
-            return error(502, "The token file of the application cannot be read (GLUONIFY_CRYSTALLON_TOKEN_FILE): check that the platform provides it to this instance", null, null);
+        if (status == 0 && e.getMessage() != null && e.getMessage().toLowerCase(java.util.Locale.ROOT).contains("token")) {
+            return error(502, "The token of the application cannot be obtained (" + e.getMessage() + "): check that the platform provides it to this instance", null, null);
         }
         if (status == 0) {
             return e.getCause() instanceof HttpTimeoutException ? error(504, "Crystallon did not answer in time", null, null) : error(502, "Crystallon is unreachable", null, null);
