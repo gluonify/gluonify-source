@@ -2,6 +2,7 @@ package io.gluonify.source;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -23,6 +24,8 @@ class DeploySpecsTest {
     private static final Set<String> STORES = Set.of("memory", "files", "gdown");
     private static final Set<String> OLD_NAMES = Set.of("id", "graphdb", "vault", "graph", "paas");
     /** The fields of gluonify.json that Bup (gluonify-bup) reads. */
+    /** The services the SDK modules of this application carry a marker for: Bup infers them at build time, gluonify.json does not repeat them. */
+    private static final Set<String> INFERRED = Set.of("crystallon");
     private static final Set<String> BUP_FIELDS = Set.of("framework", "port", "health", "healthPath", "portEnv", "sleep", "wakeTest", "archive", "uses", "gdownDatabase");
 
     private static List<Path> specs() throws IOException {
@@ -53,14 +56,16 @@ class DeploySpecsTest {
 
     /**
      * {@code gluonify.json} is what Gluonify's builder (Bup) reads at the root of the repository when it deploys after a build: it forwards {@code uses} and {@code gdownDatabase} to
-     * {@code PUT /apps/<name>}, which REPLACES the whole spec. A build that deployed without them would take {@code charm}, {@code gdown} and {@code crystallon} (and the application
-     * token for Crystallon) away from the application. So its {@code uses} must say the same thing as {@code deploy/appspec.json}, the example of the other deployment path
-     * ({@code gdownDatabase} is the choice of whoever switches to the dedicated database: {@code deploy/appspec-graph.json}).
+     * {@code PUT /apps/<name>}, which REPLACES the whole spec. Since SDK 0.7.1, Bup also infers {@code uses} from the markers of the SDK modules on the runtime classpath
+     * ({@code META-INF/gluonify/services/<service>}): {@code crystallon} comes from {@code gluonify-plasma-crystallon-client} and is added as {@code ?crystallon}. So
+     * {@code gluonify.json} only declares what the SDK cannot detect ({@code charm}: tokens verified by {@code quarkus-oidc}; {@code gdown}: Cypher over HTTP), and the declared plus the
+     * inferred services say the same thing as {@code deploy/appspec.json}, the example of the other deployment path (no build, hence no inference: everything is written there).
+     * ({@code gdownDatabase} is the choice of whoever switches to the dedicated database: {@code deploy/appspec-graph.json}.)
      */
     @Test
-    void gluonifyJsonDeclaresTheSameServicesAsTheApplicationSpecForTheBuilder() throws IOException {
+    void gluonifyJsonDeclaresWhatTheSdkCannotDetectAndBupInfersTheRest() throws IOException {
         Path file = Path.of("gluonify.json");
-        assertTrue(Files.isRegularFile(file), "gluonify.json at the root: without it, a deployment by the builder declares no service");
+        assertTrue(Files.isRegularFile(file), "gluonify.json at the root: without it, a deployment by the builder declares neither charm nor gdown (only the inferred ?crystallon)");
         assertTrue(Files.size(file) <= 16384, "the builder refuses a gluonify.json above 16 KB");
         JsonNode descriptor = JSON.readTree(Files.readString(file));
         assertTrue(descriptor.isObject(), "a JSON object");
@@ -82,7 +87,14 @@ class DeploySpecsTest {
         assertEquals(names.size(), Set.copyOf(names).size(), "uses has duplicates (gdown and ?gdown are the same service)");
         List<String> specUses = new ArrayList<>();
         spec.path("uses").forEach(n -> specUses.add(n.asString()));
-        assertEquals(Set.copyOf(specUses), Set.copyOf(names), "gluonify.json (builder) and deploy/appspec.json (PUT /apps) must declare the same services");
+        for (String inferred : INFERRED) {
+            assertFalse(names.contains(inferred), "gluonify.json: \"" + inferred + "\" is inferred by Bup from the SDK marker, do not declare it");
+            assertNotNull(Thread.currentThread().getContextClassLoader().getResource("META-INF/gluonify/services/" + inferred),
+                    "the SDK on the runtime classpath carries the marker META-INF/gluonify/services/" + inferred + " (SDK 0.7.1 or later)");
+        }
+        Set<String> effective = new java.util.HashSet<>(names);
+        effective.addAll(INFERRED);
+        assertEquals(Set.copyOf(specUses), effective, "gluonify.json (builder) plus the inferred services and deploy/appspec.json (PUT /apps) must give the same services");
         assertTrue(!descriptor.has("gdownDatabase") || descriptor.path("gdownDatabase").isBoolean(), "gdownDatabase, when present, is true or false (the builder refuses anything else)");
     }
 }
