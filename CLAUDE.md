@@ -7,7 +7,7 @@ Shared context for every gluonify-* repository (rules, build order, pitfalls, co
 ## Commands
 - `mvn quarkus:dev`: development (hot reload, UI at http://localhost:8080, **no token needed**: the "dev" identity exists only in this profile).
 - `mvn test`: 63 Java tests (REST, stores, webhooks, platform, documents, conformity). The UI is tested separately: `cd src/main/webui && npm test` (31 tests).
-- The Gluonify SDK (`gluonify-plasma-quarkus`, test scope `gluonify-plasma-testing`; `gluonify.sdk.version` is `0.1.0-SNAPSHOT`, from your local Maven repository, until the next platform release publishes them) comes from the Maven repository of gluonify-sea (`gluonify.sea.maven.url` in `pom.xml`, default `https://images.gluonify.io/maven`); to build against another copy: `mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository`.
+- The Gluonify SDK (`gluonify-plasma-quarkus`, test scope `gluonify-plasma-testing`; `gluonify.sdk.version` is `0.7.0`, published on sea) comes from the Maven repository of gluonify-sea (`gluonify.sea.maven.url` in `pom.xml`, default `https://images.gluonify.io/maven`); to build against another copy: `mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository`.
 - Native (what Gluonify runs): `docker build --target out --output type=local,dest=dist -f Dockerfile.build .` -> `dist/gluonify-source`.
 - Rename the project: `python3 scripts/rename.py <groupId> <artifactId> [<package>]`, then `mvn test`.
 - Java 25, Quarkus 4.0.0.Beta1, Jackson 3 (`tools.jackson.databind`, not `com.fasterxml`), GraalVM native (NIK 25).
