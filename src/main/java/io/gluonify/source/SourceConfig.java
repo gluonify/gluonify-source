@@ -20,6 +20,8 @@ public interface SourceConfig {
 
     Webhook webhook();
 
+    Auth auth();
+
     interface Files {
         @WithDefault("/distributed/std/notes")
         String dir();
@@ -41,5 +43,24 @@ public interface SourceConfig {
     interface Webhook {
         /** Key that Photon sends in the X-Api-Key header (configured in the webhook target). Absent: the receiver is closed (404). */
         Optional<String> key();
+    }
+
+    /**
+     * Browser sign-in (the UI is a PUBLIC OIDC client of Charm: authorization code + PKCE, no secret). Only non-secret values: they are served to the browser by
+     * {@code GET /api/auth-config}. Without a client id the UI cannot sign in (it says so).
+     */
+    interface Auth {
+        /** The Charm client registered for this UI (public, PKCE, redirect = the address of the UI, audience gluonify-source). Variable GLUONIFY_SOURCE_OIDC_CLIENT_ID. */
+        Optional<String> clientId();
+
+        /**
+         * The PUBLIC address of Charm, the one the browser reaches (https://id.example.com). Absent: derived from the token issuer
+         * (https://gluonify.lan/realms/gluonify -> https://gluonify.lan). Never GLUONIFY_SERVICE_CHARM_URL: that one is an internal address.
+         */
+        Optional<String> charmUrl();
+
+        /** Scopes asked at sign-in (the kit adds offline_access for the refresh token). */
+        @WithDefault("openid profile")
+        String scope();
     }
 }

@@ -1,0 +1,8 @@
+[
+  { "id": "synchrotron", "name": "Synchrotron", "role": { "en": "Administration console", "fr": "Console d'administration", "es": "Consola de administración", "it": "Console di amministrazione", "de": "Administrationskonsole" },
+    "particle": "ʃ", "color": "#4F46E5", "colorLight": "#818CF8", "url": "https://console.example.com/", "requiredRoles": ["gluonify:higgs:admin:*", "gluonify:synchrotron:*"] },
+  { "id": "fermion", "name": "Fermion", "role": { "en": "Workflows and rules", "fr": "Workflows et règles", "es": "Flujos de trabajo y reglas", "it": "Flussi di lavoro e regole", "de": "Workflows und Regeln" },
+    "particle": "ƒ", "color": "#0369A1", "colorLight": "#7DD3FC", "url": "https://console.example.com/fermion/", "requiredRoles": ["gluonify:fermion:*"] },
+  { "id": "top", "name": "Top", "role": { "en": "Configuration and secrets", "fr": "Configuration et secrets", "es": "Configuración y secretos", "it": "Configurazione e segreti", "de": "Konfiguration und Geheimnisse" },
+    "particle": "t", "color": "#B45309", "colorLight": "#FBBF24", "url": "https://console.example.com/top/", "requiredRoles": ["gluonify:top:*"] }
+]

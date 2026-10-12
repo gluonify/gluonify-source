@@ -7,7 +7,8 @@
   "env": {
     "SOURCE_STORE": "files",
     "GLUONIFY_SOURCE_OIDC_ISSUER": "https://id.YOUR-ZONE/realms/gluonify",
-    "GLUONIFY_SOURCE_OIDC_AUDIENCE": "gluonify-source"
+    "GLUONIFY_SOURCE_OIDC_AUDIENCE": "gluonify-source",
+    "GLUONIFY_SOURCE_OIDC_CLIENT_ID": "source-ui"
   },
   "top": true
 }

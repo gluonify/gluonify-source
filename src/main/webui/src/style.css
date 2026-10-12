@@ -40,3 +40,7 @@ select { font: inherit; padding: 6px 8px; border: 1px solid var(--border); borde
 @media (prefers-color-scheme: dark) { .brandtext .particle { color: #FB7185; } }
 @media (max-width: 480px) { .brandtext .role { display: none; } }
 footer.foot { margin-top: 28px; text-align: center; color: var(--muted); font-size: .8rem; }
+.who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.who .user { color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; }
+button.ghost { background: transparent; color: var(--accent); }
+.signin button { margin-top: 4px; }

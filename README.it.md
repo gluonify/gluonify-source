@@ -92,8 +92,11 @@ src/main/java/io/gluonify/source/
     DocumentsReflection.java    immagine nativa: i record dei dati generati
     generated/                  codice generato dalla scheda «Codice» di Crystallon (non modificare a mano)
   security/DevAuthentication.java   identità di sviluppo (solo profilo dev)
+  security/AuthConfigResource.java GET /api/auth-config: ciò che serve all'interfaccia per accedere con Charm (pubblico)
 src/main/webui/                 l'interfaccia Vue 3 (Vite + vitest), compilata da Quinoa
-src/test/java/…                 64 test Java; src/main/webui/src/App.test.js: 31 test di interfaccia
+  src/auth.js                   accesso con Charm (codice di autorizzazione + PKCE) tramite il kit @gluonify/ui
+  vendor/gluonify-ui/           copia inclusa del kit (gluonify-ui/scripts/sync-vendor.sh, mai modificata a mano)
+src/test/java/…                 67 test Java; src/main/webui/src/App.test.js: 40 test di interfaccia
 deploy/                         esempi: AppSpec, dominio, webhook Photon, database Gdown
 scripts/rename.py               rinomina il progetto
 ```
@@ -138,7 +141,7 @@ Legga [`NotesResource.java`](src/main/java/io/gluonify/source/notes/NotesResourc
 [Quinoa](https://quarkus.io/extensions/io.quarkiverse.quinoa/quarkus-quinoa/) compila un progetto web (qui Vue 3 + Vite, in `src/main/webui`) e lo serve **dallo stesso eseguibile** dell'API: un solo file da distribuire, una sola origine (niente CORS).
 
 - **Sviluppare**: `mvn quarkus:dev` avvia anche il server Vite (porta 5173, hot reload dell'interfaccia); Quarkus serve l'API. Apra <http://localhost:8080>.
-- **Chiamare l'API**: indirizzi relativi (`fetch('/api/notes')`), vedere [`src/api.js`](src/main/webui/src/api.js). Il token Charm viene incollato dall'utente e conservato per la scheda (`sessionStorage`).
+- **Chiamare l'API**: indirizzi relativi (`fetch('/api/notes')`), vedere [`src/api.js`](src/main/webui/src/api.js). Il token Charm viene dall'accesso ([`src/auth.js`](src/main/webui/src/auth.js), vedere [§6](#6-autenticazione-i-token-di-charm)), è conservato per la scheda (`sessionStorage`) e aggiunto come `Authorization: Bearer`.
 - **Le rotte dell'interfaccia**: `quarkus.quinoa.enable-spa-routing=true` restituisce `index.html` per un indirizzo sconosciuto (utile con vue-router). Ma **un indirizzo d'API sconosciuto non deve restituire l'interfaccia**: `quarkus.quinoa.ignored-path-prefixes=/api,/hooks,/q` (già impostato). Se aggiunge un prefisso d'API, lo aggiunga qui.
 - **Compilare**: `mvn package` esegue `npm install` poi `npm run build`; `dist/` viene incorporato nell'eseguibile. Senza interfaccia: `-Dquarkus.quinoa=false`.
 - **Lingue (i18n)**: l'interfaccia è disponibile in inglese (predefinito), francese, spagnolo, italiano e tedesco. Nessun testo è scritto nei componenti: ogni testo è una chiave di [`src/i18n/`](src/main/webui/src/i18n) (`en.js`, `fr.js`, `es.js`, `it.js`, `de.js`) letta con `t('chiave', { parametro })` (una piccola utilità in `index.js`, senza dipendenze). Il selettore nell'intestazione ricorda la scelta (`localStorage`); senza scelta si usa la lingua del browser se è una delle cinque, altrimenti l'inglese; `<html lang>` si adegua. Per aggiungere una lingua: copi `en.js` in `<codice>.js` e traduca i valori (stesse chiavi), poi lo importi in `index.js` (`MESSAGES` e `LANGUAGES`). I messaggi di errore restituiti dall'API sono mostrati così come arrivano; quelli dei codici 401 e 403 sono tradotti.
@@ -175,6 +178,32 @@ curl -s https://gluonify-source.<zone>/api/notes -H "Authorization: Bearer eyJ�
 ```
 
 Un valore di audience diverso (`"audience": "other"`) restituisce **401**; un token valido senza il ruolo giusto restituisce **403**.
+
+### Accedere dall'interfaccia (pagina di accesso di Charm)
+
+L'interfaccia non chiede mai una password e non fa mai incollare un token. È un **client OpenID Connect pubblico** di Charm (codice di autorizzazione + PKCE S256, nessun segreto nel browser), costruito sul kit comune `@gluonify/ui` (`createAuth`, lo stesso accesso delle console della piattaforma), incluso in [`src/main/webui/vendor/gluonify-ui`](src/main/webui/vendor/gluonify-ui) perché un clone si costruisca da solo (aggiornarlo con `gluonify-ui/scripts/sync-vendor.sh <questo repository> src/main/webui`, mai a mano):
+
+1. La pagina chiede `GET /api/auth-config` (pubblico): l'identificativo del client, gli indirizzi **pubblici** di Charm (`/authorize`, `/token`, `/logout`) e `signInRequired` (falso con `mvn quarkus:dev`: lì l'API non chiede alcun token, quindi l'interfaccia mostra tutto).
+2. **Accedi** porta il browser alla pagina di Charm: la persona digita nome utente e password **lì**, mai nell'applicazione. Charm riporta il browser all'interfaccia (`https://<indirizzo dell'interfaccia>/?code=…&state=…`).
+3. L'interfaccia verifica `state`, scambia il codice con il suo verificatore PKCE su `/token` di Charm e ottiene un token di audience `gluonify-source` il cui claim `roles` contiene i ruoli dell'account (`source:read`, `source:write`). Il token è conservato per la scheda (`sessionStorage`), rinnovato con il refresh token prima della scadenza e inviato come `Authorization: Bearer` a `/api`.
+4. **Esci** dimentica il token, avvisa le altre schede e chiude la sessione di Charm (`/logout` con `id_token_hint`). Un 401 dell'API (token scaduto o revocato) mostra di nuovo l'accesso.
+
+Senza accesso, la pagina mostra solo una breve spiegazione e il pulsante **Accedi**: note, documenti e sezione della piattaforma richiedono tutti un token.
+
+| Impostazione | Variabile | Valore |
+|---|---|---|
+| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | il client Charm di questa interfaccia (per esempio `source-ui`); vuoto: nessun pulsante *Accedi*, la pagina nomina la variabile |
+| `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | l'indirizzo **pubblico** di Charm, quello raggiunto dal browser; vuoto: dedotto da `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Mai `GLUONIFY_SERVICE_CHARM_URL`: è un indirizzo interno |
+| `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (il kit aggiunge `offline_access` per il refresh token) |
+
+**Il client Charm** (una volta, dall'amministratore della piattaforma): un client pubblico il cui unico reindirizzamento (e reindirizzamento dopo l'uscita) è l'indirizzo esatto dell'interfaccia, barra finale compresa, e la cui audience è quella dell'applicazione. Charm accetta chiamate da un'altra origine verso `/token` solo dalle origini dei reindirizzamenti registrati.
+
+```bash
+curl -s -X PUT "$CHARM_URL/v1/admin/clients/source-ui" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Source","redirectUris":["https://source.<zone>/"],"postLogoutRedirectUris":["https://source.<zone>/"],"audiences":["gluonify-source"],"scopes":["openid","profile","email","offline_access"],"accessTtl":3600}'
+```
+
+**I ruoli** `source:read` e `source:write` si assegnano agli account, compresi quelli dei clienti (i ruoli di un'applicazione non sono `gluonify:*`, quindi Charm consente di crearli e assegnarli): `PUT /v1/admin/roles/source:read` (e `source:write`), poi `PUT /v1/admin/users/<id>/roles`. Charm mette tutti i ruoli dell'account nel token: uscire e accedere di nuovo dopo una modifica.
 
 **In locale**, il profilo `dev` fornisce l'identità «dev» (vedere [`DevAuthentication`](src/main/java/io/gluonify/source/security/DevAuthentication.java)); **nei test**, `@TestSecurity`. Mai un'identità di questo tipo in produzione: viene compilata solo nel profilo `dev`.
 
@@ -327,7 +356,7 @@ curl -s -X POST localhost:8080/api/documents/invoice -H "Authorization: Bearer $
 | Crystallon troppo lento (30 s) | 504 |
 | Crystallon non disponibile | 404 |
 
-**Nell'interfaccia**: un pulsante *Scarica una fattura di esempio* nella sezione *Documenti* (mostrata solo quando `GET /api/platform` indica `"documents": true`) invia il token incollato (deve solo aprire questa API) e una fattura di esempio. [`DocumentsResourceTest`](src/test/java/io/gluonify/source/documents/DocumentsResourceTest.java) verifica tutto contro il Crystallon simulato dell'SDK (`GluonifyTestServices.start()` e `close()` in [`GluonifyTestServicesResource`](src/test/java/io/gluonify/source/documents/GluonifyTestServicesResource.java), nulla da configurare): il percorso chiamato (`/v1/templates/by-name/Gluonify%20invoice/render`), la chiamata fuori da una richiesta con il token dell'applicazione, il payload e ogni errore sopra.
+**Nell'interfaccia**: un pulsante *Scarica una fattura di esempio* nella sezione *Documenti* (mostrata solo quando `GET /api/platform` indica `"documents": true`) invia il token della persona che ha effettuato l'accesso (deve solo aprire questa API) e una fattura di esempio. [`DocumentsResourceTest`](src/test/java/io/gluonify/source/documents/DocumentsResourceTest.java) verifica tutto contro il Crystallon simulato dell'SDK (`GluonifyTestServices.start()` e `close()` in [`GluonifyTestServicesResource`](src/test/java/io/gluonify/source/documents/GluonifyTestServicesResource.java), nulla da configurare): il percorso chiamato (`/v1/templates/by-name/Gluonify%20invoice/render`), la chiamata fuori da una richiesta con il token dell'applicazione, il payload e ogni errore sopra.
 
 ### Chiamare un'altra applicazione
 
@@ -341,7 +370,7 @@ La dichiari in `"uses"`: la piattaforma fornisce `GLUONIFY_SERVICE_<APP>_URL` **
 ## 8. Compilare
 
 ```bash
-mvn test                       # test Java (64)
+mvn test                       # test Java (67)
 mvn package                    # JVM: target/quarkus-app/; compila anche l'interfaccia (Quinoa)
 ```
 
@@ -402,13 +431,14 @@ Aggiornare: stesso `PUT` (o nuovo build); le repliche vengono sostituite **una a
 ## 10. Testare
 
 ```bash
-mvn test                                 # 64 test Java
-cd src/main/webui && npm install && npm test   # 31 test di interfaccia
+mvn test                                 # 67 test Java
+cd src/main/webui && npm install && npm test   # 40 test di interfaccia
 ```
 
 | Test | Numero | Cosa verifica |
 |---|---|---|
 | `NotesResourceTest` | 7 | 401 senza token, 403 senza il ruolo giusto, ciclo di vita completo, validazione 400, OpenAPI, salute, metriche |
+| `AuthConfigResourceTest` / `AuthConfigConfiguredTest` | 2 + 1 | `GET /api/auth-config` è pubblico e vuoto senza client; gli indirizzi pubblici di Charm sono dedotti dall'emittente, mai dall'indirizzo interno `GLUONIFY_SERVICE_CHARM_URL` |
 | `FileNoteStoreTest` | 6 | file nuovi mai rinominati, ordine, due repliche sulla stessa cartella, file illeggibili ignorati, identificatori mai percorsi |
 | `GraphNoteStoreTest` | 4 | contro un falso Gdown: percorso, autenticazione, istruzione **parametrizzata**, lettura delle righe, errore |
 | `WebhookResourceTest` / `WebhookClosedTest` | 4 + 1 | chiave, conferma, **idempotenza**, rifiuti; chiuso senza chiave |
@@ -442,6 +472,9 @@ Un test d'API si copia da `NotesResourceTest`; un test di archiviazione da `File
 |---|---|
 | 401 in produzione | nessun token, token scaduto, o **audience** diversa da `GLUONIFY_SOURCE_OIDC_AUDIENCE`; oppure `GLUONIFY_SOURCE_OIDC_ISSUER` non corrisponde all'`iss` del token |
 | 403 | token valido ma senza il ruolo (`source:read` / `source:write`) |
+| Nessun pulsante *Accedi*, la pagina nomina `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | manca l'identificativo del client, oppure l'indirizzo pubblico di Charm è sconosciuto (`GLUONIFY_SOURCE_OIDC_ISSUER` lasciato a `any` e nessun `GLUONIFY_SOURCE_CHARM_PUBLIC_URL`) |
+| Charm rifiuta l'accesso (`redirect_uri`, `invalid_target`) | il reindirizzamento del client non è esattamente l'indirizzo dell'interfaccia (barra finale compresa), oppure le sue audience non contengono `gluonify-source` |
+| Accesso effettuato, ma 403 sulle note | l'account non ha `source:read` / `source:write` (assegnare i ruoli in Charm, poi uscire e accedere di nuovo: i ruoli sono letti all'accesso) |
 | L'applicazione non riceve traffico | `/q/health/ready` non risponde 200 (archiviazione irraggiungibile?): `GET /apps/<nome>` mostra le istanze pronte |
 | `store=gdown`: «source.graph.url is empty» | l'applicazione non è distribuita con `"uses": ["gdown"]` |
 | Gdown: 401 o «Unsupported property value type» | account errato; oppure una **mappa** memorizzata come proprietà (vedere §7) |

@@ -1,0 +1,22 @@
+{
+  "name": "@gluonify/ui",
+  "version": "0.3.2",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./tokens.css": "./src/tokens.css",
+    "./base.css": "./src/base.css",
+    "./components.css": "./src/components.css",
+    "./index.d.ts": "./src/index.d.ts",
+    "./catalog.example.json": "./catalog.example.json",
+    "./AppSwitcher.vue": "./src/AppSwitcher.vue"
+  },
+  "dependencies": {
+    "reka-ui": "2.10.5",
+    "lucide-vue-next": "1.0.0"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  }
+}

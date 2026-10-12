@@ -1,0 +1,80 @@
+/* Shared component styles (plain CSS, class names gx-*). Used by the Vue components and, through charm-shared.css, by Charm's server-rendered pages. */
+.gx-icon { flex: none; }
+
+/* buttons */
+.gx-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; cursor: pointer; font: inherit; font-weight: 500;
+  border: 1px solid transparent; border-radius: var(--radius-sm); padding: 0.5rem 0.9rem; line-height: 1; white-space: nowrap;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.gx-btn--primary { background: var(--primary); color: var(--primary-contrast); }
+.gx-btn--primary:hover:not(:disabled) { background: var(--primary-hover); }
+.gx-btn--ghost { background: transparent; color: var(--text); }
+.gx-btn--ghost:hover:not(:disabled) { background: var(--surface-hover); }
+.gx-btn--tone-secondary.gx-btn--primary { background: var(--surface-hover); color: var(--text); border-color: var(--border); }
+.gx-btn--tone-secondary.gx-btn--primary:hover:not(:disabled) { background: var(--surface); border-color: var(--text-muted); }
+.gx-btn--tone-danger.gx-btn--primary { background: var(--danger); color: var(--page); }
+.gx-btn--tone-danger.gx-btn--primary:hover:not(:disabled) { background: var(--danger); filter: brightness(1.1); }
+.gx-btn--tone-danger.gx-btn--ghost { color: var(--danger); }
+.gx-btn--tone-danger.gx-btn--ghost:hover:not(:disabled) { background: var(--danger-soft); }
+.gx-btn--tone-warn.gx-btn--primary { background: var(--warn); color: var(--page); }
+.gx-btn--tone-warn.gx-btn--primary:hover:not(:disabled) { background: var(--warn); filter: brightness(1.1); }
+.gx-btn--tone-warn.gx-btn--ghost { color: var(--warn); }
+.gx-btn--tone-warn.gx-btn--ghost:hover:not(:disabled) { background: var(--warn-soft); }
+.gx-btn--sm { padding: 0.38rem 0.7rem; font-size: var(--gx-fs-small); }
+.gx-btn--lg { padding: 0.65rem 1.1rem; font-size: 1.05rem; }
+.gx-btn--icon { padding: 0.5rem; }
+.gx-btn--icon.gx-btn--sm { padding: 0.38rem; }
+.gx-btn--round { border-radius: 999px; }
+.gx-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* fields */
+.gx-input, .gx-select {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.65rem;
+}
+.gx-select { padding: 0.35rem 0.5rem; font-size: 0.85rem; cursor: pointer; }
+.gx-pw { position: relative; display: block; width: 100%; }
+.gx-pw .gx-input { width: 100%; padding-right: 2.4rem; }
+.gx-pw__eye { position: absolute; right: 0.3rem; top: 50%; transform: translateY(-50%); background: none; border: 0; cursor: pointer; color: var(--text-muted); padding: 0.3rem; border-radius: 999px; display: inline-flex; }
+.gx-pw__eye:hover { background: var(--surface-hover); }
+.gx-label { display: block; font-weight: 600; margin-bottom: 0.3rem; }
+.gx-muted { color: var(--text-muted); }
+.gx-error { color: var(--danger); margin: 0.5rem 0; }
+.gx-hint { font-size: var(--gx-fs-small); margin: 0.3rem 0 0.9rem; }
+
+/* brand block */
+.gx-brand { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--text); min-width: 0; }
+.gx-brand__logo { display: inline-flex; flex: none; }
+.gx-brand__text { display: flex; flex-direction: column; line-height: 1.2; }
+.gx-brand__name { font-weight: 700; white-space: nowrap; }
+.gx-brand__role { font-weight: 400; color: var(--text-muted); font-size: var(--gx-fs-role); }
+.gx-brand__particle { font-weight: 700; font-size: var(--gx-fs-particle); color: var(--gx-particle); }
+@media (max-width: 480px) { .gx-brand__role { display: none; } }
+
+/* header: [menu] [brand] [title] <spacer> [actions] [language] [theme] [user] [switcher = always last] */
+.gx-header { height: var(--gx-header-h); display: flex; align-items: center; gap: 0.5rem; padding: 0 0.9rem; background: var(--surface); border-bottom: 1px solid var(--border); }
+.gx-header__title { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text); }
+.gx-header__spacer { flex: 1; }
+.gx-header__actions, .gx-header__user, .gx-header__switcher { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+/* footer */
+.gx-footer { flex: none; padding: 0.9rem 1rem 1.1rem; text-align: center; color: var(--text-muted); font-size: var(--gx-fs-foot); border-top: 1px solid var(--border); }
+.gx-footer small { font-size: inherit; }
+
+/* sign-in page */
+.gx-login { min-height: 100vh; display: flex; flex-direction: column; }
+.gx-login__main { flex: 1; width: 100%; max-width: var(--gx-login-max); margin: 6vh auto; padding: 0 1rem; }
+.gx-login__panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; }
+.gx-login h1 { margin: 0 0 0.5rem; font-size: var(--gx-fs-h1); }
+.gx-login hr { border: 0; border-top: 1px solid var(--border); margin: 1rem 0; }
+.gx-login p { margin: 0.5rem 0; }
+
+/* User menu (GxUserMenu): button in the header, menu aligned right below it. */
+.gx-usermenu { position: relative; }
+.gx-usermenu__btn { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.6rem; background: transparent; color: var(--text); border: 0; border-radius: var(--radius-sm); cursor: pointer; font: inherit; font-size: 0.85rem; line-height: 1; }
+.gx-usermenu__btn:hover { background: var(--surface-hover); }
+.gx-usermenu__name { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gx-usermenu__menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 12rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 0.25rem; }
+.gx-usermenu__item { display: flex; align-items: center; gap: 0.6rem; width: 100%; padding: 0.45rem 0.65rem; border: 0; border-radius: var(--radius-sm); background: none; color: inherit; font: inherit; font-size: 0.85rem; text-align: left; text-decoration: none; cursor: pointer; box-sizing: border-box; }
+.gx-usermenu__item:hover, .gx-usermenu__item:focus-visible { background: var(--surface-hover); }
+@media (max-width: 480px) { .gx-usermenu__name { display: none; } }

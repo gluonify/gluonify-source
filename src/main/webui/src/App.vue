@@ -1,6 +1,7 @@
 <script setup>
-import { onMounted, ref } from 'vue'
-import { api, token, SAMPLE_INVOICE } from './api.js'
+import { computed, onMounted, ref } from 'vue'
+import { api, SAMPLE_INVOICE } from './api.js'
+import { auth, browser, oidcConfigured } from './auth.js'
 import { useI18n } from './i18n/index.js'
 import BrandLogo from './BrandLogo.vue'
 
@@ -11,7 +12,11 @@ const notes = ref([])
 const platform = ref(null)
 const title = ref('')
 const body = ref('')
-const jwt = ref(token.get())
+// Sign-in: ready once GET /api/auth-config answered; open = the API asks for no token (mvn quarkus:dev); otherwise only a signed-in person sees the notes.
+const ready = ref(false)
+const open = ref(false)
+const signedIn = computed(() => open.value || auth.authenticated.value)
+const canSignIn = computed(() => oidcConfigured(auth.config.value))
 // Error shown: { key, params } (translated at display time, so a language change applies) or { text } (API message shown as returned).
 const error = ref(null)
 const loading = ref(false)
@@ -27,7 +32,8 @@ async function refresh() {
     platform.value = await api.platform()
   } catch (e) {
     notes.value = []
-    error.value = e.status === 401 ? { key: 'errUnauthenticated' } : e.status === 403 ? { key: 'errForbiddenRead', params: { role: 'source:read' } } : { text: e.message }
+    if (e.status === 401) return expired()
+    error.value = e.status === 403 ? { key: 'errForbiddenRead', params: { role: 'source:read' } } : { text: e.message }
   } finally {
     loading.value = false
   }
@@ -66,7 +72,7 @@ function saveFile(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 10000)
 }
 
-// The sample invoice: POST /api/documents/invoice (the API calls Crystallon with the application's own token; the token pasted here only has to open this API).
+// The sample invoice: POST /api/documents/invoice (the API calls Crystallon with the application's own token; the signed-in person's token only has to open this API).
 // A 403 without a message is the API's own role check; with a message it is Crystallon's refusal, shown as received like every API message.
 async function downloadInvoice() {
   error.value = null
@@ -74,45 +80,81 @@ async function downloadInvoice() {
   try {
     saveFile(await api.invoice(), `invoice-${SAMPLE_INVOICE.number}.pdf`)
   } catch (e) {
-    error.value = e.status === 401 ? { key: 'errUnauthenticated' } : e.status === 403 && !e.apiMessage ? { key: 'errForbiddenRead', params: { role: 'source:read' } } : { text: e.message }
+    if (e.status === 401) return expired()
+    error.value = e.status === 403 && !e.apiMessage ? { key: 'errForbiddenRead', params: { role: 'source:read' } } : { text: e.message }
   } finally {
     documentWorking.value = false
   }
 }
 
-function saveToken() {
-  token.set(jwt.value.trim())
-  refresh()
+// The API refused the token (expired, revoked): forget it and show the sign-in again.
+function expired() {
+  auth.forget({ blockSilent: false })
+  platform.value = null
+  error.value = { key: 'errSessionExpired' }
 }
 
-onMounted(refresh)
+// "Sign in": the browser goes to Charm's login page and comes back here with ?code=&state= (handled in onMounted).
+function signIn() {
+  error.value = null
+  auth.startLogin(browser.location())
+}
+
+// "Sign out": forgets the token in this tab, tells the other tabs, and ends the Charm session too when Charm gave an id token.
+function signOut() {
+  notes.value = []
+  platform.value = null
+  error.value = null
+  auth.logout(browser.location())
+}
+
+onMounted(async () => {
+  let cfg = null
+  try { cfg = await api.authConfig() } catch { /* no configuration: sign-in unavailable */ }
+  open.value = cfg?.signInRequired === false
+  if (!open.value) {
+    auth.config.value = oidcConfigured(cfg) ? cfg : null
+    try {
+      await auth.completeLogin(auth.config.value, browser.location()) // back from Charm: exchange the code for the token (PKCE verifier kept in sessionStorage)
+    } catch {
+      error.value = { key: 'errLoginFailed' }
+    }
+  }
+  auth.initLogoutBroadcast(() => { notes.value = []; platform.value = null }) // signed out in another tab: this one follows
+  ready.value = true
+  if (signedIn.value) await refresh()
+})
 </script>
 
 <template>
   <main>
     <header class="top">
       <h1><BrandLogo :label="t('logo')" /> <span class="brandtext"><span class="line"><span class="name">{{ t('pageTitle') }} {{ SEP }}</span> <span class="role">{{ t('appRole') }}</span></span><span class="particle">{{ t('appParticle') }}</span></span></h1>
+      <div class="who">
+      <span v-if="ready && !open && signedIn" class="user">{{ t('signedInAs', { name: auth.username.value || '—' }) }}</span>
+      <button v-if="ready && !open && signedIn" type="button" class="ghost" @click="signOut">{{ t('signOut') }}</button>
       <label class="lang">
         <span class="sr-only">{{ t('language') }}</span>
         <select :value="locale" :aria-label="t('language')" @change="setLanguage($event.target.value)">
           <option v-for="l in languages" :key="l.code" :value="l.code" :lang="l.code">{{ l.name }}</option>
         </select>
       </label>
+      </div>
     </header>
     <p class="lead">{{ t('lead') }}</p>
 
-    <section>
+    <p v-if="ready && open" class="hint dev">{{ t('devOpen') }}</p>
+
+    <section v-if="ready && !signedIn" class="signin">
       <h2>{{ t('authTitle') }}</h2>
-      <p class="hint">{{ t('authHint', { read: 'source:read', write: 'source:write' }) }}</p>
-      <form class="row" @submit.prevent="saveToken">
-        <input v-model="jwt" type="password" autocomplete="off" :placeholder="t('tokenPlaceholder')" :aria-label="t('tokenLabel')" />
-        <button type="submit">{{ t('useToken') }}</button>
-      </form>
+      <p class="hint">{{ t('signedOutHint', { read: 'source:read', write: 'source:write' }) }}</p>
+      <button v-if="canSignIn" type="button" @click="signIn">{{ t('signIn') }}</button>
+      <p v-else class="hint">{{ t('signInUnavailable') }}</p>
     </section>
 
     <p v-if="error" class="error" role="alert">{{ error.key ? t(error.key, error.params) : error.text }}</p>
 
-    <section>
+    <section v-if="signedIn">
       <h2>{{ t('notesTitle') }}</h2>
       <form class="stack" @submit.prevent="add">
         <input v-model="title" required maxlength="120" :placeholder="t('titlePlaceholder')" :aria-label="t('titleLabel')" />
@@ -134,13 +176,13 @@ onMounted(refresh)
       <button type="button" @click="refresh">{{ t('refresh') }}</button>
     </section>
 
-    <section v-if="platform && platform.documents">
+    <section v-if="signedIn && platform && platform.documents">
       <h2>{{ t('documentsTitle') }}</h2>
       <p class="hint">{{ t('documentsHint') }}</p>
       <button type="button" :disabled="documentWorking" @click="downloadInvoice">{{ documentWorking ? t('documentsWorking') : t('documentsDownload') }}</button>
     </section>
 
-    <section v-if="platform">
+    <section v-if="signedIn && platform">
       <h2>{{ t('platformTitle') }}</h2>
       <dl class="grid">
         <dt>{{ t('environment') }}</dt><dd>{{ platform.envName || t('local') }}</dd>

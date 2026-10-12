@@ -1,0 +1,13 @@
+/* Page base shared by the consoles (optional import: @gluonify/ui/base.css). 16px root, 14px interface text. */
+* { box-sizing: border-box; }
+html { font-size: 16px; }
+html, body { margin: 0; background: var(--page); color: var(--text); font-family: var(--font); line-height: 1.5; }
+/* break-word (not anywhere): a long word breaks only when it cannot fit, and table columns keep their natural minimum width on a phone */
+/* the 14px of the interface is the body's: the root stays at 16px so that rem means 16px (h1 1.4rem = 22.4px, hints 0.85rem) */
+body { min-height: 100vh; overflow-wrap: break-word; font-size: var(--gx-fs-base); }
+a { color: var(--primary); }
+code, .mono { font-family: var(--mono); font-size: 0.9em; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@keyframes gx-spin { to { transform: rotate(360deg); } }
+.gx-spin { animation: gx-spin 0.9s linear infinite; }
