@@ -53,7 +53,7 @@ Apra <http://localhost:8080>: l'interfaccia (aggiungere, elencare, eliminare not
 | `/q/health/ready` · `/q/health/live` | salute: «pronto» e «vivo» (vedere [§7](#7-interfacciarsi-con-i-servizi-di-gluonify)) |
 | `/q/metrics` | metriche Prometheus |
 
-In **sviluppo** non viene richiesto alcun token: un'identità «dev» (con tutti i ruoli) esiste solo in questo profilo (`@IfBuildProfile("dev")`, assente dall'eseguibile di produzione). Le note sono **in memoria** (`source.store=memory`): scompaiono allo spegnimento.
+In **sviluppo** non viene richiesto alcun token: un'identità «dev» (con tutti i ruoli) esiste solo in questo profilo (`@IfBuildProfile("dev")`, assente dall'eseguibile di produzione). Le note sono **in memoria** (`source.store=auto` ripiega sulla memoria senza database dedicato): scompaiono allo spegnimento.
 
 ```bash
 curl -s localhost:8080/api/notes -H 'Content-Type: application/json' -d '{"title":"Courses","body":"du pain"}'
@@ -96,7 +96,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 l'interfaccia Vue 3 (Vite + vitest), compilata da Quinoa
   src/auth.js                   accesso con Charm (codice di autorizzazione + PKCE) tramite il kit @gluonify/ui
   vendor/gluonify-ui/           copia inclusa del kit (gluonify-ui/scripts/sync-vendor.sh, mai modificata a mano)
-src/test/java/…                 67 test Java; src/main/webui/src/App.test.js: 40 test di interfaccia
+src/test/java/…                 70 test Java; src/main/webui/src/App.test.js: 40 test di interfaccia
 deploy/                         esempi: AppSpec, dominio, webhook Photon, database Gdown
 scripts/rename.py               rinomina il progetto
 ```
@@ -238,7 +238,7 @@ La piattaforma invia traffico solo alle istanze per cui **`/q/health/ready`** ri
 
 ### Dati in Gdown (`source.store=gdown`)
 
-**Il più semplice: un database dedicato.** Distribuisca con `"gdownDatabase": true` e `SOURCE_STORE=gdown`: la piattaforma crea un database proprio per l'applicazione (il suo gruppo Raft, un account confinato) e fornisce `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` e l'accesso di rete (`GLUONIFY_SERVICE_GDOWN_URL`); non c'è altro da fare. Il database **non viene mai eliminato** con l'applicazione.
+**Il più semplice: un database dedicato.** Niente da dichiarare: `application.properties` legge `${GLUONIFY_GDOWN_DATABASE}`, `${GLUONIFY_GDOWN_USER}` e `${GLUONIFY_GDOWN_PASSWORD}`, quindi il builder **deduce** `"gdownDatabase": true` (campo `gdownDatabaseReason` del build; `"gdownDatabase": false` in `gluonify.json` lo disattiva), e `source.store=auto` passa a `gdown` appena viene fornito `GLUONIFY_GDOWN_DATABASE` (memoria altrimenti; `SOURCE_STORE` forza un valore): la piattaforma crea un database proprio per l'applicazione (il suo gruppo Raft, un account confinato) e fornisce `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` e l'accesso di rete (`GLUONIFY_SERVICE_GDOWN_URL`); non c'è altro da fare. Il database **non viene mai eliminato** con l'applicazione.
 
 Un esempio pronto all'uso si trova in [`deploy/appspec-graph.json`](deploy/appspec-graph.json).
 
@@ -370,7 +370,7 @@ La dichiari in `"uses"`: la piattaforma fornisce `GLUONIFY_SERVICE_<APP>_URL` **
 ## 8. Compilare
 
 ```bash
-mvn test                       # test Java (67)
+mvn test                       # test Java (70)
 mvn package                    # JVM: target/quarkus-app/; compila anche l'interfaccia (Quinoa)
 ```
 
@@ -400,7 +400,7 @@ curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-
 
 Il builder clona, controlla la conformità, compila in nativo, pubblica l'eseguibile e lo distribuisce. Lo segua: `GET /v1/builds/<id>` e `/logs`. (Un push Git può anche avviare il build tramite un webhook: `POST /v1/webhooks/git`.) Nota: il builder conosce solo `topNamespace`, quindi con esso le chiavi del vault arrivano senza prefisso.
 
-**I servizi che il builder dichiara.** Il builder invia `uses` e `gdownDatabase` a `PUT /apps/<nome>`. `uses` è **dedotto al build**: ogni modulo client dell'SDK porta un marcatore `META-INF/gluonify/services/<servizio>`; Bup legge i marcatori dei jar del classpath di esecuzione (solo il gruppo `io.gluonify.plasma`) e li aggiunge come servizi facoltativi (qui `?crystallon`, da `gluonify-plasma-crystallon-client`). Li unisce ai servizi dichiarati nella richiesta di build oppure, se la richiesta non li ha, nel [`gluonify.json`](gluonify.json) alla radice del repository (la richiesta prevale; un elenco vuoto nella richiesta significa «nessun servizio dichiarato», quelli dedotti si aggiungono comunque). **Dichiari in `uses` solo ciò che l'SDK non rileva**: una chiamata HTTP diretta a un'altra applicazione, Charm per OIDC, Gdown via HTTP. Il file di questo repository è quindi `{"uses": ["charm", "gdown"]}`: con `?crystallon` dedotto, gli stessi servizi di [`deploy/appspec.json`](deploy/appspec.json), cosa che `DeploySpecsTest` verifica. Senza il file, un build distribuirebbe l'applicazione senza rete verso Charm e Gdown, perché `PUT /apps/<nome>` **sostituisce l'intera specifica**. Vi aggiunga `"gdownDatabase": true` per il database dedicato; un `?` iniziale (`"?orders"`) segna un servizio facoltativo. Un'applicazione che raggiunge servizi solo tramite l'SDK non ha bisogno di `gluonify.json`.
+**I servizi che il builder dichiara.** Il builder invia `uses` e `gdownDatabase` a `PUT /apps/<nome>`. `uses` è **dedotto al build**: ogni modulo client dell'SDK porta un marcatore `META-INF/gluonify/services/<servizio>`; Bup legge i marcatori dei jar del classpath di esecuzione (solo il gruppo `io.gluonify.plasma`) e li aggiunge come servizi facoltativi (qui `?crystallon`, da `gluonify-plasma-crystallon-client`). Li unisce ai servizi dichiarati nella richiesta di build oppure, se la richiesta non li ha, nel [`gluonify.json`](gluonify.json) alla radice del repository (la richiesta prevale; un elenco vuoto nella richiesta significa «nessun servizio dichiarato», quelli dedotti si aggiungono comunque). **Dichiari in `uses` solo ciò che l'SDK non rileva**: una chiamata HTTP diretta a un'altra applicazione, Charm per OIDC, Gdown via HTTP. Il file di questo repository è quindi `{"uses": ["charm", "gdown"]}`: con `?crystallon` dedotto, gli stessi servizi di [`deploy/appspec.json`](deploy/appspec.json), cosa che `DeploySpecsTest` verifica. Senza il file, un build distribuirebbe l'applicazione senza rete verso Charm e Gdown, perché `PUT /apps/<nome>` **sostituisce l'intera specifica**. Non serve aggiungere `"gdownDatabase": true`: il builder lo deduce dai riferimenti a `GLUONIFY_GDOWN_DATABASE|USER|PASSWORD` in `application.properties` (`GET /v1/builds/{id}/effective-spec` mostra il `gluonify.json` effettivo); un `?` iniziale (`"?orders"`) segna un servizio facoltativo. Un'applicazione che raggiunge servizi solo tramite l'SDK non ha bisogno di `gluonify.json`.
 
 **B. Pubblica Lei stesso l'eseguibile**, poi lo distribuisca:
 
@@ -431,7 +431,7 @@ Aggiornare: stesso `PUT` (o nuovo build); le repliche vengono sostituite **una a
 ## 10. Testare
 
 ```bash
-mvn test                                 # 67 test Java
+mvn test                                 # 70 test Java
 cd src/main/webui && npm install && npm test   # 40 test di interfaccia
 ```
 
@@ -441,6 +441,7 @@ cd src/main/webui && npm install && npm test   # 40 test di interfaccia
 | `AuthConfigResourceTest` / `AuthConfigConfiguredTest` | 2 + 1 | `GET /api/auth-config` è pubblico e vuoto senza client; gli indirizzi pubblici di Charm sono dedotti dall'emittente, mai dall'indirizzo interno `GLUONIFY_SERVICE_CHARM_URL` |
 | `FileNoteStoreTest` | 6 | file nuovi mai rinominati, ordine, due repliche sulla stessa cartella, file illeggibili ignorati, identificatori mai percorsi |
 | `GraphNoteStoreTest` | 4 | contro un falso Gdown: percorso, autenticazione, istruzione **parametrizzata**, lettura delle righe, errore |
+| `NoteStoresTest` | 3 | scelta dell'archiviazione: `auto` dà `gdown` quando viene fornito `GLUONIFY_GDOWN_DATABASE`, `memory` altrimenti; un valore esplicito prevale |
 | `WebhookResourceTest` / `WebhookClosedTest` | 4 + 1 | chiave, conferma, **idempotenza**, rifiuti; chiuso senza chiave |
 | `PlatformResourceTest` | 4 | variabili della piattaforma lette, **nessun segreto restituito**, chiamata da servizio a servizio limitata ai servizi dichiarati |
 | `ConformityTest` | 4 | le norme del builder, in locale |

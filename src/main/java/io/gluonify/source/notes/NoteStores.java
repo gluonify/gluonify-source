@@ -7,14 +7,32 @@ import java.nio.file.Path;
 
 /** Chooses the {@link NoteStore} implementation according to {@code source.store}. A single place to modify to add a storage. */
 public class NoteStores {
+    /** Variable provided by the platform only for a dedicated database ("gdownDatabase": true, declared or inferred by the builder). */
+    public static final String DEDICATED_DATABASE = "GLUONIFY_GDOWN_DATABASE";
+
+    /**
+     * The storage actually used: {@code auto} becomes {@code gdown} when the platform provides a dedicated database ({@code dedicatedDatabase} not blank),
+     * {@code memory} otherwise; any other value is kept as is.
+     */
+    public static String effectiveStore(String store, String dedicatedDatabase) {
+        if (!"auto".equals(store)) return store;
+        return dedicatedDatabase != null && !dedicatedDatabase.isBlank() ? "gdown" : "memory";
+    }
+
+    /** {@link #effectiveStore} with the process environment. */
+    public static String effectiveStore(SourceConfig cfg) {
+        return effectiveStore(cfg.store(), System.getenv(DEDICATED_DATABASE));
+    }
+
     @Produces
     @ApplicationScoped
     NoteStore noteStore(SourceConfig cfg) {
-        return switch (cfg.store()) {
+        String store = effectiveStore(cfg);
+        return switch (store) {
             case "memory" -> new MemoryNoteStore();
             case "files" -> new FileNoteStore(Path.of(cfg.files().dir()));
             case "gdown" -> graph(cfg);
-            default -> throw new IllegalStateException("unknown source.store: \"" + cfg.store() + "\" (memory, files or gdown)");
+            default -> throw new IllegalStateException("unknown source.store: \"" + store + "\" (auto, memory, files or gdown)");
         };
     }
 

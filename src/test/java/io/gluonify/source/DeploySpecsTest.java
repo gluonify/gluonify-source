@@ -21,7 +21,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 class DeploySpecsTest {
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Set<String> STORES = Set.of("memory", "files", "gdown");
+    private static final Set<String> STORES = Set.of("auto", "memory", "files", "gdown");
     private static final Set<String> OLD_NAMES = Set.of("id", "graphdb", "vault", "graph", "paas");
     /** The fields of gluonify.json that Bup (gluonify-bup) reads. */
     /** The services the SDK modules of this application carry a marker for: Bup infers them at build time, gluonify.json does not repeat them. */

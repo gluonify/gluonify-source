@@ -53,7 +53,7 @@ Open <http://localhost:8080>: the interface (add, list, delete notes). Also:
 | `/q/health/ready` · `/q/health/live` | health: "ready" and "alive" (see [§7](#7-integrating-with-gluonify-services)) |
 | `/q/metrics` | Prometheus metrics |
 
-In **development**, no token is required: a "dev" identity (with all roles) exists only in this profile (`@IfBuildProfile("dev")`, absent from the production executable). Notes are **in memory** (`source.store=memory`): they disappear on shutdown.
+In **development**, no token is required: a "dev" identity (with all roles) exists only in this profile (`@IfBuildProfile("dev")`, absent from the production executable). Notes are **in memory** (`source.store=auto` falls back to memory without a dedicated database): they disappear on shutdown.
 
 ```bash
 curl -s localhost:8080/api/notes -H 'Content-Type: application/json' -d '{"title":"Courses","body":"du pain"}'
@@ -96,7 +96,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
   src/auth.js                   sign-in with Charm (authorization code + PKCE) through the kit @gluonify/ui
   vendor/gluonify-ui/           embedded copy of the kit (gluonify-ui/scripts/sync-vendor.sh, never edited by hand)
-src/test/java/…                 67 Java tests; src/main/webui/src/App.test.js: 40 interface tests
+src/test/java/…                 70 Java tests; src/main/webui/src/App.test.js: 40 interface tests
 deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
 scripts/rename.py               renames the project
 ```
@@ -238,7 +238,7 @@ The platform only sends traffic to instances whose **`/q/health/ready`** answers
 
 ### Data in Gdown (`source.store=gdown`)
 
-**Simplest: a dedicated database.** Deploy with `"gdownDatabase": true` and `SOURCE_STORE=gdown`: the platform creates a database of its own for the application (its own Raft group, a confined account) and provides `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` and the network access (`GLUONIFY_SERVICE_GDOWN_URL`); nothing else to do. The database is **never deleted** with the application.
+**Simplest: a dedicated database.** Nothing to declare: `application.properties` reads `${GLUONIFY_GDOWN_DATABASE}`, `${GLUONIFY_GDOWN_USER}` and `${GLUONIFY_GDOWN_PASSWORD}`, so the builder **infers** `"gdownDatabase": true` (build result field `gdownDatabaseReason`; `"gdownDatabase": false` in `gluonify.json` turns it off), and `source.store=auto` switches to `gdown` as soon as `GLUONIFY_GDOWN_DATABASE` is provided (memory otherwise; `SOURCE_STORE` forces a value): the platform creates a database of its own for the application (its own Raft group, a confined account) and provides `GLUONIFY_GDOWN_DATABASE`, `GLUONIFY_GDOWN_USER`, `GLUONIFY_GDOWN_PASSWORD` and the network access (`GLUONIFY_SERVICE_GDOWN_URL`); nothing else to do. The database is **never deleted** with the application.
 
 A ready-to-use spec is in [`deploy/appspec-graph.json`](deploy/appspec-graph.json).
 
@@ -370,7 +370,7 @@ Declare it in `"uses"`: the platform provides `GLUONIFY_SERVICE_<APP>_URL` **and
 ## 8. Building
 
 ```bash
-mvn test                       # Java tests (67)
+mvn test                       # Java tests (70)
 mvn package                    # JVM: target/quarkus-app/; also builds the interface (Quinoa)
 ```
 
@@ -400,7 +400,7 @@ curl -X POST "$BUP_URL/v1/builds" -H 'Content-Type: application/json' -H "X-Git-
 
 The builder clones, checks compliance, compiles natively, publishes the executable and deploys it. Follow it: `GET /v1/builds/<id>` and `/logs`. (A Git push can also trigger the build through a webhook: `POST /v1/webhooks/git`.) Note: the builder only knows `topNamespace`, so with it the vault keys arrive unprefixed.
 
-**The services the builder declares.** The builder sends `uses` and `gdownDatabase` to `PUT /apps/<name>`. `uses` is **inferred at build time**: each SDK client module carries a marker `META-INF/gluonify/services/<service>`; Bup reads the markers of the jars of the runtime classpath (group `io.gluonify.plasma` only) and adds them as optional services (here `?crystallon`, from `gluonify-plasma-crystallon-client`). It merges them with the services declared in the build request or, when the request has none, in the [`gluonify.json`](gluonify.json) at the root of the repository (the request wins; an empty list in the request means "no declared service", the inferred ones are still added). **Declare in `uses` only what the SDK cannot detect**: a direct HTTP call to another application, Charm for OIDC, Gdown over HTTP. This repository's file is therefore `{"uses": ["charm", "gdown"]}`: with the inferred `?crystallon`, the same services as [`deploy/appspec.json`](deploy/appspec.json), which `DeploySpecsTest` checks. Without the file, a build would deploy the application without network to Charm and Gdown, because `PUT /apps/<name>` **replaces the whole spec**. Add `"gdownDatabase": true` to `gluonify.json` for the dedicated database; a leading `?` (`"?orders"`) marks an optional service. An application that reaches services only through the SDK needs no `gluonify.json`.
+**The services the builder declares.** The builder sends `uses` and `gdownDatabase` to `PUT /apps/<name>`. `uses` is **inferred at build time**: each SDK client module carries a marker `META-INF/gluonify/services/<service>`; Bup reads the markers of the jars of the runtime classpath (group `io.gluonify.plasma` only) and adds them as optional services (here `?crystallon`, from `gluonify-plasma-crystallon-client`). It merges them with the services declared in the build request or, when the request has none, in the [`gluonify.json`](gluonify.json) at the root of the repository (the request wins; an empty list in the request means "no declared service", the inferred ones are still added). **Declare in `uses` only what the SDK cannot detect**: a direct HTTP call to another application, Charm for OIDC, Gdown over HTTP. This repository's file is therefore `{"uses": ["charm", "gdown"]}`: with the inferred `?crystallon`, the same services as [`deploy/appspec.json`](deploy/appspec.json), which `DeploySpecsTest` checks. Without the file, a build would deploy the application without network to Charm and Gdown, because `PUT /apps/<name>` **replaces the whole spec**. No need to add `"gdownDatabase": true`: the builder infers it from the references to `GLUONIFY_GDOWN_DATABASE|USER|PASSWORD` in `application.properties` (`GET /v1/builds/{id}/effective-spec` shows the effective `gluonify.json`); a leading `?` (`"?orders"`) marks an optional service. An application that reaches services only through the SDK needs no `gluonify.json`.
 
 **B. You publish the executable** yourself, then you deploy:
 
@@ -431,7 +431,7 @@ To update: same `PUT` (or a new build); replicas are replaced **one by one**. To
 ## 10. Testing
 
 ```bash
-mvn test                                 # 67 Java tests
+mvn test                                 # 70 Java tests
 cd src/main/webui && npm install && npm test   # 40 interface tests
 ```
 
@@ -441,6 +441,7 @@ cd src/main/webui && npm install && npm test   # 40 interface tests
 | `AuthConfigResourceTest` / `AuthConfigConfiguredTest` | 2 + 1 | `GET /api/auth-config` is public and empty without a client; Charm's public endpoints derived from the issuer, never from the internal `GLUONIFY_SERVICE_CHARM_URL` |
 | `FileNoteStoreTest` | 6 | new files never renamed, ordering, two replicas on the same folder, unreadable files ignored, identifiers never paths |
 | `GraphNoteStoreTest` | 4 | against a fake Gdown: path, authentication, **parameterized** statement, row reading, failure |
+| `NoteStoresTest` | 3 | storage selection: `auto` gives `gdown` when `GLUONIFY_GDOWN_DATABASE` is provided, `memory` otherwise; an explicit value wins |
 | `WebhookResourceTest` / `WebhookClosedTest` | 4 + 1 | key, acknowledgment, **idempotence**, rejections; closed without a key |
 | `PlatformResourceTest` | 4 | platform variables read, **no secret returned**, service-to-service call limited to declared services |
 | `ConformityTest` | 4 | the builder's standards, on your side |

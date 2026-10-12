@@ -11,7 +11,7 @@ public class EventLedgers {
     @Produces
     @ApplicationScoped
     EventLedger eventLedger(SourceConfig cfg) {
-        return switch (cfg.store()) {
+        return switch (NoteStores.effectiveStore(cfg)) {
             case "files" -> new FileEventLedger(Path.of(cfg.files().dir()).resolveSibling("events"));
             case "gdown" -> new GraphEventLedger(NoteStores.graph(cfg));
             default -> new MemoryEventLedger();

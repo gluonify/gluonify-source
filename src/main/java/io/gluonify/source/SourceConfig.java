@@ -10,8 +10,8 @@ import java.util.Optional;
  */
 @ConfigMapping(prefix = "source")
 public interface SourceConfig {
-    /** memory (default, development), files (/distributed/std) or gdown (Gdown). */
-    @WithDefault("memory")
+    /** auto (default: gdown when the platform provides a dedicated database, GLUONIFY_GDOWN_DATABASE, otherwise memory), memory, files (/distributed/std) or gdown (Gdown). */
+    @WithDefault("auto")
     String store();
 
     Files files();
