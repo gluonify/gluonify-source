@@ -190,13 +190,15 @@ Die Oberfläche fragt nie nach einem Passwort und lässt nie ein Token einfügen
 
 Abgemeldet zeigt die Seite nur eine kurze Erklärung und die Schaltfläche **Anmelden**: Notizen, Dokumente und der Plattformabschnitt brauchen alle ein Token.
 
+**Die Anmeldung funktioniert ohne jede Konfiguration, sobald die Anwendung auf der Plattform bereitgestellt ist.** Eine Anwendung, die `"uses": ["charm"]` angibt (Bup leitet es aus dem Code ab), erhält einen eigenen öffentlichen Charm-Client, `app-<name>`, den die Plattform anlegt und aktuell hält: seine Weiterleitungen sind genau die Adressen der Anwendung (`https://<name>.<zone>/` und die Routen ihrer Domains), seine Audience ist `gluonify-<name>`. Die Plattform setzt `GLUONIFY_OIDC_CLIENT_ID`, `GLUONIFY_OIDC_ISSUER` (öffentlicher Aussteller), `GLUONIFY_OIDC_PUBLIC_URL` (öffentliche Adresse von Charm) und `GLUONIFY_OIDC_AUDIENCE`, die Standardwerte unten; die Variablen `GLUONIFY_SOURCE_OIDC_*` haben weiterhin Vorrang.
+
 | Einstellung | Variable | Wert |
 |---|---|---|
-| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | der Charm-Client dieser Oberfläche (zum Beispiel `source-ui`); leer: keine Schaltfläche *Anmelden*, die Seite nennt die Variable |
+| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | der Charm-Client dieser Oberfläche (zum Beispiel `source-ui`); leer: keine Schaltfläche *Anmelden*, die Seite nennt die Variable; Standard `GLUONIFY_OIDC_CLIENT_ID` (von der Plattform gesetzt) |
 | `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | die **öffentliche** Adresse von Charm, die der Browser erreicht; leer: abgeleitet aus `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Nie `GLUONIFY_SERVICE_CHARM_URL`: das ist eine interne Adresse |
 | `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (das Kit ergänzt `offline_access` für das Refresh-Token) |
 
-**Der Charm-Client** (einmal, durch die Administration der Plattform): ein öffentlicher Client, dessen einzige Weiterleitung (auch nach der Abmeldung) genau die Adresse der Oberfläche ist, abschließender Schrägstrich inbegriffen, und dessen Audience die der Anwendung ist. Charm nimmt Aufrufe anderer Herkunft an `/token` nur von den Herkünften registrierter Weiterleitungen an.
+**Außerhalb der Plattform, oder für einen anderen Client**, ihn selbst registrieren (einmal, durch die Administration der Plattform) und `GLUONIFY_SOURCE_OIDC_CLIENT_ID` setzen: ein öffentlicher Client, dessen einzige Weiterleitung (auch nach der Abmeldung) genau die Adresse der Oberfläche ist, abschließender Schrägstrich inbegriffen, und dessen Audience die der Anwendung ist. Charm nimmt Aufrufe anderer Herkunft an `/token` nur von den Herkünften registrierter Weiterleitungen an.
 
 ```bash
 curl -s -X PUT "$CHARM_URL/v1/admin/clients/source-ui" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \

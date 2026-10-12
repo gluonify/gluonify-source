@@ -190,13 +190,15 @@ The interface never asks for a password and never asks you to paste a token. It 
 
 Signed out, the page shows only a short explanation and the **Sign in** button: notes, documents and the platform section all need a token.
 
+**Sign-in works with no configuration when deployed on the platform.** An application that declares `"uses": ["charm"]` (Bup infers it from the code) gets its own public Charm client, `app-<name>`, created and kept up to date by the platform: its redirects are exactly the application's addresses (`https://<name>.<zone>/` and the routes of its domains), its audience is `gluonify-<name>`. The platform injects `GLUONIFY_OIDC_CLIENT_ID`, `GLUONIFY_OIDC_ISSUER` (public issuer), `GLUONIFY_OIDC_PUBLIC_URL` (Charm's public address) and `GLUONIFY_OIDC_AUDIENCE`, which are the defaults below; the `GLUONIFY_SOURCE_OIDC_*` variables still override them.
+
 | Setting | Variable | Value |
 |---|---|---|
-| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | the Charm client of this interface (for example `source-ui`); empty: no *Sign in* button, the page names the variable |
+| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | the Charm client of this interface (for example `source-ui`); empty: no *Sign in* button, the page names the variable; default `GLUONIFY_OIDC_CLIENT_ID` (injected by the platform) |
 | `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | Charm's **public** address, the one the browser reaches; empty: derived from `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Never `GLUONIFY_SERVICE_CHARM_URL`: it is an internal address |
 | `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (the kit adds `offline_access` for the refresh token) |
 
-**The Charm client** (once, by the platform administrator): a public client whose only redirect (and post-logout redirect) is the exact address of the interface, trailing slash included, and whose audience is the application's. Charm accepts cross-origin calls to `/token` only from the origins of registered redirects.
+**Outside the platform, or to use another client**, register one yourself (once, by the platform administrator) and set `GLUONIFY_SOURCE_OIDC_CLIENT_ID`: a public client whose only redirect (and post-logout redirect) is the exact address of the interface, trailing slash included, and whose audience is the application's. Charm accepts cross-origin calls to `/token` only from the origins of registered redirects.
 
 ```bash
 curl -s -X PUT "$CHARM_URL/v1/admin/clients/source-ui" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \

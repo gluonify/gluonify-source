@@ -190,13 +190,15 @@ L'interface ne demande jamais de mot de passe et ne vous fait jamais coller de j
 
 Déconnectée, la page ne montre qu'une courte explication et le bouton **Se connecter** : les notes, les documents et la section de la plateforme demandent tous un jeton.
 
+**La connexion fonctionne sans aucune configuration une fois déployée sur la plateforme.** Une application qui déclare `"uses": ["charm"]` (Bup le déduit du code) reçoit son propre client public de Charm, `app-<nom>`, créé et tenu à jour par la plateforme : ses redirections sont exactement les adresses de l'application (`https://<nom>.<zone>/` et les routes de ses domaines), son audience est `gluonify-<nom>`. La plateforme injecte `GLUONIFY_OIDC_CLIENT_ID`, `GLUONIFY_OIDC_ISSUER` (émetteur public), `GLUONIFY_OIDC_PUBLIC_URL` (adresse publique de Charm) et `GLUONIFY_OIDC_AUDIENCE`, valeurs par défaut ci-dessous ; les variables `GLUONIFY_SOURCE_OIDC_*` l'emportent toujours.
+
 | Réglage | Variable | Valeur |
 |---|---|---|
-| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | le client Charm de cette interface (par exemple `source-ui`) ; vide : pas de bouton *Se connecter*, la page cite la variable |
+| `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | le client Charm de cette interface (par exemple `source-ui`) ; vide : pas de bouton *Se connecter*, la page cite la variable ; par défaut `GLUONIFY_OIDC_CLIENT_ID` (injectée par la plateforme) |
 | `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | l'adresse **publique** de Charm, celle qu'atteint le navigateur ; vide : déduite de `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Jamais `GLUONIFY_SERVICE_CHARM_URL` : c'est une adresse interne |
 | `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (le kit ajoute `offline_access` pour le jeton de rafraîchissement) |
 
-**Le client Charm** (une fois, par l'administrateur de la plateforme) : un client public dont la seule redirection (et redirection après déconnexion) est l'adresse exacte de l'interface, barre finale comprise, et dont l'audience est celle de l'application. Charm n'accepte les appels d'une autre origine vers `/token` que depuis les origines des redirections enregistrées.
+**Hors de la plateforme, ou pour un autre client**, l'enregistrer soi-même (une fois, par l'administrateur de la plateforme) et fournir `GLUONIFY_SOURCE_OIDC_CLIENT_ID` : un client public dont la seule redirection (et redirection après déconnexion) est l'adresse exacte de l'interface, barre finale comprise, et dont l'audience est celle de l'application. Charm n'accepte les appels d'une autre origine vers `/token` que depuis les origines des redirections enregistrées.
 
 ```bash
 curl -s -X PUT "$CHARM_URL/v1/admin/clients/source-ui" -H "Authorization: Bearer $GLUONIFY_CHARM_ADMIN_TOKEN" -H 'Content-Type: application/json' \
