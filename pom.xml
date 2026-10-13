@@ -19,7 +19,7 @@
     <!-- Gluonify SDK. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
          gluonify-plasma-quarkus and gluonify-plasma-testing are not in a published release yet (0.6.0 has the Crystallon client only): until the next one, install the
          SDK sources with "mvn install" in gluonify-plasma (0.1.0-SNAPSHOT), then set this to the release number. -->
-    <gluonify.sdk.version>0.7.1</gluonify.sdk.version>
+    <gluonify.sdk.version>0.7.2</gluonify.sdk.version>
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
     <gluonify.sea.maven.url>https://images.gluonify.io/maven</gluonify.sea.maven.url>
