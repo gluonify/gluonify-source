@@ -8,7 +8,7 @@ import {
   Ban, BarChart3, Circle, CirclePlay, CirclePlus, CircleStop, CloudUpload, Code, Database, DollarSign, File as FileIcon, FileCheck,
   Flag, FolderOpen, FolderPlus, Inbox, LayoutGrid, ListChecks, Mail, Network, RefreshCcw, RotateCcw, Send, Share2, Signpost, Table2, Tag,
   Undo2, Zap, Asterisk, Star, Eraser, Image as ImageIcon, Maximize, Maximize2, Minimize2, Fullscreen, Expand, Package, Server,
-  LayoutDashboard, Boxes, Route, Globe, Waypoints, Hammer, Gauge, Activity, HardDrive, Users,
+  LayoutDashboard, Boxes, Route, Globe, Waypoints, Hammer, Gauge, Activity, HardDrive, Users, UserCog,
 } from 'lucide-vue-next'
 
 /** Semantic names of the common icon set (Lucide) -> components. The names are the contract; add here, never in a console. */
@@ -33,6 +33,8 @@ export const ICONS = {
   // used by the administration console (navigation)
   dashboard: LayoutDashboard, boxes: Boxes, route: Route, globe: Globe, waypoints: Waypoints, hammer: Hammer, gauge: Gauge,
   activity: Activity, hardDrive: HardDrive, users: Users,
+  // signed-in user menu: Charm account security
+  userCog: UserCog,
 }
 
 /** Accepts a kit name or its kebab-case spelling (`sign-in`); undefined when unknown (nothing is drawn rather than a wrong glyph). */

@@ -16,6 +16,8 @@
   "password.hide": "Verbergen",
   "header.menu": "Menü ein- oder ausblenden",
   "header.user": "Benutzermenü",
+  "header.accountSecurity": "Kontosicherheit",
+  "header.newTab": "öffnet sich in einem neuen Tab",
   "header.signOut": "Abmelden",
   "theme.toggle": "Design wechseln",
   "theme.light": "Helles Design",

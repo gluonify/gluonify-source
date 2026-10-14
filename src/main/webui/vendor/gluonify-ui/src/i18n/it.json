@@ -16,6 +16,8 @@
   "password.hide": "Nascondi",
   "header.menu": "Mostra o nascondi il menu",
   "header.user": "Menu utente",
+  "header.accountSecurity": "Sicurezza dell’account",
+  "header.newTab": "si apre in una nuova scheda",
   "header.signOut": "Esci",
   "theme.toggle": "Cambia tema",
   "theme.light": "Tema chiaro",

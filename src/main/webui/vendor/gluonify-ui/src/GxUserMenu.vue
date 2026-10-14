@@ -5,10 +5,12 @@ import { useGx } from './context.js'
 import './components.css'
 
 // The signed-in person's menu in the header (`user` slot of GxHeader): a button (user icon, name, chevron) that opens a small menu.
-// Optional `items` come first; « Sign out » is always the last entry. Link items have an `href`; the others emit `select` with their id.
+// Optional `items` come first, then « Account security » when `accountUrl` (Charm's `/account`, see `charmAccountUrl`) is set;
+// « Sign out » is always the last entry. Charm's `/account` has no `return` parameter yet, so the page opens in a new tab. Link items have an `href`; the others emit `select` with their id.
 const props = defineProps({
   name: { type: String, default: '' },
   items: { type: Array, default: () => [] },
+  accountUrl: { type: String, default: '' },
   locale: { type: String, default: undefined },
 })
 const emit = defineEmits(['select', 'sign-out'])
@@ -59,6 +61,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onOutside))
         <a v-if="item.href" class="gx-usermenu__item" role="menuitem" tabindex="-1" :href="item.href" @click="close(false)"><GxIcon v-if="item.icon" :name="item.icon" :size="15" /><span>{{ item.label }}</span></a>
         <button v-else class="gx-usermenu__item" role="menuitem" tabindex="-1" type="button" @click="pick(item)"><GxIcon v-if="item.icon" :name="item.icon" :size="15" /><span>{{ item.label }}</span></button>
       </template>
+      <a v-if="accountUrl" class="gx-usermenu__item gx-usermenu__account" role="menuitem" tabindex="-1" :href="accountUrl" target="_blank" rel="noopener noreferrer"
+         :aria-label="`${gx.t('header.accountSecurity')} (${gx.t('header.newTab')})`" @click="close(false)"><GxIcon name="userCog" :size="15" /><span>{{ gx.t('header.accountSecurity') }}</span></a>
       <button class="gx-usermenu__item" role="menuitem" tabindex="-1" type="button" @click="signOut"><GxIcon name="signOut" :size="15" /><span>{{ gx.t('header.signOut') }}</span></button>
     </div>
   </div>

@@ -41,6 +41,20 @@ export function oidcConfigured(cfg) {
   return !!(cfg && cfg.clientId && cfg.authorizationUrl && cfg.tokenUrl)
 }
 
+/**
+ * The person's Charm account page (password, TOTP, passkeys, recovery methods), or '' without Charm.
+ * Explicit `accountUrl` first, then `<issuer>/account`, then the authorization URL with `/authorize` replaced by `/account`.
+ * Only absolute http(s) URLs are returned.
+ */
+export function charmAccountUrl(cfg) {
+  if (!cfg) return ''
+  const issuer = typeof cfg.issuer === 'string' && cfg.issuer ? cfg.issuer.replace(/\/+$/, '') + '/account' : ''
+  const fromAuthorize = typeof cfg.authorizationUrl === 'string' && /\/authorize(\?.*)?$/.test(cfg.authorizationUrl)
+    ? cfg.authorizationUrl.replace(/\/authorize(\?.*)?$/, '/account') : ''
+  const url = cfg.accountUrl || issuer || fromAuthorize
+  return typeof url === 'string' && /^https?:\/\//.test(url) ? url : ''
+}
+
 /** The configured scope plus `offline_access`, which gives the refresh token. */
 export function scopeOf(cfg, scope) {
   const scopes = (scope || cfg.scope || 'openid').split(/\s+/).filter(Boolean)
@@ -288,8 +302,11 @@ export function createAuth(options = {}) {
     if (target) loc.assign(target)
   }
 
+  /** Charm account page of the signed-in person ('' without Charm or when signed out): `accountUrl` of GxUserMenu. */
+  const accountUrl = computed(() => (authenticated.value ? charmAccountUrl(config.value) : ''))
+
   return {
-    token, config, claims, username, roles, authenticated, hasRole, signedOut, loginError,
+    accountUrl, token, config, claims, username, roles, authenticated, hasRole, signedOut, loginError,
     isValid, setToken, getAccessToken, loadConfig, buildLoginUrl, startLogin, autoLogin, trySilentLogin, completeLogin,
     endSessionUrl, refreshIfNeeded, logout, forget, recover, initLogoutBroadcast,
     baseUrl, withBase, stripBase, appRoot, redirectUri,

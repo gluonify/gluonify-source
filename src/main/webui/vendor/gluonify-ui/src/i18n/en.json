@@ -16,6 +16,8 @@
   "password.hide": "Hide",
   "header.menu": "Toggle menu",
   "header.user": "User menu",
+  "header.accountSecurity": "Account security",
+  "header.newTab": "opens in a new tab",
   "header.signOut": "Sign out",
   "theme.toggle": "Switch theme",
   "theme.light": "Light theme",

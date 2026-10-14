@@ -62,7 +62,7 @@ export const metrics: Readonly<Record<string, number>>
 export const HEADER_ORDER: readonly string[]
 export function loginTitle(signIn: string, product: string): string
 
-export interface OidcConfig { clientId: string; authorizationUrl: string; tokenUrl: string; logoutUrl?: string; scope?: string }
+export interface OidcConfig { clientId: string; authorizationUrl: string; tokenUrl: string; logoutUrl?: string; accountUrl?: string; issuer?: string; scope?: string }
 export interface Claims { sub?: string; name?: string; preferred_username?: string; exp?: number; roles?: string[]; [key: string]: unknown }
 export interface AuthOptions {
   storagePrefix: string
@@ -75,7 +75,7 @@ export interface AuthOptions {
   appName?: string
 }
 export interface Auth {
-  token: Ref<string>; config: Ref<OidcConfig | null>; claims: ComputedRef<Claims>; username: ComputedRef<string>
+  accountUrl: ComputedRef<string>; token: Ref<string>; config: Ref<OidcConfig | null>; claims: ComputedRef<Claims>; username: ComputedRef<string>
   roles: ComputedRef<string[]>; authenticated: ComputedRef<boolean>; hasRole(role: string): boolean
   isValid(token?: string): boolean; setToken(v: string): void; getAccessToken(): string | undefined
   loadConfig(fetchFn?: typeof fetch): Promise<OidcConfig | null>
@@ -104,6 +104,7 @@ export function createAuth(options: AuthOptions): Auth
 export function decodeJwt(token: string): Claims
 export function challenge(verifier: string): Promise<string>
 export function scopeOf(cfg: OidcConfig, scope?: string): string
+export function charmAccountUrl(cfg: Partial<OidcConfig> | null | undefined): string
 export function oidcConfigured(cfg: unknown): cfg is OidcConfig
 export const LOGOUT_CHANNEL: string
 export const SILENT_RETRY_MS: number
