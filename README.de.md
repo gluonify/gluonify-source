@@ -48,7 +48,7 @@ mvn quarkus:dev
 | `/` | die Vue-Oberfläche |
 | `/api/notes` | die REST-API (JSON) |
 | `/api/documents/invoice` | `POST`: eine Rechnung als PDF, von Crystallon erzeugt, wenn es konfiguriert ist (siehe [§7](#dokumente-crystallon)) |
-| `/q/swagger-ui` | die interaktive Dokumentation der API |
+| `/q/swagger-ui` | die Dokumentation der API (interaktiv in Dev und Test, in Produktion nur lesbar: weder Authorize noch Try it out) |
 | `/q/openapi` | der OpenAPI-Vertrag (JSON oder YAML) |
 | `/q/health/ready` · `/q/health/live` | Gesundheit: »bereit« und »lebendig« (siehe [§7](#7-anbindung-an-die-gluonify-dienste)) |
 | `/q/metrics` | Prometheus-Metriken |

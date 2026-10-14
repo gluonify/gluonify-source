@@ -48,7 +48,7 @@ Apra <http://localhost:8080>: l'interfaccia (aggiungere, elencare, eliminare not
 | `/` | l'interfaccia Vue |
 | `/api/notes` | l'API REST (JSON) |
 | `/api/documents/invoice` | `POST`: una fattura in PDF, prodotta da Crystallon quando è configurato (vedere [§7](#documenti-crystallon)) |
-| `/q/swagger-ui` | la documentazione interattiva dell'API |
+| `/q/swagger-ui` | la documentazione dell'API (interattiva in dev e test, in sola lettura in produzione: né Authorize né Try it out) |
 | `/q/openapi` | il contratto OpenAPI (JSON o YAML) |
 | `/q/health/ready` · `/q/health/live` | salute: «pronto» e «vivo» (vedere [§7](#7-interfacciarsi-con-i-servizi-di-gluonify)) |
 | `/q/metrics` | metriche Prometheus |

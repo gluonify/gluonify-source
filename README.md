@@ -48,7 +48,7 @@ Open <http://localhost:8080>: the interface (add, list, delete notes). Also:
 | `/` | the Vue interface (shows the Source logo on a transparent background, "Source · role" and the particle line in the header, "© year Gluonify" at the bottom, `BrandLogo.vue` and `public/favicon.svg`: replace both with your own logo) |
 | `/api/notes` | the REST API (JSON) |
 | `/api/documents/invoice` | `POST`: an invoice as a PDF, produced by Crystallon when it is configured (see [§7](#documents-crystallon)) |
-| `/q/swagger-ui` | the interactive API documentation |
+| `/q/swagger-ui` | the API documentation (interactive in dev and test, read-only in production: no Authorize, no Try it out) |
 | `/q/openapi` | the OpenAPI contract (JSON or YAML) |
 | `/q/health/ready` · `/q/health/live` | health: "ready" and "alive" (see [§7](#7-integrating-with-gluonify-services)) |
 | `/q/metrics` | Prometheus metrics |
@@ -495,3 +495,10 @@ An API test is copied from `NotesResourceTest`; a storage test from `FileNoteSto
 ---
 
 *Gluonify is a minimalist platform for native Quarkus applications: [gluonify.cloud](https://gluonify.cloud) (overview) and [gluonify.io](https://gluonify.io) (technical). This repository is deliberately small: it can be read in an hour.*
+
+## Swagger UI in production: read-only documentation
+
+Since 2026-10-14, `/q/swagger-ui` in a production build (`prod` profile, JVM or native) is read-only documentation: no "Authorize" and no
+"Try it out" button (hidden), and every request other than loading the `/q/openapi` contract is refused in the browser by
+`quarkus.swagger-ui.request-interceptor`: no pasted token can be used. The contract stays public as before. Dev and test keep the full
+Swagger UI. Settings `%prod.quarkus.swagger-ui.*` in `application.properties`, checked by `SwaggerReadOnlyConfigTest`.

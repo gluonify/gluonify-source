@@ -48,7 +48,7 @@ Abra <http://localhost:8080>: la interfaz (añadir, listar, eliminar notas). Tam
 | `/` | la interfaz Vue |
 | `/api/notes` | la API REST (JSON) |
 | `/api/documents/invoice` | `POST`: una factura en PDF, producida por Crystallon cuando está configurado (véase [§7](#documentos-crystallon)) |
-| `/q/swagger-ui` | la documentación interactiva de la API |
+| `/q/swagger-ui` | la documentación de la API (interactiva en dev y test, de solo lectura en producción: ni Authorize ni Try it out) |
 | `/q/openapi` | el contrato OpenAPI (JSON o YAML) |
 | `/q/health/ready` · `/q/health/live` | salud: «listo» y «vivo» (véase [§7](#7-interactuar-con-los-servicios-de-gluonify)) |
 | `/q/metrics` | métricas Prometheus |

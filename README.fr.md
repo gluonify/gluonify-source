@@ -48,7 +48,7 @@ Ouvrez <http://localhost:8080> : l'interface (ajouter, lister, supprimer des not
 | `/` | l'interface Vue |
 | `/api/notes` | l'API REST (JSON) |
 | `/api/documents/invoice` | `POST` : une facture en PDF, produite par Crystallon quand il est configuré (voir [§7](#documents-crystallon)) |
-| `/q/swagger-ui` | la documentation interactive de l'API |
+| `/q/swagger-ui` | la documentation de l'API (interactive en dev et en test, en lecture seule en production : ni Authorize ni Try it out) |
 | `/q/openapi` | le contrat OpenAPI (JSON ou YAML) |
 | `/q/health/ready` · `/q/health/live` | santé : « prêt » et « vivant » (voir [§7](#7-sinterfacer-avec-les-services-de-gluonify)) |
 | `/q/metrics` | mesures Prometheus |
