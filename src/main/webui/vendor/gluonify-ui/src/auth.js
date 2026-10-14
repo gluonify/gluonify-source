@@ -56,7 +56,7 @@ export function createAuth(options = {}) {
   if (!prefix) throw new Error('createAuth: storagePrefix is required')
   const K = {
     token: `${prefix}-token`, pkce: `${prefix}-pkce`, id: `${prefix}-idtoken`,
-    refresh: `${prefix}-refresh`, expiry: `${prefix}-expiry`, silent: `${prefix}-silent`,
+    refresh: `${prefix}-refresh`, expiry: `${prefix}-expiry`, silent: `${prefix}-silent`, out: `${prefix}-signedout`,
   }
   const retryMs = options.silentRetryMs ?? SILENT_RETRY_MS
   const channelName = options.logoutChannel ?? LOGOUT_CHANNEL
@@ -76,7 +76,8 @@ export function createAuth(options = {}) {
   }
   const appRoot = (loc = window.location) => `${loc.origin}${baseUrl()}`
   const redirectUri = (loc = window.location) => appRoot(loc)
-  const currentPage = (loc) => stripBase(loc.pathname) + loc.search
+  // the page to come back to, hash included (consoles with a hash router: `/#/overview`)
+  const currentPage = (loc) => stripBase(loc.pathname) + loc.search + (loc.hash || '')
 
   // --- storage
   const readSession = (key) => { try { return sessionStorage.getItem(key) ?? '' } catch { return '' } }
@@ -98,6 +99,11 @@ export function createAuth(options = {}) {
     return !exp || exp * 1000 > Date.now()
   }
   const authenticated = computed(() => isValid(token.value))
+  // explicit sign-out (this tab, or another tab or console): the sign-in page says so instead of signing straight back in
+  const signedOut = ref(readSession(K.out) === '1')
+  const markSignedOut = (v) => { signedOut.value = v; writeSession(K.out, v ? '1' : '') }
+  // the last return from Charm carried an error (or the code exchange failed): no automatic redirect, the page explains
+  const loginError = ref(false)
   const setToken = (v) => { token.value = String(v || '').trim(); writeSession(K.token, token.value) }
   const getAccessToken = () => (isValid() ? token.value : undefined)
 
@@ -136,27 +142,36 @@ export function createAuth(options = {}) {
   async function startLogin(loc = window.location) {
     const cfg = config.value ?? (await loadConfig())
     if (!oidcConfigured(cfg)) return false
-    writeSession(K.silent, '')
+    writeSession(K.silent, String(Date.now())) // a deliberate sign-in also arms the loop guard
+    markSignedOut(false)
+    loginError.value = false
     loc.assign(await buildLoginUrl(cfg, redirectUri(loc), currentPage(loc)))
     return true
   }
 
   /**
-   * Without a token, asks Charm once (`prompt=none`) whether its session is still open. Resolves to true when the browser is
-   * being sent away. Never loops: the attempt is timestamped in the session and not repeated for `silentRetryMs`; a sign-out
-   * stamps it as well; a later visit, after signing in elsewhere, tries again.
+   * Automatic sign-in: without a valid token, sends the browser straight to Charm's sign-in page (code + PKCE, no `prompt`: an open
+   * Charm session comes back at once, otherwise Charm shows its form: password or access key), keeping the requested page so that the
+   * person comes back to it. Resolves to true when the browser is being sent away; false means the console shows its sign-in page:
+   * already signed in (possibly refused by the console's roles), Charm not configured, the last return from Charm was an error, an
+   * explicit sign-out (until the next sign-in), or the loop guard (a redirect less than `silentRetryMs` ago that did not come back
+   * signed in). `returnTo` overrides the page to come back to (a hash route, for instance).
    */
-  async function trySilentLogin(loc = window.location) {
+  async function autoLogin(loc = window.location, { returnTo } = {}) {
+    signedOut.value = readSession(K.out) === '1' // the session is the reference (another instance or a test may have changed it)
+    if (authenticated.value || signedOut.value || loginError.value) return false
     const last = Number(readSession(K.silent)) || 0
-    if (Date.now() - last < retryMs || authenticated.value) return false
+    if (Date.now() - last < retryMs) return false
     const cfg = config.value
     if (!oidcConfigured(cfg)) return false
-    // a token kept in the tab but no longer usable (expired, refresh refused) must not stop the silent sign-in: Charm's session may be open
+    // a token kept in the tab but no longer usable (expired, refresh refused) must not stop the sign-in: Charm's session may be open
     if (token.value) forget({ blockSilent: false })
     writeSession(K.silent, String(Date.now()))
-    loc.assign(await buildLoginUrl(cfg, redirectUri(loc), currentPage(loc), true))
+    loc.assign(await buildLoginUrl(cfg, redirectUri(loc), returnTo ?? currentPage(loc)))
     return true
   }
+  /** Former name of `autoLogin` (it used to ask with `prompt=none`); kept so that every console follows the automatic redirect. */
+  const trySilentLogin = (loc = window.location, opts) => autoLogin(loc, opts)
 
   function keep(j) {
     setToken(j.access_token ?? '')
@@ -173,11 +188,12 @@ export function createAuth(options = {}) {
     const p = new URLSearchParams(loc.search)
     const code = p.get('code'), state = p.get('state'), error = p.get('error')
     if (!code && !error) return null
+    loginError.value = true // until the exchange succeeds
     let saved = null
     try { saved = JSON.parse(readSession(K.pkce) || 'null') } catch { /* no saved login */ }
     writeSession(K.pkce, '')
     try { history.replaceState(null, '', loc.pathname + loc.hash) } catch { /* no history */ }
-    if (!code && error && SILENT_ERRORS.includes(error) && saved?.silent && saved.state === state) return null
+    if (!code && error && SILENT_ERRORS.includes(error) && saved?.silent && saved.state === state) { loginError.value = false; return null }
     if (!code || !saved || saved.state !== state || !oidcConfigured(cfg)) throw new Error('login-failed')
     const r = await fetchFn(cfg.tokenUrl, {
       method: 'POST',
@@ -190,6 +206,9 @@ export function createAuth(options = {}) {
     const j = await r.json()
     if (!j.access_token) throw new Error('login-failed')
     keep(j)
+    loginError.value = false
+    markSignedOut(false)
+    writeSession(K.silent, '') // came back signed in: the loop guard is released
     const back = saved.returnTo ?? '/'
     return back.startsWith('/') && !back.startsWith('//') ? back : '/'
   }
@@ -251,7 +270,7 @@ export function createAuth(options = {}) {
     listener?.close()
     listenerCtor = BroadcastChannel
     listener = new BroadcastChannel(channelName)
-    listener.onmessage = () => { forget(); onLogout?.() }
+    listener.onmessage = () => { forget(); markSignedOut(true); onLogout?.() }
   }
   function announceLogout() {
     if (typeof BroadcastChannel === 'undefined') return
@@ -264,13 +283,14 @@ export function createAuth(options = {}) {
   function logout(loc = window.location) {
     const target = endSessionUrl(config.value, redirectUri(loc))
     forget()
+    markSignedOut(true)
     announceLogout()
     if (target) loc.assign(target)
   }
 
   return {
-    token, config, claims, username, roles, authenticated, hasRole,
-    isValid, setToken, getAccessToken, loadConfig, buildLoginUrl, startLogin, trySilentLogin, completeLogin,
+    token, config, claims, username, roles, authenticated, hasRole, signedOut, loginError,
+    isValid, setToken, getAccessToken, loadConfig, buildLoginUrl, startLogin, autoLogin, trySilentLogin, completeLogin,
     endSessionUrl, refreshIfNeeded, logout, forget, recover, initLogoutBroadcast,
     baseUrl, withBase, stripBase, appRoot, redirectUri,
   }

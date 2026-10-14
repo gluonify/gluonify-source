@@ -294,6 +294,22 @@ describe('sign-in with Charm (authorization code + PKCE)', () => {
     expect(w.findAll('button').map((b) => b.text())).not.toContain('Sign out')
   })
 
+  it('not signed in: goes straight to Charm\'s sign-in page, keeping the page, with no sign-in section in between', async () => {
+    sessionStorage.removeItem('gluonify-source-silent') // beforeEach signed out locally, which arms the loop guard
+    loc.search = '?note=1'
+    mockApi({})
+    const w = mount(App)
+    await vi.waitFor(() => expect(loc.assign).toHaveBeenCalledTimes(1))
+    expect(new URL(loc.assign.mock.calls[0][0]).searchParams.get('prompt')).toBeNull()
+    expect(JSON.parse(sessionStorage.getItem('gluonify-source-pkce')).returnTo).toBe('/?note=1')
+    expect(w.find('.signin').exists()).toBe(false)
+    // came back without signing in (inside the loop guard): the sign-in section, no second redirect
+    const again = mount(App)
+    await flushPromises()
+    expect(again.find('.signin button').text()).toBe('Sign in')
+    expect(loc.assign).toHaveBeenCalledTimes(1)
+  })
+
   it('Sign in sends the browser to Charm with the client id, the redirect URI of the UI and a S256 challenge', async () => {
     mockApi({})
     const w = mount(App)
@@ -337,7 +353,8 @@ describe('sign-in with Charm (authorization code + PKCE)', () => {
     await flushPromises()
     expect(auth.token.value).toBe('')
     expect(w.text()).not.toContain('First')
-    expect(w.find('.signin button').text()).toBe('Sign in')
+    expect(w.find('.signin button').text()).toBe('Sign in again') // right after a sign-out: no automatic redirect, the person chooses
+    expect(w.find('.signin [role=status]').text()).toBe('You are signed out.')
     const out = new URL(loc.assign.mock.calls.at(-1)[0])
     expect(out.origin + out.pathname).toBe('https://gluonify.lan/logout')
     expect(out.searchParams.get('id_token_hint')).toBe('id.t.k')

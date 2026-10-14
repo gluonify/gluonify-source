@@ -119,6 +119,9 @@ onMounted(async () => {
     } catch {
       error.value = { key: 'errLoginFailed' }
     }
+    // not signed in: straight to Charm's sign-in page, no intermediate step (the kit's autoLogin keeps the page for the return); the
+    // sign-in section only shows after a sign-out, an error coming back from Charm, without Charm, or inside the kit's loop guard
+    if (!auth.authenticated.value && !error.value && (await auth.autoLogin(browser.location()))) return
   }
   auth.initLogoutBroadcast(() => { notes.value = []; platform.value = null }) // signed out in another tab: this one follows
   ready.value = true
@@ -147,8 +150,9 @@ onMounted(async () => {
 
     <section v-if="ready && !signedIn" class="signin">
       <h2>{{ t('authTitle') }}</h2>
+      <p v-if="auth.signedOut.value" class="hint" role="status">{{ t('signedOutNotice') }}</p>
       <p class="hint">{{ t('signedOutHint', { read: 'source:read', write: 'source:write' }) }}</p>
-      <button v-if="canSignIn" type="button" @click="signIn">{{ t('signIn') }}</button>
+      <button v-if="canSignIn" type="button" @click="signIn">{{ t(auth.signedOut.value ? 'signInAgain' : 'signIn') }}</button>
       <p v-else class="hint">{{ t('signInUnavailable') }}</p>
     </section>
 

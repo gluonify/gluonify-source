@@ -10,6 +10,8 @@ export default {
   authTitle: 'Authentification',
   signedOutHint: 'Connectez-vous avec votre compte Gluonify pour lire et écrire des notes (rôles {read} et {write}). Vous tapez votre mot de passe sur la page de connexion de Charm, jamais dans cette application.',
   signIn: 'Se connecter',
+  signedOutNotice: 'Vous êtes déconnecté.',
+  signInAgain: 'Se reconnecter',
   signOut: 'Se déconnecter',
   signedInAs: 'Connecté : {name}',
   signInUnavailable: "La connexion n'est pas configurée : donnez à l'application son identifiant de client Charm (GLUONIFY_SOURCE_OIDC_CLIENT_ID) et l'émetteur des jetons (GLUONIFY_SOURCE_OIDC_ISSUER).",

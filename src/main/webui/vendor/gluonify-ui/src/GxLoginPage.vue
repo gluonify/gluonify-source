@@ -14,7 +14,9 @@ import './components.css'
  * Tab title: « Sign in - <product> ». Every human sign-in goes through Charm (authorization code + PKCE), so that Charm's MFA
  * (WebAuthn, TOTP) cannot be bypassed: there is deliberately no field to paste an access token. Without Charm configured, the page
  * says so instead of offering the button. The logic stays in the console: it listens to `charm` (start the redirect) and drives
- * `charmEnabled`, `denied` (account refused by the console), `failed`, `checking` (silent sign-in running).
+ * `charmEnabled`, `denied` (account refused by the console), `failed`, `checking` (sign-in running), `signedOut` (right after an
+ * explicit sign-out: « You are signed out » and « Sign in again », so that the sign-out is not undone by the automatic redirect).
+ * The console only shows this page when `auth.autoLogin()` did not send the browser to Charm.
  */
 const props = defineProps({
   intro: { type: [String, Object], default: undefined },
@@ -22,6 +24,7 @@ const props = defineProps({
   denied: { type: Boolean, default: false },
   failed: { type: Boolean, default: false },
   checking: { type: Boolean, default: false },
+  signedOut: { type: Boolean, default: false },
   name: { type: [String, Object], default: undefined },
   locale: { type: String, default: undefined },
 })
@@ -30,7 +33,8 @@ const gx = useGx(props)
 
 const productName = () => localized(props.name ?? gx.brand?.name, gx.locale.value)
 const previousTitle = typeof document !== 'undefined' ? document.title : ''
-watchEffect(() => { document.title = loginTitle(gx.t('login.title'), productName()) })
+const heading = () => gx.t(props.signedOut && !props.denied && !props.failed ? 'login.signedOutTitle' : 'login.title')
+watchEffect(() => { document.title = loginTitle(heading(), productName()) })
 onBeforeUnmount(() => { document.title = previousTitle })
 </script>
 
@@ -39,12 +43,13 @@ onBeforeUnmount(() => { document.title = previousTitle })
     <GxHeader :locale="locale"><template #brand><GxBrandBlock :locale="locale" /></template></GxHeader>
     <main id="main" class="gx-login__main">
       <div class="gx-login__panel">
-        <h1>{{ gx.t('login.title') }}</h1>
-        <p class="gx-muted gx-login__intro"><slot name="intro">{{ intro === undefined ? gx.t('login.intro') : localized(intro, gx.locale.value) }}</slot></p>
+        <h1>{{ heading() }}</h1>
+        <p v-if="signedOut && !denied && !failed" class="gx-muted gx-login__intro" role="status" data-gx="signed-out">{{ gx.t('login.signedOut') }}</p>
+        <p v-else class="gx-muted gx-login__intro"><slot name="intro">{{ intro === undefined ? gx.t('login.intro') : localized(intro, gx.locale.value) }}</slot></p>
         <p v-if="checking" class="gx-muted" role="status">{{ gx.t('login.checking') }}</p>
         <p v-if="denied" class="gx-error" role="alert">{{ gx.t('login.rejected') }}</p>
         <p v-if="failed" class="gx-error" role="alert">{{ gx.t('login.failed') }}</p>
-        <GxButton v-if="charmEnabled" :label="gx.t('login.charm')" icon="signIn" @click="emit('charm')" />
+        <GxButton v-if="charmEnabled" :label="gx.t(signedOut && !denied && !failed ? 'login.signInAgain' : 'login.charm')" icon="signIn" @click="emit('charm')" />
         <p v-else class="gx-muted" role="note" data-gx="unavailable">{{ gx.t('login.unavailable') }}</p>
       </div>
     </main>

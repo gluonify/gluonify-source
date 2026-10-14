@@ -10,6 +10,8 @@ export default {
   authTitle: 'Authentifizierung',
   signedOutHint: 'Melden Sie sich mit Ihrem Gluonify-Konto an, um Notizen zu lesen und zu schreiben (Rollen {read} und {write}). Ihr Passwort geben Sie auf der Anmeldeseite von Charm ein, nie in dieser Anwendung.',
   signIn: 'Anmelden',
+  signedOutNotice: 'Sie sind abgemeldet.',
+  signInAgain: 'Erneut anmelden',
   signOut: 'Abmelden',
   signedInAs: 'Angemeldet: {name}',
   signInUnavailable: 'Die Anmeldung ist nicht konfiguriert: Geben Sie der Anwendung ihre Charm-Client-ID (GLUONIFY_SOURCE_OIDC_CLIENT_ID) und den Token-Aussteller (GLUONIFY_SOURCE_OIDC_ISSUER).',

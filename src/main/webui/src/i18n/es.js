@@ -10,6 +10,8 @@ export default {
   authTitle: 'Autenticación',
   signedOutHint: 'Inicie sesión con su cuenta de Gluonify para leer y escribir notas (roles {read} y {write}). La contraseña se escribe en la página de inicio de sesión de Charm, nunca en esta aplicación.',
   signIn: 'Iniciar sesión',
+  signedOutNotice: 'Ha cerrado la sesión.',
+  signInAgain: 'Volver a iniciar sesión',
   signOut: 'Cerrar sesión',
   signedInAs: 'Sesión iniciada: {name}',
   signInUnavailable: 'El inicio de sesión no está configurado: indique a la aplicación su identificador de cliente de Charm (GLUONIFY_SOURCE_OIDC_CLIENT_ID) y el emisor de los tokens (GLUONIFY_SOURCE_OIDC_ISSUER).',

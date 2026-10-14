@@ -10,6 +10,8 @@ export default {
   authTitle: 'Autenticazione',
   signedOutHint: 'Accedi con il tuo account Gluonify per leggere e scrivere note (ruoli {read} e {write}). La password si digita nella pagina di accesso di Charm, mai in questa applicazione.',
   signIn: 'Accedi',
+  signedOutNotice: 'Sei disconnesso.',
+  signInAgain: 'Accedi di nuovo',
   signOut: 'Esci',
   signedInAs: 'Accesso effettuato: {name}',
   signInUnavailable: "L'accesso non è configurato: fornisci all'applicazione il suo identificativo client di Charm (GLUONIFY_SOURCE_OIDC_CLIENT_ID) e l'emittente dei token (GLUONIFY_SOURCE_OIDC_ISSUER).",

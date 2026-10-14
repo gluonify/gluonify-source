@@ -10,6 +10,8 @@ export default {
   authTitle: 'Authentication',
   signedOutHint: "Sign in with your Gluonify account to read and write notes (roles {read} and {write}). You type your password on Charm's sign-in page, never in this application.",
   signIn: 'Sign in',
+  signedOutNotice: 'You are signed out.',
+  signInAgain: 'Sign in again',
   signOut: 'Sign out',
   signedInAs: 'Signed in as {name}',
   signInUnavailable: 'Sign-in is not configured: give the application its Charm client id (GLUONIFY_SOURCE_OIDC_CLIENT_ID) and the token issuer (GLUONIFY_SOURCE_OIDC_ISSUER).',

@@ -81,7 +81,14 @@ export interface Auth {
   loadConfig(fetchFn?: typeof fetch): Promise<OidcConfig | null>
   buildLoginUrl(cfg: OidcConfig, redirectUri: string, returnTo?: string, silent?: boolean): Promise<string>
   startLogin(loc?: Location): Promise<boolean>
-  trySilentLogin(loc?: Location): Promise<boolean>
+  /** Signed out and nothing to explain: straight to Charm's sign-in page (true: the browser is leaving). False after a sign-out, an OIDC error, a refusal, without Charm, or inside the loop guard. */
+  autoLogin(loc?: Location, opts?: { returnTo?: string }): Promise<boolean>
+  /** Former name of autoLogin. */
+  trySilentLogin(loc?: Location, opts?: { returnTo?: string }): Promise<boolean>
+  /** True right after an explicit sign-out (this tab or another), until the next sign-in. */
+  signedOut: Ref<boolean>
+  /** True when the last return from Charm was an OIDC error or a failed code exchange. */
+  loginError: Ref<boolean>
   completeLogin(cfg?: OidcConfig | null, loc?: Location, fetchFn?: typeof fetch): Promise<string | null>
   endSessionUrl(cfg: OidcConfig | null, returnUri: string): string | null
   refreshIfNeeded(fetchFn?: typeof fetch): Promise<void>
