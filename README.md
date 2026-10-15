@@ -385,7 +385,7 @@ docker build --target out --output type=local,dest=dist -f Dockerfile.build .
 
 The `dist/gluonify-source` file is a **glibc** Linux executable for your Docker's architecture (arm64 on Apple Silicon, amd64 on x86_64). For the other architecture: `docker build --platform linux/amd64 …` (slow: emulation; see the comments in `Dockerfile.build`).
 
-Without Docker: `mvn package -Dnative` requires GraalVM (NIK 25) to be installed.
+Without Docker: `mvn package -Dnative` requires a GraalVM 25 distribution with native-image installed (Mandrel 25, the toolchain of the Docker build and of the platform builder, or GraalVM CE 25).
 
 **Platform standards**: after the clone, Gluonify's builder checks the project (`R-SANTE`, `R-SECRET`, `R-FICHIER-SENSIBLE`, `R-NATIF`, `R-IMAGE`, `R-ECOUTE`) and rejects a repository that does not comply. [`ConformityTest`](src/test/java/io/gluonify/source/ConformityTest.java) checks them **on your side**; keep it.
 

@@ -3,8 +3,16 @@
 #   docker build --target out --output type=local,dest=dist -f Dockerfile.build .      ->  dist/gluonify-source
 # STANDALONE project: no extra context (unlike Gluonify's internal components, which receive the parent POM of gluonify-plasma).
 # The Vue UI (Quinoa) is built with the system Node (the one Quinoa would download is linked to glibc, not to this image) and embedded in the executable.
-FROM bellsoft/liberica-native-image-kit-container:jdk-25-nik-25-glibc AS build
-RUN apk add --no-cache maven zlib-dev nodejs npm
+# Chaîne native : Mandrel 25 (JDK 25 + native-image de Red Hat, ubi9 : glibc 2.34), épinglée par empreinte ; Maven et Node copiés de leurs images officielles.
+FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS maven
+FROM node:24.11.1-bookworm-slim@sha256:48abc13a19400ca3985071e287bd405a1d99306770eb81d61202fb6b65cf0b57 AS node
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25@sha256:c0c1c74529e053b272bd5dcb16c646a9dd7546c5c6e76f5c6141c0d72a9126e0 AS build
+USER root
+COPY --from=maven /usr/share/maven /opt/maven
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+ENV PATH=/opt/maven/bin:$PATH
 WORKDIR /src
 COPY pom.xml .
 COPY src src
