@@ -495,3 +495,11 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 ---
 
 *Gluonify es una plataforma minimalista para aplicaciones Quarkus nativas: [gluonify.cloud](https://gluonify.cloud) (presentación) y [gluonify.io](https://gluonify.io) (técnica). Este repositorio es deliberadamente pequeño: se lee en una hora.*
+
+## Licencia
+
+Copyright (c) 2026 David Cabillic.
+
+Este repositorio se publica bajo la [licencia Apache, versión 2.0](LICENSE). Puede usarlo, modificarlo y
+redistribuirlo, incluso con fines comerciales, en las condiciones de esa licencia; se entrega «tal cual»,
+sin garantía. Los componentes de terceros conservan sus propias licencias (véase `NOTICE` si existe).

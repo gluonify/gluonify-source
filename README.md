@@ -502,3 +502,11 @@ Since 2026-10-14, `/q/swagger-ui` in a production build (`prod` profile, JVM or 
 "Try it out" button (hidden), and every request other than loading the `/q/openapi` contract is refused in the browser by
 `quarkus.swagger-ui.request-interceptor`: no pasted token can be used. The contract stays public as before. Dev and test keep the full
 Swagger UI. Settings `%prod.quarkus.swagger-ui.*` in `application.properties`, checked by `SwaggerReadOnlyConfigTest`.
+
+## License
+
+Copyright (c) 2026 David Cabillic.
+
+This repository is released under the [Apache License, Version 2.0](LICENSE). You may use, modify and
+redistribute it, including commercially, under the terms of that license; it is provided "as is",
+without warranty. Third-party components remain under their own licenses (see `NOTICE` where present).
