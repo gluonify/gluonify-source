@@ -6,5 +6,6 @@ export default defineConfig({
   plugins: [vue()],
   base: './',
   build: { outDir: 'dist', emptyOutDir: true },
-  test: { environment: 'jsdom', include: ['src/**/*.test.js'] }
+  // the kit's .vue files live in node_modules (file:./vendor/gluonify-ui): Vitest must transform them (node 20 otherwise refuses the .vue extension)
+  test: { environment: 'jsdom', include: ['src/**/*.test.js'], server: { deps: { inline: ['@gluonify/ui'] } } }
 })
