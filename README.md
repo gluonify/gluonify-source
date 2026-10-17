@@ -296,7 +296,7 @@ Photon receives your partners' messages (verifies their HMAC signature, converts
 </dependency>
 ```
 
-The SDK is served by the Maven repository of **gluonify-sea** (public read: no account to resolve it), added to Maven Central, not instead of it; this `pom.xml` writes its address as the property `gluonify.sea.maven.url`, so that a mirror or a local copy can replace it (`mvn verify -Dgluonify.sea.maven.url=file:///…`). Gluonify's builder (Bup) declares this repository by itself for the builds it runs. **Version**: the SDK is published at 0.7.2 on gluonify-sea, with `gluonify-plasma-quarkus` and `gluonify-plasma-testing`; `gluonify.sdk.version` is `0.7.2` in `pom.xml`, nothing to install locally. Since 0.7.1 each client module carries a marker (`META-INF/gluonify/services/crystallon` in `gluonify-plasma-crystallon-client`) from which the builder infers `uses`. With Gradle: the same two artifacts (`implementation` and `testImplementation`), with no repository other than Maven Central and gluonify-sea.
+The SDK is served by the Maven repository of **gluonify-sea** (public read: no account to resolve it), added to Maven Central, not instead of it; this `pom.xml` writes its address as the property `gluonify.sea.maven.url`, so that a mirror or a local copy can replace it (`mvn verify -Dgluonify.sea.maven.url=file:///…`). Gluonify's builder (Bup) declares this repository by itself for the builds it runs. **Version**: the SDK is published at 0.7.4 on gluonify-sea, with `gluonify-plasma-quarkus` and `gluonify-plasma-testing`; `gluonify.sdk.version` is `0.7.4` in `pom.xml` (0.7.4 or later: `GET /q/usage`), nothing to install locally. Since 0.7.1 each client module carries a marker (`META-INF/gluonify/services/crystallon` in `gluonify-plasma-crystallon-client`) from which the builder infers `uses`. With Gradle: the same two artifacts (`implementation` and `testImplementation`), with no repository other than Maven Central and gluonify-sea.
 
 **2. Nothing to declare.** Built by Bup, the application gets `?crystallon` in its `uses` without writing it: Bup reads the marker of `gluonify-plasma-crystallon-client` on the runtime classpath (SDK 0.7.1 and later) and adds the service as optional; [`gluonify.json`](gluonify.json) does not mention it. Deployed by hand (`PUT /apps`: no build, so no inference), the spec declares it: `crystallon` in the `uses` of [`deploy/appspec.json`](deploy/appspec.json). Either way the platform **opens the network** to Crystallon, and to it alone, and provides its address and the application's own token. **There is no property, no URL and no token in this repository**: the producer of `gluonify-plasma-quarkus` gives the code a `CrystallonClient` (the Jackson 3 mapper of the application, the address and the token found by the SDK). [`Documents`](src/main/java/io/gluonify/source/documents/Documents.java) only asks whether Crystallon is available (`GluonifyServices.optional("crystallon")`) and injects the client as an `Instance<CrystallonClient>`. **Without it the feature is off and nothing else changes**: the endpoint answers 404 and says why, `GET /api/platform` says `"documents": false`, the interface hides the section, the application starts and every other test runs without Crystallon. Where the application runs decides how the SDK finds Crystallon:
 
@@ -458,6 +458,7 @@ cd src/main/webui && npm install && npm test   # 53 interface tests
 | `DocumentsReflectionTest` | 1 | native guard: every record of the generated payload is registered for reflection |
 | `CrystallonTemplateFileTest` | 1 | the Crystallon template of the repository (`crystallon/templates/gluonify-invoice.json`): valid JSON, the exact name the generated code calls, the same top-level fields as the generated payload (the `SCHEMA_SHA256` fingerprint is computed by Crystallon only) |
 | `DeploySpecsTest` | 2 | the specs of `deploy/` use current names (`uses`, `SOURCE_STORE`); `gluonify.json` (read by the builder) declares only what the SDK cannot detect (`charm`, `gdown`) and, with the inferred `crystallon` (marker on the classpath), gives the same `uses` as `deploy/appspec.json` |
+| `UsageContractTest` | 8 | `GET /q/usage` (`gluonify-usage/1`): the five common checks of the SDK (shape, 401 without a token, 403 without the role, no secret, no-store), then the product role `gluonify:source:usage:read`, the common role `gluonify:usage:read`, `attribution: none` |
 
 An API test is copied from `NotesResourceTest`; a storage test from `FileNoteStoreTest` (without starting Quarkus: fast).
 
@@ -506,6 +507,16 @@ Since 2026-10-14, `/q/swagger-ui` in a production build (`prod` profile, JVM or 
 "Try it out" button (hidden), and every request other than loading the `/q/openapi` contract is refused in the browser by
 `quarkus.swagger-ui.request-interceptor`: no pasted token can be used. The contract stays public as before. Dev and test keep the full
 Swagger UI. Settings `%prod.quarkus.swagger-ui.*` in `application.properties`, checked by `SwaggerReadOnlyConfigTest`.
+
+## Usage contract `/q/usage` (`gluonify-usage/1`)
+
+`GET /q/usage` returns the memory and CPU of this process in the platform's common usage contract: the SDK's `UsageResource` (`gluonify-plasma-sdk`, enabled by `quarkus.index-dependency.plasma-sdk.*` in `application.properties`), `component` = `source`, `process` read from `/proc/self`, `cgroup` when it exists, `attribution: none` (this application attributes nothing to other applications), `Cache-Control: no-store`. Never anonymous: readers are the Charm tokens (OIDC, audience `gluonify-source`) carrying the role `gluonify:source:usage:read` (this application) or `gluonify:usage:read` (common, the one Higgs gets); without a token: 401; a token without either role: 403. The `/q/` prefix stays blocked by Higgs' public ingress. Not a billing basis.
+
+| Property | Default | Role |
+|---|---|---|
+| `quarkus.index-dependency.plasma-sdk.group-id` / `.artifact-id` | `io.gluonify.plasma` / `gluonify-plasma-sdk` | enables the SDK's `UsageResource` (set in `application.properties`) |
+| `gluonify.usage.component` | `source` | the `component` field of the response |
+| `mp.openapi.scan.exclude.packages` | `^io.gluonify.plasma$` | keeps the SDK's unused schemas out of the OpenAPI document (set in `application.properties`) |
 
 ## License
 

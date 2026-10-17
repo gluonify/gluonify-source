@@ -32,10 +32,10 @@
     <quarkus.platform.version>4.0.0.CR1</quarkus.platform.version>
     <quinoa.version>2.9.2</quinoa.version>
     <surefire.version>3.5.2</surefire.version>
-    <!-- Gluonify SDK. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
-         gluonify-plasma-quarkus and gluonify-plasma-testing are not in a published release yet (0.6.0 has the Crystallon client only): until the next one, install the
-         SDK sources with "mvn install" in gluonify-plasma (0.3.0-SNAPSHOT), then set this to the release number. -->
-    <gluonify.sdk.version>0.7.2</gluonify.sdk.version>
+    <!-- Gluonify SDK, published on gluonify-sea. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
+         0.7.4 or later: GET /q/usage (the SDK's UsageResource and its UsageContractTests) is not in 0.7.2. To build against unpublished SDK sources,
+         run "mvn install" in gluonify-plasma and set this to its SNAPSHOT version. -->
+    <gluonify.sdk.version>0.7.4</gluonify.sdk.version>
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
     <gluonify.sea.maven.url>https://images.gluonify.io/maven</gluonify.sea.maven.url>
@@ -128,6 +128,14 @@
       <groupId>io.gluonify.plasma</groupId>
       <artifactId>gluonify-plasma-testing</artifactId>
       <version>${gluonify.sdk.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- SDK test kit of the usage contract (UsageContractTests) -->
+    <dependency>
+      <groupId>io.gluonify.plasma</groupId>
+      <artifactId>gluonify-plasma-sdk</artifactId>
+      <version>${gluonify.sdk.version}</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
