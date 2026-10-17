@@ -498,7 +498,7 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 
 ## Licencia
 
-Copyright (c) 2026 David Cabillic.
+Copyright (c) 2026 Gluonify.
 
 Este repositorio se publica bajo la [licencia Apache, versión 2.0](LICENSE). Puede usarlo, modificarlo y
 redistribuirlo, incluso con fines comerciales, en las condiciones de esa licencia; se entrega «tal cual»,

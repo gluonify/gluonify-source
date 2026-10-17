@@ -498,7 +498,7 @@ Ein API-Test wird von `NotesResourceTest` kopiert; ein Speichertest von `FileNot
 
 ## Lizenz
 
-Copyright (c) 2026 David Cabillic.
+Copyright (c) 2026 Gluonify.
 
 Dieses Repository wird unter der [Apache-Lizenz, Version 2.0](LICENSE) veröffentlicht. Sie dürfen es zu den
 Bedingungen dieser Lizenz nutzen, verändern und weitergeben, auch kommerziell; es wird „wie besehen“ und ohne

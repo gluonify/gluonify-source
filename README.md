@@ -505,7 +505,7 @@ Swagger UI. Settings `%prod.quarkus.swagger-ui.*` in `application.properties`, c
 
 ## License
 
-Copyright (c) 2026 David Cabillic.
+Copyright (c) 2026 Gluonify.
 
 This repository is released under the [Apache License, Version 2.0](LICENSE). You may use, modify and
 redistribute it, including commercially, under the terms of that license; it is provided "as is",
