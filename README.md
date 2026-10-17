@@ -454,6 +454,7 @@ cd src/main/webui && npm install && npm test   # 40 interface tests
 | `DocumentsReflectionTest` | 1 | native guard: every record of the generated payload is registered for reflection |
 | `CrystallonTemplateFileTest` | 1 | the Crystallon template of the repository (`crystallon/templates/gluonify-invoice.json`): valid JSON, the exact name the generated code calls, the same top-level fields as the generated payload (the `SCHEMA_SHA256` fingerprint is computed by Crystallon only) |
 | `DeploySpecsTest` | 2 | the specs of `deploy/` use current names (`uses`, `SOURCE_STORE`); `gluonify.json` (read by the builder) declares only what the SDK cannot detect (`charm`, `gdown`) and, with the inferred `crystallon` (marker on the classpath), gives the same `uses` as `deploy/appspec.json` |
+| `UsageContractTest` | 8 | `GET /q/usage` (`gluonify-usage/1`): the five common checks of the SDK (shape, 401 without a token, 403 without the role, no secret, no-store), then the product role `gluonify:source:usage:read`, the common role `gluonify:usage:read`, `attribution: none` |
 
 An API test is copied from `NotesResourceTest`; a storage test from `FileNoteStoreTest` (without starting Quarkus: fast).
 
@@ -502,6 +503,16 @@ Since 2026-10-14, `/q/swagger-ui` in a production build (`prod` profile, JVM or 
 "Try it out" button (hidden), and every request other than loading the `/q/openapi` contract is refused in the browser by
 `quarkus.swagger-ui.request-interceptor`: no pasted token can be used. The contract stays public as before. Dev and test keep the full
 Swagger UI. Settings `%prod.quarkus.swagger-ui.*` in `application.properties`, checked by `SwaggerReadOnlyConfigTest`.
+
+## Usage contract `/q/usage` (`gluonify-usage/1`)
+
+`GET /q/usage` returns the memory and CPU of this process in the platform's common usage contract: the SDK's `UsageResource` (`gluonify-plasma-sdk`, enabled by `quarkus.index-dependency.plasma-sdk.*` in `application.properties`), `component` = `source`, `process` read from `/proc/self`, `cgroup` when it exists, `attribution: none` (this application attributes nothing to other applications), `Cache-Control: no-store`. Never anonymous: readers are the Charm tokens (OIDC, audience `gluonify-source`) carrying the role `gluonify:source:usage:read` (this application) or `gluonify:usage:read` (common, the one Higgs gets); without a token: 401; a token without either role: 403. The `/q/` prefix stays blocked by Higgs' public ingress. Not a billing basis.
+
+| Property | Default | Role |
+|---|---|---|
+| `quarkus.index-dependency.plasma-sdk.group-id` / `.artifact-id` | `io.gluonify.plasma` / `gluonify-plasma-sdk` | enables the SDK's `UsageResource` (set in `application.properties`) |
+| `gluonify.usage.component` | `source` | the `component` field of the response |
+| `mp.openapi.scan.exclude.packages` | `^io.gluonify.plasma$` | keeps the SDK's unused schemas out of the OpenAPI document (set in `application.properties`) |
 
 ## License
 

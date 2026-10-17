@@ -26,7 +26,8 @@
     <!-- Gluonify SDK. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
          gluonify-plasma-quarkus and gluonify-plasma-testing are not in a published release yet (0.6.0 has the Crystallon client only): until the next one, install the
          SDK sources with "mvn install" in gluonify-plasma (0.1.0-SNAPSHOT), then set this to the release number. -->
-    <gluonify.sdk.version>0.7.2</gluonify.sdk.version>
+    <gluonify.sdk.version>0.1.0-SNAPSHOT</gluonify.sdk.version>
+    <!-- 0.1.0-SNAPSHOT = the SDK sources (mvn install in gluonify-plasma): GET /q/usage (UsageResource) is not in a published release yet (0.7.2 lacks it); back to the release number once published -->
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
     <gluonify.sea.maven.url>https://images.gluonify.io/maven</gluonify.sea.maven.url>
@@ -75,6 +76,8 @@
 
     <!-- Fake Gluonify services for tests (GluonifyTestServices.start() / close()): a fake Crystallon, nothing to configure -->
     <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-testing</artifactId><version>${gluonify.sdk.version}</version><scope>test</scope></dependency>
+    <!-- SDK test kit of the usage contract (UsageContractTests) -->
+    <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-sdk</artifactId><version>${gluonify.sdk.version}</version><type>test-jar</type><scope>test</scope></dependency>
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-junit</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-test-security</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><scope>test</scope></dependency>
