@@ -51,7 +51,7 @@ public class WebhookResource {
             @HeaderParam("X-Gluonify-Delivery-Attempt") String attempt, String body) {
         String expected = config.webhook().key().orElse("");
         if (expected.isBlank()) return Response.status(404).build(); // receiver closed as long as no key is configured
-        if (key == null || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8))) return Response.status(401).entity(Map.of("error", "clé invalide")).build();
+        if (key == null || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8))) return Response.status(401).entity(Map.of("error", "invalid key")).build();
         if (eventId == null || eventId.isBlank()) return Response.status(400).entity(Map.of("error", "X-Gluonify-Event-Id manquant")).build();
         JsonNode json;
         try {

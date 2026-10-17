@@ -90,7 +90,7 @@ public class PlatformResource {
     public Response ping(@PathParam("app") String app) {
         if (!app.matches("[a-z0-9-]{1,63}")) return Response.status(400).entity(Map.of("error", "nom d'application invalide")).build();
         String url = env.get().get("GLUONIFY_SERVICE_" + app.toUpperCase(Locale.ROOT).replace('-', '_') + "_URL");
-        if (url == null) return Response.status(404).entity(Map.of("error", "application non déclarée dans « uses » : " + app)).build();
+        if (url == null) return Response.status(404).entity(Map.of("error", "application not declared in \"uses\": " + app)).build();
         try {
             HttpResponse<String> r = client().send(HttpRequest.newBuilder(URI.create(url + "/q/health/ready")).timeout(Duration.ofSeconds(5)).GET().build(), HttpResponse.BodyHandlers.ofString());
             return Response.ok(Map.of("app", app, "status", r.statusCode())).build();
