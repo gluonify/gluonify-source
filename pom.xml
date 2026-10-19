@@ -30,6 +30,17 @@
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
     <gluonify.sea.maven.url>https://images.gluonify.io/maven</gluonify.sea.maven.url>
+    <!-- Quality gates of every build (copy of the gluonify-plasma parent POM, README "Quality gates": keep identical): versions, and the ratchets each repository sets to its current level. -->
+    <jacoco.version>0.8.14</jacoco.version>
+    <pmd.plugin.version>3.28.0</pmd.plugin.version>
+    <pmd.version>7.28.0</pmd.version>
+    <!-- Version of gluonify-plasma-build-rules (the PMD ruleset, installed by gluonify-plasma's mvn install): kept equal to gluonify-plasma's version. -->
+    <gluonify.build-rules.version>0.1.0-SNAPSHOT</gluonify.build-rules.version>
+    <!-- Coverage ratchet (JaCoCo, whole module): each repository sets its current level rounded down, raises it with its tests, never lowers it. -->
+    <gluonify.coverage.minimum>0.85</gluonify.coverage.minimum>
+    <gluonify.coverage.branch.minimum>0.81</gluonify.coverage.branch.minimum>
+    <!-- Existing PMD debt only (class=Rule,Rule): a line is removed when its class is fixed, never added. -->
+    <gluonify.pmd.baseline>${project.basedir}/pmd-baseline.properties</gluonify.pmd.baseline>
   </properties>
 
   <repositories>
@@ -81,6 +92,59 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>${pmd.plugin.version}</version>
+          <configuration>
+            <rulesets>
+              <ruleset>gluonify/pmd/ruleset.xml</ruleset>
+            </rulesets>
+            <targetJdk>${maven.compiler.release}</targetJdk>
+            <includeTests>false</includeTests>
+            <failurePriority>5</failurePriority>
+            <printFailingErrors>true</printFailingErrors>
+            <excludeFromFailureFile>${gluonify.pmd.baseline}</excludeFromFailureFile>
+            <linkXRef>false</linkXRef>
+            <analysisCache>true</analysisCache>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>net.sourceforge.pmd</groupId>
+              <artifactId>pmd-core</artifactId>
+              <version>${pmd.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>net.sourceforge.pmd</groupId>
+              <artifactId>pmd-java</artifactId>
+              <version>${pmd.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>net.sourceforge.pmd</groupId>
+              <artifactId>pmd-javascript</artifactId>
+              <version>${pmd.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>net.sourceforge.pmd</groupId>
+              <artifactId>pmd-jsp</artifactId>
+              <version>${pmd.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>io.gluonify.plasma</groupId>
+              <artifactId>gluonify-plasma-build-rules</artifactId>
+              <version>${gluonify.build-rules.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>io.quarkus.platform</groupId>
@@ -112,6 +176,78 @@
   </build>
 
   <profiles>
+    <!-- Quality gates (copy of the gluonify-plasma parent POM, README "Quality gates"): active in every module that has Java sources, so that the parent POMs and the build-rules module
+         (no code) neither need the ruleset nor measure anything. `mvn verify` fails like a red test when the coverage falls below the ratchet or
+         when PMD finds a violation that is not in the module's pmd-baseline.properties. -Djacoco.skip / -Dpmd.skip for a scoped run. -->
+    <profile>
+      <id>gluonify-quality</id>
+      <activation>
+        <file>
+          <exists>${basedir}/src/main/java</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>gluonify-coverage-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>gluonify-coverage-report</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>gluonify-coverage-check</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <rule>
+                      <element>BUNDLE</element>
+                      <limits>
+                        <limit>
+                          <counter>LINE</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>${gluonify.coverage.minimum}</minimum>
+                        </limit>
+                        <limit>
+                          <counter>BRANCH</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>${gluonify.coverage.branch.minimum}</minimum>
+                        </limit>
+                      </limits>
+                    </rule>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-pmd-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>gluonify-pmd-check</id>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <profile>
       <!-- activated by -Dnative (what gluonify-bup does: mvn package -Dnative) -->
       <id>native</id>

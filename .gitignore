@@ -7,3 +7,4 @@ src/main/webui/node_modules/
 .vscode/
 dist/
 .quinoa/
+coverage/

@@ -41,6 +41,10 @@ cd gluonify-source
 mvn quarkus:dev
 ```
 
+**Quality gates** (since 2026-10-19, [gluonify-plasma README, "Quality gates"](https://github.com/gluonify/gluonify-plasma#quality-gates)): `mvn verify` fails when the coverage falls below the ratchet (JaCoCo, line 0.85, branch 0.81: `gluonify.coverage.minimum` in `pom.xml`, raised as tests are added, never lowered) or when PMD finds a violation that is not in `pmd-baseline.properties` (existing debt of 2026-10-19: 15 violations; the file only shrinks). A scoped run: `mvn verify -Djacoco.skip -Dpmd.skip -Dtest=...`.
+
+**Interface quality gates** (since 2026-10-19, [gluonify-plasma README, "Quality gates"](https://github.com/gluonify/gluonify-plasma#quality-gates)): `npm test` in `src/main/webui` runs ESLint 9 (`eslint.config.js`: typescript-eslint strict, eslint-plugin-vue, eslint-plugin-sonarjs) then Vitest with v8 coverage; it fails on a lint error not in `eslint-suppressions.json` (existing debt of 2026-10-19: 4; the file only shrinks, `npx eslint . --prune-suppressions` removes what is paid) or when the coverage falls below the thresholds of the Vite configuration (lines 96 %, branches 80 %, raised as tests are added, never lowered).
+
 Open <http://localhost:8080>: the interface (add, list, delete notes). Also:
 
 | Address | Content |

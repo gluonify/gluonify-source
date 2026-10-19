@@ -1,5 +1,9 @@
 # plan.md: gluonify-source
 
+## Done recently
+- [x] **Quality gates in the build** (2026-10-19): `mvn verify` checks the coverage ratchet (line 0.85, branch 0.81) and the PMD ruleset of gluonify-plasma (baseline: 15 existing violations). **Left**: raise the ratchet to 0.95 and empty `pmd-baseline.properties`.
+- [x] **Interface quality gates** (2026-10-19): `npm test` runs ESLint (sonarjs, typescript-eslint strict; 4 suppressed existing violations) and Vitest coverage thresholds (lines 96 %, branches 80 %). **Left**: empty `eslint-suppressions.json`, coverage to 95 %.
+
 ## Not done yet
 - Done on 2026-10-14: read-only Swagger UI in production (neither "Authorize" nor "Try it out", requests refused except the contract; `SwaggerReadOnlyConfigTest`).
 - [x] **`@gluonify/ui` kit 0.4.0** (2026-10-14): embedded copy refreshed (`sync-vendor.sh`); `GxLoginPage` no longer has a pasted-token field (Charm sign-in only, OIDC + PKCE). The interface already had no pasted-token path ("no pasted token, no password field" test in `App.test.js`); `dev` identity limited to the `dev` profile (`@IfBuildProfile`). 40 interface tests.

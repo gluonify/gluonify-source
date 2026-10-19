@@ -1,0 +1,10 @@
+{
+  "src/App.test.js": {
+    "sonarjs/no-clear-text-protocols": {
+      "count": 3
+    },
+    "sonarjs/super-linear-regex": {
+      "count": 1
+    }
+  }
+}
