@@ -38,9 +38,9 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Platform")
 public class PlatformResource {
-    private static final String URL_2 = "_URL";
+    private static final String VALUE_URL = "_URL";
     private static final String GLUONIFY_SERVICE = "GLUONIFY_SERVICE_";
-    private static final String ERROR_2 = "error";
+    private static final String ERROR = "error";
     @Inject
     SourceConfig config;
     @Inject
@@ -61,7 +61,7 @@ public class PlatformResource {
         Map<String, String> e = env.get();
         Map<String, String> services = new TreeMap<>();
         e.forEach((k, v) -> {
-            if (k.startsWith(GLUONIFY_SERVICE) && k.endsWith(URL_2)) services.put(k.substring(GLUONIFY_SERVICE.length(), k.length() - URL_2.length()).toLowerCase(Locale.ROOT), v);
+            if (k.startsWith(GLUONIFY_SERVICE) && k.endsWith(VALUE_URL)) services.put(k.substring(GLUONIFY_SERVICE.length(), k.length() - VALUE_URL.length()).toLowerCase(Locale.ROOT), v);
         });
         Map<String, Object> out = new TreeMap<>();
         out.put("envName", e.getOrDefault("GLUONIFY_ENVIRONMENT", ""));
@@ -91,14 +91,14 @@ public class PlatformResource {
     @RolesAllowed("source:read")
     @Operation(summary = "Queries /q/health/ready of an application declared in \"uses\"")
     public Response ping(@PathParam("app") String app) {
-        if (!app.matches("[a-z0-9-]{1,63}")) return Response.status(400).entity(Map.of(ERROR_2, "nom d'application invalide")).build();
-        String url = env.get().get(GLUONIFY_SERVICE + app.toUpperCase(Locale.ROOT).replace('-', '_') + URL_2);
-        if (url == null) return Response.status(404).entity(Map.of(ERROR_2, "application not declared in \"uses\": " + app)).build();
+        if (!app.matches("[a-z0-9-]{1,63}")) return Response.status(400).entity(Map.of(ERROR, "nom d'application invalide")).build();
+        String url = env.get().get(GLUONIFY_SERVICE + app.toUpperCase(Locale.ROOT).replace('-', '_') + VALUE_URL);
+        if (url == null) return Response.status(404).entity(Map.of(ERROR, "application not declared in \"uses\": " + app)).build();
         try {
             HttpResponse<String> r = client().send(HttpRequest.newBuilder(URI.create(url + "/q/health/ready")).timeout(Duration.ofSeconds(5)).GET().build(), HttpResponse.BodyHandlers.ofString());
             return Response.ok(Map.of("app", app, "status", r.statusCode())).build();
         } catch (java.io.IOException e) {
-            return Response.status(502).entity(Map.of(ERROR_2, "injoignable : " + e.getMessage())).build();
+            return Response.status(502).entity(Map.of(ERROR, "injoignable : " + e.getMessage())).build();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return Response.status(504).build();

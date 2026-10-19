@@ -33,7 +33,7 @@ import tools.jackson.databind.ObjectMapper;
 @Path("/hooks/events")
 @Tag(name = "Webhooks")
 public class WebhookResource {
-    private static final String ERROR_2 = "error";
+    private static final String ERROR = "error";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Inject
@@ -52,14 +52,14 @@ public class WebhookResource {
             @HeaderParam("X-Gluonify-Delivery-Attempt") String attempt, String body) {
         String expected = config.webhook().key().orElse("");
         if (expected.isBlank()) return Response.status(404).build(); // receiver closed as long as no key is configured
-        if (key == null || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8))) return Response.status(401).entity(Map.of(ERROR_2, "invalid key")).build();
-        if (eventId == null || eventId.isBlank()) return Response.status(400).entity(Map.of(ERROR_2, "X-Gluonify-Event-Id manquant")).build();
+        if (key == null || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8))) return Response.status(401).entity(Map.of(ERROR, "invalid key")).build();
+        if (eventId == null || eventId.isBlank()) return Response.status(400).entity(Map.of(ERROR, "X-Gluonify-Event-Id manquant")).build();
         JsonNode json;
         try {
             json = MAPPER.readTree(body);
         } catch (RuntimeException e) {
             // an unreadable body will not fix itself by replaying: 4XX (Photon will replay it according to its policy, then dead-letter it)
-            return Response.status(400).entity(Map.of(ERROR_2, "JSON illisible")).build();
+            return Response.status(400).entity(Map.of(ERROR, "JSON illisible")).build();
         }
         if (!ledger.firstSeen(eventId)) { // atomic across replicas
             duplicates.incrementAndGet();
