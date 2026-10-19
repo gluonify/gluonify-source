@@ -45,6 +45,8 @@ class AuthConfigRealmTest {
                 .body("tokenUrl", is(PROTOCOL + "/token"))
                 .body("logoutUrl", is(PROTOCOL + "/logout"));
         assertEquals("http://127.0.0.1:9999/realms/org-acme", ConfigProvider.getConfig().getValue("quarkus.oidc.auth-server-url", String.class));
+        assertEquals("ERROR", ConfigProvider.getConfig().getValue("quarkus.log.category.\"io.quarkus.oidc.runtime.OidcProvider\".level", String.class),
+                "a refused token is never logged (the OIDC warning carries the whole token)");
     }
 
     @Test
