@@ -165,3 +165,20 @@ describe('entry point', () => {
     expect(document.querySelector('#app main')).not.toBeNull()
   })
 })
+
+describe('functions left uncovered elsewhere', () => {
+  it('the auth configuration comes from /api/auth-config, so the kit callback yields no configuration', async () => {
+    expect(await auth.loadConfig()).toBeNull()
+  })
+
+  it('typing in the note body updates the form', async () => {
+    sessionStorage.clear(); auth.forget(); auth.setToken('abc.def.ghi')
+    mockFetch((key) => (key === 'GET /api/platform' ? respond(200, JSON.stringify(PLATFORM)) : respond(200, '[]')))
+    const w = mount(App)
+    await flushPromises()
+    const area = w.find('textarea')
+    await area.setValue('some text')
+    expect(area.element.value).toBe('some text')
+    w.unmount()
+  })
+})
