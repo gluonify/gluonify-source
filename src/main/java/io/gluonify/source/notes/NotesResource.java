@@ -1,6 +1,5 @@
 package io.gluonify.source.notes;
 
-import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -35,8 +34,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Notes")
 public class NotesResource {
+    private final NoteStore store;
+
     @Inject
-    NoteStore store;
+    public NotesResource(final NoteStore store) {
+        this.store = store;
+    }
 
     @GET
     @RolesAllowed("source:read")
@@ -49,14 +52,14 @@ public class NotesResource {
     @Path("{id}")
     @RolesAllowed("source:read")
     @Operation(summary = "One note")
-    public Response get(@PathParam("id") String id) {
+    public Response get(@PathParam("id") final String id) {
         return store.get(id).map(n -> Response.ok(n).build()).orElseGet(() -> Response.status(404).entity(Map.of("error", "note inconnue")).build());
     }
 
     @POST
     @RolesAllowed("source:write")
     @Operation(summary = "Creates a note (the author is the token subject)")
-    public Response create(@Valid NewNote in, @Context SecurityContext sc, @Context UriInfo uri) {
+    public Response create(@Valid final NewNote in, @Context final SecurityContext sc, @Context final UriInfo uri) {
         String author = sc.getUserPrincipal() == null ? "" : sc.getUserPrincipal().getName();
         Note n = store.create(in, author);
         return Response.created(uri.getAbsolutePathBuilder().path(n.id()).build()).entity(n).build();
@@ -66,7 +69,7 @@ public class NotesResource {
     @Path("{id}")
     @RolesAllowed("source:write")
     @Operation(summary = "Deletes a note")
-    public Response delete(@PathParam("id") String id) {
+    public Response delete(@PathParam("id") final String id) {
         return store.delete(id) ? Response.noContent().build() : Response.status(404).entity(Map.of("error", "note inconnue")).build();
     }
 }

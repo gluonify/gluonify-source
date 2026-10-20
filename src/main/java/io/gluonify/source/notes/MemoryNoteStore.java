@@ -17,7 +17,7 @@ public class MemoryNoteStore implements NoteStore {
     }
 
     @Override
-    public Note create(NewNote in, String author) {
+    public Note create(final NewNote in, final String author) {
         Note n = new Note(UUID.randomUUID().toString(), in.title(), in.body() == null ? "" : in.body(), Instant.now(), author);
         notes.put(n.id(), n);
         return n;
@@ -29,12 +29,12 @@ public class MemoryNoteStore implements NoteStore {
     }
 
     @Override
-    public Optional<Note> get(String id) {
+    public Optional<Note> get(final String id) {
         return Optional.ofNullable(notes.get(id));
     }
 
     @Override
-    public boolean delete(String id) {
+    public boolean delete(final String id) {
         return notes.remove(id) != null;
     }
 

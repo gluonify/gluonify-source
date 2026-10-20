@@ -19,8 +19,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -41,18 +41,26 @@ public class PlatformResource {
     private static final String VALUE_URL = "_URL";
     private static final String GLUONIFY_SERVICE = "GLUONIFY_SERVICE_";
     private static final String ERROR = "error";
-    @Inject
-    SourceConfig config;
-    @Inject
-    NoteStore store;
-    @Inject
-    WebhookResource webhooks;
-    @Inject
-    Documents documents; // is Crystallon available? (documents feature)
+    private final SourceConfig config;
+    private final NoteStore store;
+    private final WebhookResource webhooks;
+    private final Documents documents; // is Crystallon available? (documents feature)
+    private final Supplier<Map<String, String>> env;
+    private final AtomicReference<HttpClient> http = new AtomicReference<>();
 
-    /** The environment variables: replaceable in tests. */
-    Supplier<Map<String, String>> env = System::getenv;
-    private volatile HttpClient http;
+    @Inject
+    public PlatformResource(final SourceConfig config, final NoteStore store, final WebhookResource webhooks, final Documents documents) {
+        this(config, store, webhooks, documents, System::getenv);
+    }
+
+    /** With the environment variables given: for tests. */
+    PlatformResource(final SourceConfig config, final NoteStore store, final WebhookResource webhooks, final Documents documents, final Supplier<Map<String, String>> env) {
+        this.config = config;
+        this.store = store;
+        this.webhooks = webhooks;
+        this.documents = documents;
+        this.env = env;
+    }
 
     @GET
     @RolesAllowed("source:read")
@@ -75,7 +83,7 @@ public class PlatformResource {
         boolean documentsOn;
         try {
             documentsOn = documents.enabled();
-        } catch (GluonifyServicesException ex) {
+        } catch (GluonifyServicesException _) {
             documentsOn = false; // e.g. the cluster of your machine is not reachable: this endpoint must still answer
         }
         out.put("documents", documentsOn);
@@ -90,7 +98,7 @@ public class PlatformResource {
     @Path("ping/{app}")
     @RolesAllowed("source:read")
     @Operation(summary = "Queries /q/health/ready of an application declared in \"uses\"")
-    public Response ping(@PathParam("app") String app) {
+    public Response ping(@PathParam("app") final String app) {
         if (!app.matches("[a-z0-9-]{1,63}")) return Response.status(400).entity(Map.of(ERROR, "nom d'application invalide")).build();
         String url = env.get().get(GLUONIFY_SERVICE + app.toUpperCase(Locale.ROOT).replace('-', '_') + VALUE_URL);
         if (url == null) return Response.status(404).entity(Map.of(ERROR, "application not declared in \"uses\": " + app)).build();
@@ -99,15 +107,18 @@ public class PlatformResource {
             return Response.ok(Map.of("app", app, "status", r.statusCode())).build();
         } catch (java.io.IOException e) {
             return Response.status(502).entity(Map.of(ERROR, "injoignable : " + e.getMessage())).build();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             return Response.status(504).build();
         }
     }
 
     private HttpClient client() {
-        HttpClient h = http;
-        if (h == null) http = h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).followRedirects(HttpClient.Redirect.NEVER).build(); // on first use (native)
+        HttpClient h = http.get();
+        if (h == null) {
+            h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).followRedirects(HttpClient.Redirect.NEVER).build(); // on first use (native)
+            http.set(h);
+        }
         return h;
     }
 }

@@ -14,30 +14,40 @@ public class NoteStores {
      * The storage actually used: {@code auto} becomes {@code gdown} when the platform provides a dedicated database ({@code dedicatedDatabase} not blank),
      * {@code memory} otherwise; any other value is kept as is.
      */
-    public static String effectiveStore(String store, String dedicatedDatabase) {
+    public static String effectiveStore(final String store, final String dedicatedDatabase) {
         if (!"auto".equals(store)) return store;
         return dedicatedDatabase != null && !dedicatedDatabase.isBlank() ? "gdown" : "memory";
     }
 
     /** {@link #effectiveStore} with the process environment. */
-    public static String effectiveStore(SourceConfig cfg) {
+    public static String effectiveStore(final SourceConfig cfg) {
         return effectiveStore(cfg.store(), System.getenv(DEDICATED_DATABASE));
+    }
+
+    /** The storage modes {@code source.store} can resolve to (once {@code auto} is replaced). */
+    private enum StoreKind {
+        MEMORY, FILES, GDOWN;
+
+        static StoreKind of(final String store) {
+            for (final StoreKind k : values()) {
+                if (k.name().toLowerCase(java.util.Locale.ROOT).equals(store)) return k;
+            }
+            throw new IllegalStateException("unknown source.store: \"" + store + "\" (auto, memory, files or gdown)");
+        }
     }
 
     @Produces
     @ApplicationScoped
-    NoteStore noteStore(SourceConfig cfg) {
-        String store = effectiveStore(cfg);
-        return switch (store) {
-            case "memory" -> new MemoryNoteStore();
-            case "files" -> new FileNoteStore(Path.of(cfg.files().dir()));
-            case "gdown" -> graph(cfg);
-            default -> throw new IllegalStateException("unknown source.store: \"" + store + "\" (auto, memory, files or gdown)");
+    NoteStore noteStore(final SourceConfig cfg) {
+        return switch (StoreKind.of(effectiveStore(cfg))) {
+            case MEMORY -> new MemoryNoteStore();
+            case FILES -> new FileNoteStore(Path.of(cfg.files().dir()));
+            case GDOWN -> graph(cfg);
         };
     }
 
     /** The Gdown connection built from the configuration (also used by the webhook ledger when source.store=gdown). */
-    public static GraphNoteStore graph(SourceConfig cfg) {
+    public static GraphNoteStore graph(final SourceConfig cfg) {
         return new GraphNoteStore(
                     cfg.graph().url().filter(u -> !u.isBlank()).orElseThrow(() -> new IllegalStateException("source.store=gdown : source.graph.url is empty (deploy with \"uses\": [\"gdown\"])")),
                     cfg.graph().database(),

@@ -15,6 +15,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -40,10 +41,16 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 @Path("/api/documents")
 @Tag(name = "Documents")
 public class DocumentsResource {
+    /** The time zone of the invoice template (Europe/Zurich): the date printed when the request has none. */
+    private static final ZoneId INVOICE_ZONE = ZoneId.of("Europe/Zurich");
     private static final Logger LOG = Logger.getLogger(DocumentsResource.class);
 
+    private final Documents documents;
+
     @Inject
-    Documents documents;
+    public DocumentsResource(final Documents documents) {
+        this.documents = documents;
+    }
 
     @POST
     @Path("invoice")
@@ -57,12 +64,12 @@ public class DocumentsResource {
     @APIResponse(responseCode = "404", description = "Documents are off: the application is not deployed with \"uses\": [\"crystallon\"]")
     @APIResponse(responseCode = "422", description = "The template cannot render these data (Crystallon's message, code and path)")
     @APIResponse(responseCode = "502", description = "Crystallon is unreachable or failed, or did not accept the application's own token")
-    public Response invoice(@Valid InvoiceRequest in) {
+    public Response invoice(@Valid final InvoiceRequest in) {
         Optional<CrystallonClient> client = documents.client();
         if (client.isEmpty()) {
             return Response.status(404).type(MediaType.APPLICATION_JSON).entity(Map.of("error", "documents are off: Crystallon is not available; deploy the application with \"uses\": [\"crystallon\"] (or run gluonify login <zone> on your machine)")).build();
         }
-        RenderedPdf pdf = new GluonifyInvoiceDocument(client.get()).render(InvoiceMapping.payload(in, LocalDate.now()), InvoiceMapping.options(in));
+        RenderedPdf pdf = new GluonifyInvoiceDocument(client.get()).render(InvoiceMapping.payload(in, LocalDate.now(INVOICE_ZONE)), InvoiceMapping.options(in));
         return Response.ok(pdf.bytes(), "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"" + InvoiceMapping.fileName(in) + "\"")
                 .header("X-Crystallon-Pages", pdf.pages())
@@ -72,14 +79,14 @@ public class DocumentsResource {
 
     /** Crystallon failures of this resource only: the other resources keep their own errors. */
     @ServerExceptionMapper
-    public Response crystallonFailed(CrystallonException e) {
+    public Response crystallonFailed(final CrystallonException e) {
         LOG.warnf("Crystallon call failed: status=%d code=%s path=%s: %s", e.status(), e.code(), e.path(), e.getMessage());
         return DocumentErrors.toResponse(e);
     }
 
     /** Crystallon is available but the SDK cannot get a token or an address (expired developer session...): the message of the SDK says what to do and never holds a token. */
     @ServerExceptionMapper
-    public Response servicesFailed(GluonifyServicesException e) {
+    public Response servicesFailed(final GluonifyServicesException e) {
         LOG.warnf("Gluonify services: %s", e.getMessage());
         return Response.status(502).type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.getMessage())).build();
     }

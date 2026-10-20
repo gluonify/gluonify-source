@@ -19,27 +19,32 @@ import java.util.HexFormat;
 public class FileEventLedger implements EventLedger {
     private final Path dir;
 
-    public FileEventLedger(Path dir) {
+    public FileEventLedger(final Path dir) {
         this.dir = dir;
     }
 
     @Override
-    public boolean firstSeen(String eventId) {
+    public boolean firstSeen(final String eventId) {
         try {
             Files.createDirectories(dir);
             // hashed: the identifier comes from the network and is never a file name
             Files.writeString(dir.resolve(sha256(eventId) + ".evt"), eventId, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
             return true;
-        } catch (FileAlreadyExistsException e) {
+        } catch (FileAlreadyExistsException _) {
             return false;
         } catch (IOException e) {
             throw new UncheckedIOException("cannot record the event in " + dir, e);
         }
     }
 
-    static String sha256(String s) {
+    static String sha256(final String s) {
+        return digest("SHA-256", s);
+    }
+
+    /** Hex digest of the text; the algorithm is a parameter so that the (never expected) missing algorithm is tested. */
+    static String digest(final String algorithm, final String s) {
         try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(s.getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(MessageDigest.getInstance(algorithm).digest(s.getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }

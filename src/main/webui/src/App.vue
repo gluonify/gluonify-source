@@ -150,7 +150,7 @@ onMounted(async () => {
 
     <section v-if="ready && !signedIn" class="signin">
       <h2>{{ t('authTitle') }}</h2>
-      <p v-if="auth.signedOut.value" class="hint" role="status">{{ t('signedOutNotice') }}</p>
+      <output v-if="auth.signedOut.value" class="hint">{{ t('signedOutNotice') }}</output>
       <p class="hint">{{ t('signedOutHint', { read: 'source:read', write: 'source:write' }) }}</p>
       <button v-if="canSignIn" type="button" @click="signIn">{{ t(auth.signedOut.value ? 'signInAgain' : 'signIn') }}</button>
       <p v-else class="hint">{{ t('signInUnavailable') }}</p>

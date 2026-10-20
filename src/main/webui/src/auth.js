@@ -3,9 +3,9 @@
 // (username and password are typed THERE, never in this application); Charm sends it back here with a code, exchanged for a token whose audience is
 // gluonify-source and whose "roles" claim carries source:read / source:write. The client id and Charm's public endpoints come from GET /api/auth-config
 // (never hard-coded). Tokens only live in sessionStorage (gone when the tab closes) and are sent as "Authorization: Bearer" to this application's /api.
-import { createAuth, oidcConfigured } from '@gluonify/ui'
+import { createAuth } from '@gluonify/ui'
 
-export { oidcConfigured }
+export { oidcConfigured } from '@gluonify/ui'
 
 export const auth = createAuth({
   storagePrefix: 'gluonify-source', // sessionStorage keys gluonify-source-token, -pkce, -idtoken, -refresh, -expiry

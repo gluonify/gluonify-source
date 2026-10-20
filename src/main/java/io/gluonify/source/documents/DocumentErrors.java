@@ -26,7 +26,7 @@ public final class DocumentErrors {
     private DocumentErrors() {}
 
     /** @param e the failed call; the token it used is the application's own (a refusal is a deployment problem, not the caller's) */
-    public static Response toResponse(CrystallonException e) {
+    public static Response toResponse(final CrystallonException e) {
         int status = e.status();
         if (status == 401 || status == 403) {
             return error(502, "Crystallon did not accept the token of the application (HTTP " + status + "): deploy the application with \"uses\": [\"crystallon\"] so that the platform issues one "
@@ -51,7 +51,7 @@ public final class DocumentErrors {
         return error(502, "Crystallon failed (HTTP " + status + ")", e.code(), null);
     }
 
-    private static Response error(int status, String message, String code, String path) {
+    private static Response error(final int status, final String message, final String code, final String path) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", message);
         if (code != null) body.put("code", code);

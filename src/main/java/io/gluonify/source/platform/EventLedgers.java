@@ -10,7 +10,7 @@ import java.nio.file.Path;
 public class EventLedgers {
     @Produces
     @ApplicationScoped
-    EventLedger eventLedger(SourceConfig cfg) {
+    EventLedger eventLedger(final SourceConfig cfg) {
         return switch (NoteStores.effectiveStore(cfg)) {
             case "files" -> new FileEventLedger(Path.of(cfg.files().dir()).resolveSibling("events"));
             case "gdown" -> new GraphEventLedger(NoteStores.graph(cfg));

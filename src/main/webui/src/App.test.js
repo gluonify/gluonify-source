@@ -354,7 +354,7 @@ describe('sign-in with Charm (authorization code + PKCE)', () => {
     expect(auth.token.value).toBe('')
     expect(w.text()).not.toContain('First')
     expect(w.find('.signin button').text()).toBe('Sign in again') // right after a sign-out: no automatic redirect, the person chooses
-    expect(w.find('.signin [role=status]').text()).toBe('You are signed out.')
+    expect(w.find('.signin output').text()).toBe('You are signed out.')
     const out = new URL(loc.assign.mock.calls.at(-1)[0])
     expect(out.origin + out.pathname).toBe('https://gluonify.lan/logout')
     expect(out.searchParams.get('id_token_hint')).toBe('id.t.k')

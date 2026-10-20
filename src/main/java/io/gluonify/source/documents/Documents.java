@@ -2,7 +2,7 @@ package io.gluonify.source.documents;
 
 import io.gluonify.plasma.crystallon.client.CrystallonClient;
 import io.gluonify.plasma.services.GluonifyServices;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Singleton;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.util.Optional;
@@ -12,13 +12,17 @@ import java.util.Optional;
  * the platform when the application is deployed with {@code "uses": ["crystallon"]}, your cluster after {@code gluonify login}, the fake services in tests) and this class only
  * asks whether the service is available. Not available = the documents feature is off ({@code POST /api/documents/invoice} answers 404) and nothing else changes.
  */
-@ApplicationScoped
+@Singleton
 public class Documents {
     /** Name of the service in {@code "uses"}. */
     static final String SERVICE = "crystallon";
 
+    private final Instance<CrystallonClient> crystallon; // always resolvable (default bean); it fails when the service cannot be reached, hence the check below
+
     @Inject
-    Instance<CrystallonClient> crystallon; // always resolvable (default bean); it fails when the service cannot be reached, hence the check below
+    public Documents(final Instance<CrystallonClient> crystallon) {
+        this.crystallon = crystallon;
+    }
 
     /** @return true when Crystallon can be reached from here (the platform provides it, or a cluster is known, or fake services run in a test) */
     public boolean enabled() {

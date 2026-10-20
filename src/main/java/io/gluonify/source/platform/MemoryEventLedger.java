@@ -8,7 +8,7 @@ public class MemoryEventLedger implements EventLedger {
     private final ConcurrentHashMap<String, Boolean> seen = new ConcurrentHashMap<>();
 
     @Override
-    public boolean firstSeen(String eventId) {
+    public boolean firstSeen(final String eventId) {
         if (seen.size() > MAX_REMEMBERED) seen.clear(); // bounded memory
         return seen.putIfAbsent(eventId, Boolean.TRUE) == null;
     }

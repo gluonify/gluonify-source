@@ -41,7 +41,7 @@ cd gluonify-source
 mvn quarkus:dev
 ```
 
-**Quality gates** (since 2026-10-19, [gluonify-plasma README, "Quality gates"](https://github.com/gluonify/gluonify-plasma#quality-gates)): `mvn verify` fails when the coverage falls below the ratchet (JaCoCo, line 0.85, branch 0.81: `gluonify.coverage.minimum` in `pom.xml`, raised as tests are added, never lowered) or when PMD finds a violation that is not in `pmd-baseline.properties` (existing debt of 2026-10-19: 15 violations; the file only shrinks). A scoped run: `mvn verify -Djacoco.skip -Dpmd.skip -Dtest=...`.
+**Quality gates** (since 2026-10-19, [gluonify-plasma README, "Quality gates"](https://github.com/gluonify/gluonify-plasma#quality-gates)): `mvn verify` fails when the coverage falls below the ratchet (JaCoCo, line 1.00, branch 1.00: `gluonify.coverage.minimum` in `pom.xml`, raised as tests are added, never lowered) or when PMD finds a violation that is not in `pmd-baseline.properties` (empty since 2026-10-20: no known debt). A scoped run: `mvn verify -Djacoco.skip -Dpmd.skip -Dtest=...`.
 
 **Interface quality gates** (since 2026-10-19, [gluonify-plasma README, "Quality gates"](https://github.com/gluonify/gluonify-plasma#quality-gates)): `npm test` in `src/main/webui` runs ESLint 9 (`eslint.config.js`: typescript-eslint strict, eslint-plugin-vue, eslint-plugin-sonarjs) then Vitest with v8 coverage; it fails on a lint error not in `eslint-suppressions.json` (existing debt of 2026-10-19: 4; the file only shrinks, `npx eslint . --prune-suppressions` removes what is paid) or when the coverage falls below the thresholds of the Vite configuration (lines 96 %, branches 80 %, raised as tests are added, never lowered).
 
@@ -100,7 +100,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
   src/auth.js                   sign-in with Charm (authorization code + PKCE) through the kit @gluonify/ui
   vendor/gluonify-ui/           embedded copy of the kit (gluonify-ui/scripts/sync-vendor.sh, never edited by hand)
-src/test/java/…                 70 Java tests; src/main/webui/src/App.test.js: 40 interface tests
+src/test/java/…                 121 Java tests; src/main/webui/src/*.test.js: 53 interface tests
 deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
 scripts/rename.py               renames the project
 ```
@@ -376,7 +376,7 @@ Declare it in `"uses"`: the platform provides `GLUONIFY_SERVICE_<APP>_URL` **and
 ## 8. Building
 
 ```bash
-mvn test                       # Java tests (70)
+mvn test                       # Java tests (121)
 mvn package                    # JVM: target/quarkus-app/; also builds the interface (Quinoa)
 ```
 
@@ -437,8 +437,8 @@ To update: same `PUT` (or a new build); replicas are replaced **one by one**. To
 ## 10. Testing
 
 ```bash
-mvn test                                 # 70 Java tests
-cd src/main/webui && npm install && npm test   # 40 interface tests
+mvn test                                 # 121 Java tests
+cd src/main/webui && npm install && npm test   # 53 interface tests
 ```
 
 | Test | Tests | What it checks |

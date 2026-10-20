@@ -1,7 +1,7 @@
 # plan.md: gluonify-source
 
 ## Done recently
-- [x] **Quality gates in the build** (2026-10-19): `mvn verify` checks the coverage ratchet (line 0.85, branch 0.81) and the PMD ruleset of gluonify-plasma (baseline: 15 existing violations). **Left**: raise the ratchet to 0.95 and empty `pmd-baseline.properties`.
+- [x] **Quality gates in the build** (2026-10-19): `mvn verify` checks the coverage ratchet (line 1.00, branch 1.00, reached 2026-10-20) and the PMD ruleset of gluonify-plasma (baseline empty since 2026-10-20). Sonar: S1192, field injection, `final` parameters, unnamed catch patterns and the front-end findings fixed on 2026-10-20.
 - [x] **Interface quality gates** (2026-10-19): `npm test` runs ESLint (sonarjs, typescript-eslint strict; 4 suppressed existing violations) and Vitest coverage thresholds (lines 96 %, branches 80 %). **Left**: empty `eslint-suppressions.json`, coverage to 95 %.
 
 ## Not done yet

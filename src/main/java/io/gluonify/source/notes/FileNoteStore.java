@@ -35,7 +35,7 @@ public class FileNoteStore implements NoteStore {
 
     private final Path dir;
 
-    public FileNoteStore(Path dir) {
+    public FileNoteStore(final Path dir) {
         this.dir = dir;
     }
 
@@ -45,7 +45,7 @@ public class FileNoteStore implements NoteStore {
     }
 
     @Override
-    public Note create(NewNote in, String author) {
+    public Note create(final NewNote in, final String author) {
         Instant now = Instant.now();
         String id = String.format("%013d-%s", now.toEpochMilli(), UUID.randomUUID());
         Note n = new Note(id, in.title(), in.body() == null ? "" : in.body(), now, author);
@@ -73,12 +73,12 @@ public class FileNoteStore implements NoteStore {
     }
 
     @Override
-    public Optional<Note> get(String id) {
+    public Optional<Note> get(final String id) {
         return safe(id) ? read(file(id)) : Optional.empty();
     }
 
     @Override
-    public boolean delete(String id) {
+    public boolean delete(final String id) {
         if (!safe(id)) return false;
         try {
             return Files.deleteIfExists(file(id));
@@ -91,26 +91,26 @@ public class FileNoteStore implements NoteStore {
     public boolean ready() {
         try {
             Files.createDirectories(dir);
-            return Files.isDirectory(dir) && Files.isWritable(dir);
-        } catch (IOException e) {
+            return Files.isWritable(dir); // createDirectories fails when the path exists and is not a folder
+        } catch (IOException _) {
             return false;
         }
     }
 
     /** An identifier is never a path: no "..", no "/" (protects against access to another file). */
-    static boolean safe(String id) {
-        return id != null && id.matches("[0-9]{13}-[0-9a-fA-F-]{36}");
+    static boolean safe(final String id) {
+        return id != null && id.matches("\\d{13}-[0-9a-fA-F-]{36}");
     }
 
-    private Path file(String id) {
+    private Path file(final String id) {
         return dir.resolve(id + ".json");
     }
 
-    private Optional<Note> read(Path p) {
+    private Optional<Note> read(final Path p) {
         try {
             JsonNode j = MAPPER.readTree(Files.readString(p, StandardCharsets.UTF_8));
             return Optional.of(new Note(j.get("id").asString(), j.get("title").asString(), j.path("body").asString(""), Instant.parse(j.get("createdAt").asString()), j.path("author").asString("")));
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException | RuntimeException _) {
             return Optional.empty(); // missing, partial or corrupt: ignored (rule 3)
         }
     }

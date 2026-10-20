@@ -37,8 +37,8 @@
     <!-- Version of gluonify-plasma-build-rules (the PMD ruleset, installed by gluonify-plasma's mvn install): kept equal to gluonify-plasma's version. -->
     <gluonify.build-rules.version>0.1.0-SNAPSHOT</gluonify.build-rules.version>
     <!-- Coverage ratchet (JaCoCo, whole module): each repository sets its current level rounded down, raises it with its tests, never lowers it. -->
-    <gluonify.coverage.minimum>0.85</gluonify.coverage.minimum>
-    <gluonify.coverage.branch.minimum>0.81</gluonify.coverage.branch.minimum>
+    <gluonify.coverage.minimum>1.00</gluonify.coverage.minimum>
+    <gluonify.coverage.branch.minimum>1.00</gluonify.coverage.branch.minimum>
     <!-- Existing PMD debt only (class=Rule,Rule): a line is removed when its class is fixed, never added. -->
     <gluonify.pmd.baseline>${project.basedir}/pmd-baseline.properties</gluonify.pmd.baseline>
   </properties>

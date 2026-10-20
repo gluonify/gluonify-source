@@ -12,12 +12,12 @@ public class GraphEventLedger implements EventLedger {
     private final GraphNoteStore graph;
     private volatile boolean constraintReady;
 
-    public GraphEventLedger(GraphNoteStore graph) {
+    public GraphEventLedger(final GraphNoteStore graph) {
         this.graph = graph;
     }
 
     @Override
-    public boolean firstSeen(String eventId) {
+    public boolean firstSeen(final String eventId) {
         if (!constraintReady) {
             graph.run("CREATE CONSTRAINT event_id IF NOT EXISTS FOR (e:Event) REQUIRE e.id IS UNIQUE", Map.of());
             constraintReady = true;

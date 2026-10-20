@@ -28,12 +28,12 @@ import java.util.Set;
 @IfBuildProfile("dev")
 public class DevAuthentication implements HttpAuthenticationMechanism {
     @Override
-    public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
+    public Uni<SecurityIdentity> authenticate(final RoutingContext context, final IdentityProviderManager identityProviderManager) {
         return Uni.createFrom().item(QuarkusSecurityIdentity.builder().setPrincipal(new QuarkusPrincipal("dev")).addRoles(Set.of("source:read", "source:write")).build());
     }
 
     @Override
-    public Uni<ChallengeData> getChallenge(RoutingContext context) {
+    public Uni<ChallengeData> getChallenge(final RoutingContext context) {
         return Uni.createFrom().nullItem();
     }
 

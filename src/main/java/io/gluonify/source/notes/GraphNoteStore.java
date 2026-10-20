@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -31,10 +32,12 @@ import tools.jackson.databind.ObjectMapper;
 public class GraphNoteStore implements NoteStore {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private final String url, database, auth;
-    private volatile HttpClient http;
+    private final String url;
+    private final String database;
+    private final String auth;
+    private final AtomicReference<HttpClient> http = new AtomicReference<>();
 
-    public GraphNoteStore(String url, String database, String user, String password) {
+    public GraphNoteStore(final String url, final String database, final String user, final String password) {
         this.url = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
         this.database = database;
         this.auth = "Basic " + Base64.getEncoder().encodeToString((user + ":" + password).getBytes(StandardCharsets.UTF_8));
@@ -46,7 +49,7 @@ public class GraphNoteStore implements NoteStore {
     }
 
     @Override
-    public Note create(NewNote in, String author) {
+    public Note create(final NewNote in, final String author) {
         Note n = new Note(UUID.randomUUID().toString(), in.title(), in.body() == null ? "" : in.body(), Instant.now(), author);
         query("CREATE (:Note {id: $id, title: $title, body: $body, createdAt: $createdAt, author: $author})",
                 Map.of("id", n.id(), "title", n.title(), "body", n.body(), "createdAt", n.createdAt().toString(), "author", author == null ? "" : author));
@@ -59,12 +62,12 @@ public class GraphNoteStore implements NoteStore {
     }
 
     @Override
-    public Optional<Note> get(String id) {
+    public Optional<Note> get(final String id) {
         return notes(query("MATCH (n:Note {id: $id}) RETURN n.id, n.title, n.body, n.createdAt, n.author", Map.of("id", id))).stream().findFirst();
     }
 
     @Override
-    public boolean delete(String id) {
+    public boolean delete(final String id) {
         JsonNode r = query("MATCH (n:Note {id: $id}) DELETE n", Map.of("id", id));
         return r.path("stats").path("nodesDeleted").asInt(0) > 0;
     }
@@ -74,12 +77,12 @@ public class GraphNoteStore implements NoteStore {
         try {
             query("RETURN 1", Map.of());
             return true;
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return false;
         }
     }
 
-    private static List<Note> notes(JsonNode result) {
+    private static List<Note> notes(final JsonNode result) {
         List<Note> out = new ArrayList<>();
         for (JsonNode row : result.path("rows")) {
             out.add(new Note(row.get(0).asString(), row.get(1).asString(), row.get(2).asString(""), Instant.parse(row.get(3).asString()), row.get(4).asString("")));
@@ -88,11 +91,11 @@ public class GraphNoteStore implements NoteStore {
     }
 
     /** Runs a parameterised statement (used by other graph-backed components, e.g. the webhook ledger); fails with IllegalStateException carrying Gdown's message. */
-    public JsonNode run(String statement, Map<String, Object> parameters) {
+    public JsonNode run(final String statement, final Map<String, Object> parameters) {
         return query(statement, parameters);
     }
 
-    private JsonNode query(String statement, Map<String, Object> parameters) {
+    private JsonNode query(final String statement, final Map<String, Object> parameters) {
         try {
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("statement", statement);
@@ -112,8 +115,11 @@ public class GraphNoteStore implements NoteStore {
     }
 
     private HttpClient client() {
-        HttpClient h = http;
-        if (h == null) http = h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(); // created on first use (native)
+        HttpClient h = http.get();
+        if (h == null) {
+            h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(); // created on first use (native)
+            http.set(h);
+        }
         return h;
     }
 }

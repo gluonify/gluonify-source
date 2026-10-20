@@ -96,7 +96,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 l'interfaccia Vue 3 (Vite + vitest), compilata da Quinoa
   src/auth.js                   accesso con Charm (codice di autorizzazione + PKCE) tramite il kit @gluonify/ui
   vendor/gluonify-ui/           copia inclusa del kit (gluonify-ui/scripts/sync-vendor.sh, mai modificata a mano)
-src/test/java/…                 70 test Java; src/main/webui/src/App.test.js: 40 test di interfaccia
+src/test/java/…                 121 test Java; src/main/webui/src/*.test.js: 53 test di interfaccia
 deploy/                         esempi: AppSpec, dominio, webhook Photon, database Gdown
 scripts/rename.py               rinomina il progetto
 ```
@@ -372,7 +372,7 @@ La dichiari in `"uses"`: la piattaforma fornisce `GLUONIFY_SERVICE_<APP>_URL` **
 ## 8. Compilare
 
 ```bash
-mvn test                       # test Java (70)
+mvn test                       # test Java (121)
 mvn package                    # JVM: target/quarkus-app/; compila anche l'interfaccia (Quinoa)
 ```
 
@@ -433,8 +433,8 @@ Aggiornare: stesso `PUT` (o nuovo build); le repliche vengono sostituite **una a
 ## 10. Testare
 
 ```bash
-mvn test                                 # 70 test Java
-cd src/main/webui && npm install && npm test   # 40 test di interfaccia
+mvn test                                 # 121 test Java
+cd src/main/webui && npm install && npm test   # 53 test di interfaccia
 ```
 
 | Test | Numero | Cosa verifica |

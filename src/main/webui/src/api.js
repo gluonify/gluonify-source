@@ -4,7 +4,7 @@ import { auth } from './auth.js'
 
 // An Error carrying the HTTP status; apiMessage is true when the text comes from the API itself ({"error": ...} or validation violations) rather than being "HTTP <status>".
 function failure(status, json) {
-  const apiMessage = (json && (json.error || (json.violations && json.violations.map((v) => v.message).join(', ')))) || ''
+  const apiMessage = json?.error || json?.violations?.map((v) => v.message).join(', ') || ''
   const e = new Error(apiMessage || `HTTP ${status}`)
   e.status = status
   e.apiMessage = Boolean(apiMessage)

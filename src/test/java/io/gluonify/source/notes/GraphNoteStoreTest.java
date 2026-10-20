@@ -93,4 +93,27 @@ class GraphNoteStoreTest {
         gdown.stop(0);
         assertFalse(store().ready(), "unreachable: not ready, without throwing");
     }
+
+    @Test
+    void aNoteWithoutBodyOrAuthorIsStoredWithEmptyStrings() throws Exception {
+        final GraphNoteStore g = store();
+        assertEquals("gdown", g.kind());
+        final Note n = g.create(new NewNote("T", null), null);
+        assertEquals("", n.body());
+        final JsonNode j = M.readTree(seen.poll()[2]);
+        assertEquals("", j.at("/parameters/body").asString());
+        assertEquals("", j.at("/parameters/author").asString());
+    }
+
+    @Test
+    void anInterruptedCallFailsAndKeepsTheInterruptFlag() {
+        Thread.currentThread().interrupt();
+        try {
+            final var e = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> store().list());
+            assertEquals("interrupted", e.getMessage());
+            assertTrue(Thread.currentThread().isInterrupted());
+        } finally {
+            Thread.interrupted();
+        }
+    }
 }

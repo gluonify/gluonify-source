@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import tools.jackson.databind.JsonNode;
@@ -34,22 +35,27 @@ import tools.jackson.databind.ObjectMapper;
 @Tag(name = "Webhooks")
 public class WebhookResource {
     private static final String ERROR = "error";
+    private static final String STATUS = "status";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    @Inject
-    SourceConfig config;
+    private final SourceConfig config;
+    private final EventLedger ledger; // shared by all replicas (memory / distributed files / Gdown, according to source.store)
+
+    private final AtomicLong accepted = new AtomicLong();
+    private final AtomicLong duplicates = new AtomicLong();
 
     @Inject
-    EventLedger ledger; // shared by all replicas (memory / distributed files / Gdown, according to source.store)
-
-    private final java.util.concurrent.atomic.AtomicLong accepted = new java.util.concurrent.atomic.AtomicLong(), duplicates = new java.util.concurrent.atomic.AtomicLong();
+    public WebhookResource(final SourceConfig config, final EventLedger ledger) {
+        this.config = config;
+        this.ledger = ledger;
+    }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Receives a delivery from Photon (acknowledges with 200; idempotent on X-Gluonify-Event-Id)")
-    public Response receive(@HeaderParam("X-Api-Key") String key, @HeaderParam("X-Gluonify-Event-Id") String eventId, @HeaderParam("X-Gluonify-Webhook-Id") String webhook,
-            @HeaderParam("X-Gluonify-Delivery-Attempt") String attempt, String body) {
+    public Response receive(@HeaderParam("X-Api-Key") final String key, @HeaderParam("X-Gluonify-Event-Id") final String eventId, @HeaderParam("X-Gluonify-Webhook-Id") final String webhook,
+            @HeaderParam("X-Gluonify-Delivery-Attempt") final String attempt, final String body) {
         String expected = config.webhook().key().orElse("");
         if (expected.isBlank()) return Response.status(404).build(); // receiver closed as long as no key is configured
         if (key == null || !MessageDigest.isEqual(key.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8))) return Response.status(401).entity(Map.of(ERROR, "invalid key")).build();
@@ -57,18 +63,18 @@ public class WebhookResource {
         JsonNode json;
         try {
             json = MAPPER.readTree(body);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             // an unreadable body will not fix itself by replaying: 4XX (Photon will replay it according to its policy, then dead-letter it)
             return Response.status(400).entity(Map.of(ERROR, "JSON illisible")).build();
         }
         if (!ledger.firstSeen(eventId)) { // atomic across replicas
             duplicates.incrementAndGet();
-            return Response.ok(Map.of("status", "duplicate", "eventId", eventId)).build(); // already processed: we still acknowledge (2XX), without redoing the work
+            return Response.ok(Map.of(STATUS, "duplicate", "eventId", eventId)).build(); // already processed: we still acknowledge (2XX), without redoing the work
         }
         accepted.incrementAndGet();
         // HERE: your processing. It receives "json" (the message ALREADY converted to JSON by Photon).
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("status", "accepted");
+        out.put(STATUS, "accepted");
         out.put("eventId", eventId);
         out.put("webhook", webhook);
         out.put("attempt", attempt);

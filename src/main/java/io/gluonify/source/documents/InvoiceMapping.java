@@ -26,7 +26,7 @@ public final class InvoiceMapping {
     private InvoiceMapping() {}
 
     /** @param today the date used when the request has none (a parameter, so that tests do not depend on the clock) */
-    public static GluonifyInvoicePayload payload(InvoiceRequest in, LocalDate today) {
+    public static GluonifyInvoicePayload payload(final InvoiceRequest in, final LocalDate today) {
         InvoiceRequest.Customer c = in.customer();
         GluonifyInvoicePayload.Recipient recipient = new GluonifyInvoicePayload.Recipient(c.name(), null, c.street(), c.houseNumber(), c.postalCode(), c.city(), c.country(), null);
         GluonifyInvoicePayload.Invoice invoice = new GluonifyInvoicePayload.Invoice(in.number(), in.date() == null ? today : in.date(), in.dueDate(), in.subject(), null);
@@ -39,12 +39,12 @@ public final class InvoiceMapping {
     }
 
     /** Rendering options: only the language is asked for; currency, country and time zone are the template's (CHF, CH, Europe/Zurich), PDF/A-1B is the SDK default. */
-    public static RenderOptions options(InvoiceRequest in) {
+    public static RenderOptions options(final InvoiceRequest in) {
         return in.lang() == null ? RenderOptions.DEFAULT : RenderOptions.builder().lang(in.lang()).build();
     }
 
     /** A file name made of safe characters only (the invoice number comes from the caller): {@code invoice-2026-0042.pdf}. */
-    public static String fileName(InvoiceRequest in) {
+    public static String fileName(final InvoiceRequest in) {
         String safe = in.number().replaceAll("[^A-Za-z0-9._-]", "_");
         return "invoice-" + (safe.length() > 40 ? safe.substring(0, 40) : safe) + ".pdf";
     }
