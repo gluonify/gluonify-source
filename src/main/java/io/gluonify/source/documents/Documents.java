@@ -12,6 +12,7 @@ import java.util.Optional;
  * the platform when the application is deployed with {@code "uses": ["crystallon"]}, your cluster after {@code gluonify login}, the fake services in tests) and this class only
  * asks whether the service is available. Not available = the documents feature is off ({@code POST /api/documents/invoice} answers 404) and nothing else changes.
  */
+// @Singleton, not @ApplicationScoped: Quarkus rewrites @ApplicationScoped classes with constructor injection, which makes JaCoCo lose their coverage.
 @Singleton
 public class Documents {
     /** Name of the service in {@code "uses"}. */

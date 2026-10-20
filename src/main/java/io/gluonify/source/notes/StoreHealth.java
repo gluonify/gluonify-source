@@ -11,6 +11,7 @@ import org.eclipse.microprofile.health.Readiness;
  * (/q/health/live depends on nothing external: a Gdown outage must not make the application restart in a loop.)
  */
 @Readiness
+// @Singleton, not @ApplicationScoped: Quarkus rewrites @ApplicationScoped classes with constructor injection, which makes JaCoCo lose their coverage.
 @Singleton
 public class StoreHealth implements HealthCheck {
     private final NoteStore store;

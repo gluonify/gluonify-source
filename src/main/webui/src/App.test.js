@@ -6,11 +6,11 @@ import App from './App.vue'
 import { LANGUAGES, setLanguage, detectLanguage } from './i18n/index.js'
 import { SAMPLE_INVOICE } from './api.js'
 import { auth, browser } from './auth.js'
-import en from './i18n/en.js'
-import fr from './i18n/fr.js'
-import es from './i18n/es.js'
-import it_ from './i18n/it.js'
-import de from './i18n/de.js'
+import en from './i18n/en.json'
+import fr from './i18n/fr.json'
+import es from './i18n/es.json'
+import it_ from './i18n/it.json'
+import de from './i18n/de.json'
 
 // UI tests ("mvn package" runs them through Quinoa): fetch is replaced, no server is needed.
 // Sign-in configuration served by GET /api/auth-config on the platform (Charm client of this UI); every test is signed in unless it says otherwise.

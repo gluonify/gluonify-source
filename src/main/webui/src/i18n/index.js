@@ -1,10 +1,10 @@
-// Tiny dependency-free i18n. To add a language: create <code>.js with the keys of en.js, import it here and add it to MESSAGES and LANGUAGES.
+// Tiny dependency-free i18n. To add a language: create <code>.json with the keys of en.json, import it here and add it to MESSAGES and LANGUAGES.
 import { ref } from 'vue'
-import en from './en.js'
-import fr from './fr.js'
-import es from './es.js'
-import it from './it.js'
-import de from './de.js'
+import en from './en.json'
+import fr from './fr.json'
+import es from './es.json'
+import it from './it.json'
+import de from './de.json'
 
 const MESSAGES = { en, fr, es, it, de }
 export const LANGUAGES = [
