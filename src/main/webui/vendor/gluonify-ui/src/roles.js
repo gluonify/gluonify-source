@@ -3,13 +3,13 @@ export function rolesFromToken(jwt) {
   try {
     const part = String(jwt || '').split('.')[1]
     if (!part) return []
-    const b64 = part.replace(/-/g, '+').replace(/_/g, '/')
-    const bytes = Uint8Array.from(atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, '=')), (c) => c.charCodeAt(0))
+    const b64 = part.replaceAll('-', '+').replaceAll('_', '/')
+    const bytes = Uint8Array.from(atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, '=')), (c) => c.codePointAt(0))
     const claims = JSON.parse(new TextDecoder().decode(bytes))
     const out = new Set()
     const add = (v) => { if (Array.isArray(v)) v.forEach((x) => typeof x === 'string' && x && out.add(x)) }
     add(claims.roles)
-    add(claims.realm_access && claims.realm_access.roles)
+    add(claims.realm_access?.roles)
     if (typeof claims.scope === 'string') claims.scope.split(/\s+/).filter(Boolean).forEach((s) => out.add(s))
     return [...out]
   } catch {

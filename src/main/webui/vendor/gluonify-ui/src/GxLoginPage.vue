@@ -17,6 +17,8 @@ import './components.css'
  * `charmEnabled`, `denied` (account refused by the console), `failed`, `checking` (sign-in running), `signedOut` (right after an
  * explicit sign-out: « You are signed out » and « Sign in again », so that the sign-out is not undone by the automatic redirect).
  * The console only shows this page when `auth.autoLogin()` did not send the browser to Charm.
+ * Slot `local` (0.6.1): a console whose server has no identity provider (gDown on its own) may offer its own sign-in with a local account there; it is
+ * rendered only when Charm is not configured, in place of the « not configured » note, so that it can never bypass Charm's MFA.
  */
 const props = defineProps({
   intro: { type: [String, Object], default: undefined },
@@ -44,12 +46,13 @@ onBeforeUnmount(() => { document.title = previousTitle })
     <main id="main" class="gx-login__main">
       <div class="gx-login__panel">
         <h1>{{ heading() }}</h1>
-        <p v-if="signedOut && !denied && !failed" class="gx-muted gx-login__intro" role="status" data-gx="signed-out">{{ gx.t('login.signedOut') }}</p>
+        <p v-if="signedOut && !denied && !failed" class="gx-muted gx-login__intro" data-gx="signed-out"><output>{{ gx.t('login.signedOut') }}</output></p>
         <p v-else class="gx-muted gx-login__intro"><slot name="intro">{{ intro === undefined ? gx.t('login.intro') : localized(intro, gx.locale.value) }}</slot></p>
-        <p v-if="checking" class="gx-muted" role="status">{{ gx.t('login.checking') }}</p>
+        <p v-if="checking" class="gx-muted" data-gx="checking"><output>{{ gx.t('login.checking') }}</output></p>
         <p v-if="denied" class="gx-error" role="alert">{{ gx.t('login.rejected') }}</p>
         <p v-if="failed" class="gx-error" role="alert">{{ gx.t('login.failed') }}</p>
         <GxButton v-if="charmEnabled" :label="gx.t(signedOut && !denied && !failed ? 'login.signInAgain' : 'login.charm')" icon="signIn" @click="emit('charm')" />
+        <slot v-else-if="$slots.local" name="local" />
         <p v-else class="gx-muted" role="note" data-gx="unavailable">{{ gx.t('login.unavailable') }}</p>
       </div>
     </main>

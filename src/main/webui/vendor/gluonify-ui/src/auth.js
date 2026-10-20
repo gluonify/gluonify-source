@@ -15,13 +15,20 @@ import { rolesFromToken, roleMatches } from './roles.js'
  */
 export const LOGOUT_CHANNEL = 'gluonify-logout'
 export const SILENT_RETRY_MS = 30_000
-const SILENT_ERRORS = ['login_required', 'consent_required', 'interaction_required', 'account_selection_required']
+const SILENT_ERRORS = new Set(['login_required', 'consent_required', 'interaction_required', 'account_selection_required'])
+
+/** `s` without the trailing `ch` characters (a loop: no backtracking regular expression). */
+function trimEnd(s, ch) {
+  let end = s.length
+  while (end > 0 && s[end - 1] === ch) end--
+  return s.slice(0, end)
+}
 
 export function decodeJwt(token) {
   try {
     const part = String(token).split('.')[1] ?? ''
-    const base64 = part.replace(/-/g, '+').replace(/_/g, '/')
-    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
+    const base64 = part.replaceAll('-', '+').replaceAll('_', '/')
+    const bytes = Uint8Array.from(atob(base64), (c) => c.codePointAt(0))
     return JSON.parse(new TextDecoder().decode(bytes)) ?? {}
   } catch {
     return {}
@@ -29,7 +36,7 @@ export function decodeJwt(token) {
 }
 
 const b64url = (buf) =>
-  btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  trimEnd(btoa(String.fromCodePoint(...new Uint8Array(buf))).replaceAll('+', '-').replaceAll('/', '_'), '=')
 const random = (n = 32) => b64url(crypto.getRandomValues(new Uint8Array(n)))
 
 /** S256 challenge of a verifier (RFC 7636). */
@@ -38,7 +45,7 @@ export async function challenge(verifier) {
 }
 
 export function oidcConfigured(cfg) {
-  return !!(cfg && cfg.clientId && cfg.authorizationUrl && cfg.tokenUrl)
+  return !!(cfg?.clientId && cfg.authorizationUrl && cfg.tokenUrl)
 }
 
 /**
@@ -48,7 +55,7 @@ export function oidcConfigured(cfg) {
  */
 export function charmAccountUrl(cfg) {
   if (!cfg) return ''
-  const issuer = typeof cfg.issuer === 'string' && cfg.issuer ? cfg.issuer.replace(/\/+$/, '') + '/account' : ''
+  const issuer = typeof cfg.issuer === 'string' && cfg.issuer ? trimEnd(cfg.issuer, '/') + '/account' : ''
   const fromAuthorize = typeof cfg.authorizationUrl === 'string' && /\/authorize(\?.*)?$/.test(cfg.authorizationUrl)
     ? cfg.authorizationUrl.replace(/\/authorize(\?.*)?$/, '/account') : ''
   const url = cfg.accountUrl || issuer || fromAuthorize
@@ -185,7 +192,7 @@ export function createAuth(options = {}) {
     return true
   }
   /** Former name of `autoLogin` (it used to ask with `prompt=none`); kept so that every console follows the automatic redirect. */
-  const trySilentLogin = (loc = window.location, opts) => autoLogin(loc, opts)
+  const trySilentLogin = (...args) => autoLogin(...args)
 
   function keep(j) {
     setToken(j.access_token ?? '')
@@ -207,8 +214,8 @@ export function createAuth(options = {}) {
     try { saved = JSON.parse(readSession(K.pkce) || 'null') } catch { /* no saved login */ }
     writeSession(K.pkce, '')
     try { history.replaceState(null, '', loc.pathname + loc.hash) } catch { /* no history */ }
-    if (!code && error && SILENT_ERRORS.includes(error) && saved?.silent && saved.state === state) { loginError.value = false; return null }
-    if (!code || !saved || saved.state !== state || !oidcConfigured(cfg)) throw new Error('login-failed')
+    if (!code && error && SILENT_ERRORS.has(error) && saved?.silent && saved.state === state) { loginError.value = false; return null }
+    if (!code || saved?.state !== state || !oidcConfigured(cfg)) throw new Error('login-failed')
     const r = await fetchFn(cfg.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },

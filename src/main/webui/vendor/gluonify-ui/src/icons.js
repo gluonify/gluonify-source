@@ -3,8 +3,6 @@ import {
   ChevronsUpDown, CircleHelp, Clock, ArrowLeftRight, FilePen, Folder, History, Copy, Download, ExternalLink, Eye, EyeOff, Filter, House, Info, KeyRound, Link2, List, Loader2, Lock,
   LockOpen, LogIn, LogOut, Menu as MenuIcon, Minus, Moon, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Settings,
   ShieldCheck, SlidersHorizontal, Rocket, ScrollText, Sun, Trash2, TriangleAlert, Upload, User, Wand2, X, XCircle,
-} from 'lucide-vue-next'
-import {
   Ban, BarChart3, Circle, CirclePlay, CirclePlus, CircleStop, CloudUpload, Code, Database, DollarSign, File as FileIcon, FileCheck,
   Flag, FolderOpen, FolderPlus, Inbox, LayoutGrid, ListChecks, Mail, Network, RefreshCcw, RotateCcw, Send, Share2, Signpost, Table2, Tag,
   Undo2, Zap, Asterisk, Star, Eraser, Image as ImageIcon, Maximize, Maximize2, Minimize2, Fullscreen, Expand, Package, Server,
@@ -41,5 +39,5 @@ export const ICONS = {
 export function resolveIcon(ref) {
   if (!ref) return undefined
   const name = String(ref).replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())
-  return Object.prototype.hasOwnProperty.call(ICONS, name) ? name : undefined
+  return Object.hasOwn(ICONS, name) ? name : undefined
 }

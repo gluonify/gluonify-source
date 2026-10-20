@@ -8,7 +8,7 @@ export type Localized = string | Partial<Record<Locale, string>>
 export interface PortalApp { id: string; name: string; role: Localized; particle: string; color: string; colorLight?: string; url: string; requiredRoles: string[]; mark?: string }
 
 export const AppSwitcher: Component
-export function usePortalCatalog(): { catalog: Ref<PortalApp[]> }
+export function usePortalCatalog(options?: { token?: () => string | null | undefined }): { catalog: Ref<PortalApp[]>; loaded: Ref<boolean> }
 export function resetPortalCatalog(): void
 export function rolesFromToken(jwt: string): string[]
 export function roleMatches(pattern: string, role: string): boolean
