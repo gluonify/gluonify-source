@@ -2,8 +2,6 @@
 
 This repository is the **starting point** for a Quarkus 4 service that runs on Gluonify. Read `README.md` first: it explains everything, step by step (also available as `README.fr.md`, `README.es.md`, `README.it.md`, `README.de.md`). This file summarizes what you must not break.
 
-Shared context for every gluonify-* repository (rules, build order, pitfalls, conventions, Edge model): `/Users/a/dev/gluonify/CLAUDE.md`, loaded automatically with this file (written in French).
-
 ## Commands
 - `mvn quarkus:dev`: development (hot reload, UI at http://localhost:8080, **no token needed**: the "dev" identity exists only in this profile).
 - `mvn test`: 121 Java tests (REST, stores, webhooks, platform, documents, sign-in configuration, conformity). The UI is tested separately: `cd src/main/webui && npm test` (55 tests).
