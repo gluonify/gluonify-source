@@ -48,8 +48,12 @@
     <repository>
       <id>gluonify-sea</id>
       <url>${gluonify.sea.maven.url}</url>
-      <releases><enabled>true</enabled></releases>
-      <snapshots><enabled>false</enabled></snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
 
@@ -76,28 +80,71 @@
 
   <dependencies>
     <!-- REST + JSON (Jackson 3) -->
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-rest-jackson</artifactId></dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-jackson</artifactId>
+    </dependency>
     <!-- Request body validation (@NotBlank, @Size...) -->
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-hibernate-validator</artifactId></dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-hibernate-validator</artifactId>
+    </dependency>
     <!-- Health: REQUIRED by Gluonify (builder rule R-SANTE): traffic only arrives if /q/health/ready answers 200 -->
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-smallrye-health</artifactId></dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-health</artifactId>
+    </dependency>
     <!-- Authentication: gluonify-charm tokens (OpenID Connect, "service" mode) -->
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-oidc</artifactId></dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-oidc</artifactId>
+    </dependency>
     <!-- OpenAPI contract (/q/openapi) and Swagger UI (/q/swagger-ui) -->
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-smallrye-openapi</artifactId></dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-smallrye-openapi</artifactId>
+    </dependency>
     <!-- Prometheus metrics (/q/metrics): the platform scrapes them -->
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-micrometer-registry-prometheus</artifactId></dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+    </dependency>
     <!-- Web UI: Quinoa builds and serves the Vue project in src/main/webui -->
-    <dependency><groupId>io.quarkiverse.quinoa</groupId><artifactId>quarkus-quinoa</artifactId><version>${quinoa.version}</version></dependency>
+    <dependency>
+      <groupId>io.quarkiverse.quinoa</groupId>
+      <artifactId>quarkus-quinoa</artifactId>
+      <version>${quinoa.version}</version>
+    </dependency>
     <!-- Gluonify SDK, zero configuration: default CDI beans for the services (CrystallonClient, with the address and the token found by the SDK: platform, "gluonify login", fake services in tests);
          brings gluonify-plasma-services and gluonify-plasma-crystallon-client. Crystallon stays optional at run time: see io.gluonify.source.documents -->
-    <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-quarkus</artifactId><version>${gluonify.sdk.version}</version></dependency>
+    <dependency>
+      <groupId>io.gluonify.plasma</groupId>
+      <artifactId>gluonify-plasma-quarkus</artifactId>
+      <version>${gluonify.sdk.version}</version>
+    </dependency>
 
     <!-- Fake Gluonify services for tests (GluonifyTestServices.start() / close()): a fake Crystallon, nothing to configure -->
-    <dependency><groupId>io.gluonify.plasma</groupId><artifactId>gluonify-plasma-testing</artifactId><version>${gluonify.sdk.version}</version><scope>test</scope></dependency>
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-junit</artifactId><scope>test</scope></dependency>
-    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-test-security</artifactId><scope>test</scope></dependency>
-    <dependency><groupId>io.rest-assured</groupId><artifactId>rest-assured</artifactId><scope>test</scope></dependency>
+    <dependency>
+      <groupId>io.gluonify.plasma</groupId>
+      <artifactId>gluonify-plasma-testing</artifactId>
+      <version>${gluonify.sdk.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-test-security</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.rest-assured</groupId>
+      <artifactId>rest-assured</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -160,12 +207,20 @@
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.platform.version}</version>
         <extensions>true</extensions>
-        <executions><execution><goals><goal>build</goal></goals></execution></executions>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.13.0</version>
-        <configuration><parameters>true</parameters></configuration>
+        <configuration>
+          <parameters>true</parameters>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -260,7 +315,11 @@
     <profile>
       <!-- activated by -Dnative (what gluonify-bup does: mvn package -Dnative) -->
       <id>native</id>
-      <activation><property><name>native</name></property></activation>
+      <activation>
+        <property>
+          <name>native</name>
+        </property>
+      </activation>
       <properties>
         <quarkus.native.enabled>true</quarkus.native.enabled>
         <!-- -march=compatibility : the executable runs on any x86-64 / arm64 CPU (otherwise GraalVM 25 targets x86-64-v3, AVX2).
