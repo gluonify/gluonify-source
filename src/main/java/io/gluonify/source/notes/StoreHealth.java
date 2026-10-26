@@ -23,6 +23,6 @@ public class StoreHealth implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.builder().name("stockage des notes").status(store.ready()).withData("store", store.kind()).build();
+        return HealthCheckResponse.builder().name("notes storage").status(store.ready()).withData("store", store.kind()).build();
     }
 }

@@ -67,7 +67,7 @@ class NotesResourceTest {
 
     @Test
     void santeEtMesuresSontOuvertes() {
-        given().when().get("/q/health/ready").then().statusCode(200).body(containsString("stockage des notes")).body(containsString("memory"));
+        given().when().get("/q/health/ready").then().statusCode(200).body(containsString("notes storage")).body(containsString("memory"));
         given().when().get("/q/health/live").then().statusCode(200);
         given().when().get("/q/metrics").then().statusCode(200).body(containsString("jvm_memory"));
         given().when().get("/q/health").then().statusCode(200).header("Content-Type", containsString("json")).body(endsWith("}"));
