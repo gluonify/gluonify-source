@@ -9,7 +9,7 @@ This repository is the **starting point** for a Quarkus 4 service that runs on G
 - This project is standalone (no parent POM). If the user moves it onto the Gluonify parent `io.gluonify.plasma:gluonify-plasma` (0.7.4 or later; 0.7.3 and earlier do not work for an application), tell them that the parent turns **PMD on by default** (`mvn verify` fails on a violation not listed in `pmd-baseline.properties`; add an empty one if missing): keep it on; it is turned off only at the user's request, with `-Dgluonify.plasma.pmd.skip=true` in `.mvn/maven.config` (a `pom.xml` property does not turn it off). Details: gluonify-plasma README, "Quality gates".
 - Native (what Gluonify runs): `docker build --target out --output type=local,dest=dist -f Dockerfile.build .` -> `dist/gluonify-source`.
 - Rename the project: `python3 scripts/rename.py <groupId> <artifactId> [<package>]`, then `mvn test`.
-- Java 25, Quarkus 4.0.0.Beta1, Jackson 3 (`tools.jackson.databind`, not `com.fasterxml`), GraalVM native (Mandrel 25).
+- Java 25, Quarkus 4.0.0.Beta2, Jackson 3 (`tools.jackson.databind`, not `com.fasterxml`), GraalVM native (Mandrel 25).
 
 ## Platform rules (Gluonify's builder enforces them; `ConformityTest` checks them on your side)
 - `quarkus-smallrye-health` is mandatory (R-SANTE). No plaintext secret in `application.properties`: use `${VARIABLE}` or `${app.key}` (R-SECRET). No `.env`, `*.pem`, `*.p12`, `*.jks` (R-FICHIER-SENSIBLE). No `quarkus-container-image-*` (R-IMAGE). `quarkus.http.host` never on loopback (R-ECOUTE). Native compilation never disabled (R-NATIF).

@@ -63,7 +63,7 @@ curl -s localhost:8080/api/notes
 ## 2. La carte du projet
 
 ```
-pom.xml                         projet Maven AUTONOME (Quarkus 4.0.0.Beta1, Java 25) : aucun parent Gluonify
+pom.xml                         projet Maven AUTONOME (Quarkus 4.0.0.Beta2, Java 25) : aucun parent Gluonify
 gluonify.json                   lu par le builder de Gluonify (Bup) : seulement les services que le SDK ne détecte pas (`uses` : charm, gdown) ; Bup déduit le reste
 crystallon/templates/           le modèle Crystallon de l'exemple, tel que la console l'exporte ; le builder l'installe au déploiement
 Dockerfile.build                construit l'exécutable natif dans Docker

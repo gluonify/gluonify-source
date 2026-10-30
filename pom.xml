@@ -20,12 +20,12 @@
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.platform.version>4.0.0.Beta1</quarkus.platform.version>
+    <quarkus.platform.version>4.0.0.Beta2</quarkus.platform.version>
     <quinoa.version>2.9.2</quinoa.version>
     <surefire.version>3.5.2</surefire.version>
     <!-- Gluonify SDK. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
          gluonify-plasma-quarkus and gluonify-plasma-testing are not in a published release yet (0.6.0 has the Crystallon client only): until the next one, install the
-         SDK sources with "mvn install" in gluonify-plasma (0.1.0), then set this to the release number. -->
+         SDK sources with "mvn install" in gluonify-plasma (0.3.0-SNAPSHOT), then set this to the release number. -->
     <gluonify.sdk.version>0.7.2</gluonify.sdk.version>
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
@@ -35,7 +35,7 @@
     <pmd.plugin.version>3.28.0</pmd.plugin.version>
     <pmd.version>7.28.0</pmd.version>
     <!-- Version of gluonify-plasma-build-rules (the PMD ruleset, installed by gluonify-plasma's mvn install): kept equal to gluonify-plasma's version. -->
-    <gluonify.build-rules.version>0.1.0</gluonify.build-rules.version>
+    <gluonify.build-rules.version>0.3.0-SNAPSHOT</gluonify.build-rules.version>
     <!-- Coverage ratchet (JaCoCo, whole module): each repository sets its current level rounded down, raises it with its tests, never lowers it. -->
     <gluonify.coverage.minimum>1.00</gluonify.coverage.minimum>
     <gluonify.coverage.branch.minimum>1.00</gluonify.coverage.branch.minimum>
@@ -59,15 +59,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <!-- Before the Quarkus BOM, so that it wins (as in the gluonify-plasma parent, which this standalone project does not inherit): Quarkus 4.0.0.Beta1
-             brings Jackson 3.1.4, with high advisories fixed in 3.1.6 and 3.1.7 (sbom.py audit, 2026-10-24). Remove once the Quarkus BOM is at 3.1.7 or later. -->
-        <groupId>tools.jackson</groupId>
-        <artifactId>jackson-bom</artifactId>
-        <version>3.1.8</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <dependency>
         <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-bom</artifactId>

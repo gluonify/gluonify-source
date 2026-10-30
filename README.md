@@ -67,7 +67,7 @@ curl -s localhost:8080/api/notes
 ## 2. The project map
 
 ```
-pom.xml                         STANDALONE Maven project (Quarkus 4.0.0.Beta1, Java 25): no Gluonify parent
+pom.xml                         STANDALONE Maven project (Quarkus 4.0.0.Beta2, Java 25): no Gluonify parent
 gluonify.json                   read by Gluonify's builder (Bup): only the services the SDK cannot detect (`uses`: charm, gdown); Bup infers the rest
 crystallon/templates/           the Crystallon template of the example, as the console exports it; the builder installs it at deployment
 Dockerfile.build                builds the native executable in Docker
