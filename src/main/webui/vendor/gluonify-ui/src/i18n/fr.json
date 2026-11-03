@@ -12,6 +12,7 @@
   "login.signedOutTitle": "Vous êtes déconnecté",
   "login.signedOut": "Vous vous êtes déconnecté. Reconnectez-vous pour continuer.",
   "login.signInAgain": "Se reconnecter",
+  "login.loop": "La connexion se répète : cette console vous a connecté plusieurs fois de suite et le serveur refuse toujours la session. La connexion automatique est arrêtée ; réessayez ou contactez votre administrateur.",
   "password.show": "Afficher",
   "password.hide": "Masquer",
   "header.menu": "Afficher ou masquer le menu",

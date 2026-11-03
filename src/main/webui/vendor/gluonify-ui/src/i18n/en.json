@@ -12,6 +12,7 @@
   "login.signedOutTitle": "You are signed out",
   "login.signedOut": "You have signed out. Sign in again to continue.",
   "login.signInAgain": "Sign in again",
+  "login.loop": "The sign-in keeps repeating: this console signed you in several times in a row and the server still refuses the session. The automatic sign-in is stopped; try again or contact your administrator.",
   "password.show": "Show",
   "password.hide": "Hide",
   "header.menu": "Toggle menu",

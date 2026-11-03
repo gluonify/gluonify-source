@@ -71,6 +71,9 @@ export interface AuthOptions {
   clientId?: string
   scope?: string
   silentRetryMs?: number
+  /** Completed sign-ins tolerated within loopWindowMs (3): one more stops the automatic sign-in (loopDetected). */
+  loopMaxLogins?: number
+  loopWindowMs?: number
   logoutChannel?: string
   appName?: string
 }
@@ -89,6 +92,8 @@ export interface Auth {
   signedOut: Ref<boolean>
   /** True when the last return from Charm was an OIDC error or a failed code exchange. */
   loginError: Ref<boolean>
+  /** True when more than loopMaxLogins sign-ins came back within loopWindowMs: the automatic sign-in is stopped until startLogin or logout. */
+  loopDetected: Ref<boolean>
   completeLogin(cfg?: OidcConfig | null, loc?: Location, fetchFn?: typeof fetch): Promise<string | null>
   endSessionUrl(cfg: OidcConfig | null, returnUri: string): string | null
   refreshIfNeeded(fetchFn?: typeof fetch): Promise<void>
@@ -108,3 +113,5 @@ export function charmAccountUrl(cfg: Partial<OidcConfig> | null | undefined): st
 export function oidcConfigured(cfg: unknown): cfg is OidcConfig
 export const LOGOUT_CHANNEL: string
 export const SILENT_RETRY_MS: number
+export const LOGIN_LOOP_MAX: number
+export const LOGIN_LOOP_WINDOW_MS: number

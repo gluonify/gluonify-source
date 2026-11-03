@@ -8,13 +8,18 @@ import { rolesFromToken, roleMatches } from './roles.js'
  *
  *   const auth = createAuth({ storagePrefix: 'fermion' })
  *
- * Options: storagePrefix (sessionStorage keys `<prefix>-token`, `-pkce`, `-idtoken`, `-refresh`, `-expiry`, `-silent`),
+ * Options: storagePrefix (sessionStorage keys `<prefix>-token`, `-pkce`, `-idtoken`, `-refresh`, `-expiry`, `-silent`, `-logins`, `-loop`),
  * getConfig (async () => OidcConfig | null; by default GET <base>/public/auth/config), baseUrl (string or function; by default
  * Vite's BASE_URL, read at call time), clientId and scope (override what the server config says), silentRetryMs (30 000),
- * logoutChannel ('gluonify-logout'), appName (announced on the channel; the prefix by default).
+ * loopMaxLogins (3) and loopWindowMs (60 000): more than loopMaxLogins completed sign-ins within loopWindowMs stop the automatic
+ * sign-in (`loopDetected`) until a deliberate `startLogin` or a sign-out, logoutChannel ('gluonify-logout'), appName (announced on
+ * the channel; the prefix by default).
  */
 export const LOGOUT_CHANNEL = 'gluonify-logout'
 export const SILENT_RETRY_MS = 30_000
+/** Completed sign-ins tolerated within {@link LOGIN_LOOP_WINDOW_MS}; one more means a loop (a server that refuses every token it gets). */
+export const LOGIN_LOOP_MAX = 3
+export const LOGIN_LOOP_WINDOW_MS = 60_000
 const SILENT_ERRORS = new Set(['login_required', 'consent_required', 'interaction_required', 'account_selection_required'])
 
 /** `s` without the trailing `ch` characters (a loop: no backtracking regular expression). */
@@ -78,8 +83,11 @@ export function createAuth(options = {}) {
   const K = {
     token: `${prefix}-token`, pkce: `${prefix}-pkce`, id: `${prefix}-idtoken`,
     refresh: `${prefix}-refresh`, expiry: `${prefix}-expiry`, silent: `${prefix}-silent`, out: `${prefix}-signedout`,
+    logins: `${prefix}-logins`, loop: `${prefix}-loop`,
   }
   const retryMs = options.silentRetryMs ?? SILENT_RETRY_MS
+  const loopMax = options.loopMaxLogins ?? LOGIN_LOOP_MAX
+  const loopWindowMs = options.loopWindowMs ?? LOGIN_LOOP_WINDOW_MS
   const channelName = options.logoutChannel ?? LOGOUT_CHANNEL
   const appName = options.appName ?? prefix
 
@@ -125,6 +133,19 @@ export function createAuth(options = {}) {
   const markSignedOut = (v) => { signedOut.value = v; writeSession(K.out, v ? '1' : '') }
   // the last return from Charm carried an error (or the code exchange failed): no automatic redirect, the page explains
   const loginError = ref(false)
+  // more than loopMax sign-ins came back within loopWindowMs: the server refuses every token it is given (a key or audience
+  // mismatch, a route that answers 401 by mistake); the automatic sign-in stops and the page explains, until a deliberate sign-in
+  const loopDetected = ref(readSession(K.loop) === '1')
+  const markLoop = (v) => { loopDetected.value = v; writeSession(K.loop, v ? '1' : ''); if (!v) writeSession(K.logins, '') }
+  /** Records a completed sign-in; true when it is one too many within the window. */
+  const recordLogin = (now = Date.now()) => {
+    let recent = []
+    try { recent = JSON.parse(readSession(K.logins) || '[]') } catch { /* unreadable: start over */ }
+    recent = (Array.isArray(recent) ? recent : []).filter((t) => typeof t === 'number' && now - t < loopWindowMs)
+    recent.push(now)
+    writeSession(K.logins, JSON.stringify(recent))
+    return recent.length > loopMax
+  }
   const setToken = (v) => { token.value = String(v || '').trim(); writeSession(K.token, token.value) }
   const getAccessToken = () => (isValid() ? token.value : undefined)
 
@@ -165,6 +186,7 @@ export function createAuth(options = {}) {
     if (!oidcConfigured(cfg)) return false
     writeSession(K.silent, String(Date.now())) // a deliberate sign-in also arms the loop guard
     markSignedOut(false)
+    markLoop(false) // the person asked: the loop guard starts counting again
     loginError.value = false
     loc.assign(await buildLoginUrl(cfg, redirectUri(loc), currentPage(loc)))
     return true
@@ -180,7 +202,8 @@ export function createAuth(options = {}) {
    */
   async function autoLogin(loc = window.location, { returnTo } = {}) {
     signedOut.value = readSession(K.out) === '1' // the session is the reference (another instance or a test may have changed it)
-    if (authenticated.value || signedOut.value || loginError.value) return false
+    loopDetected.value = readSession(K.loop) === '1'
+    if (authenticated.value || signedOut.value || loginError.value || loopDetected.value) return false
     const last = Number(readSession(K.silent)) || 0
     if (Date.now() - last < retryMs) return false
     const cfg = config.value
@@ -229,7 +252,8 @@ export function createAuth(options = {}) {
     keep(j)
     loginError.value = false
     markSignedOut(false)
-    writeSession(K.silent, '') // came back signed in: the loop guard is released
+    writeSession(K.silent, '') // came back signed in: the retry window is released
+    if (recordLogin()) markLoop(true) // ...but one sign-in too many within the window stops the automatic ones
     const back = saved.returnTo ?? '/'
     return back.startsWith('/') && !back.startsWith('//') ? back : '/'
   }
@@ -305,6 +329,7 @@ export function createAuth(options = {}) {
     const target = endSessionUrl(config.value, redirectUri(loc))
     forget()
     markSignedOut(true)
+    markLoop(false)
     announceLogout()
     if (target) loc.assign(target)
   }
@@ -313,7 +338,7 @@ export function createAuth(options = {}) {
   const accountUrl = computed(() => (authenticated.value ? charmAccountUrl(config.value) : ''))
 
   return {
-    accountUrl, token, config, claims, username, roles, authenticated, hasRole, signedOut, loginError,
+    accountUrl, token, config, claims, username, roles, authenticated, hasRole, signedOut, loginError, loopDetected,
     isValid, setToken, getAccessToken, loadConfig, buildLoginUrl, startLogin, autoLogin, trySilentLogin, completeLogin,
     endSessionUrl, refreshIfNeeded, logout, forget, recover, initLogoutBroadcast,
     baseUrl, withBase, stripBase, appRoot, redirectUri,

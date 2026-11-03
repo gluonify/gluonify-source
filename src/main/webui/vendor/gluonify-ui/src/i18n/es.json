@@ -12,6 +12,7 @@
   "login.signedOutTitle": "Ha cerrado la sesión",
   "login.signedOut": "Ha cerrado la sesión. Vuelva a iniciar sesión para continuar.",
   "login.signInAgain": "Volver a iniciar sesión",
+  "login.loop": "El inicio de sesión se repite: esta consola le ha conectado varias veces seguidas y el servidor sigue rechazando la sesión. El inicio de sesión automático está detenido; vuelva a intentarlo o contacte con su administrador.",
   "password.show": "Mostrar",
   "password.hide": "Ocultar",
   "header.menu": "Mostrar u ocultar el menú",

@@ -12,6 +12,7 @@
   "login.signedOutTitle": "Sie sind abgemeldet",
   "login.signedOut": "Sie haben sich abgemeldet. Melden Sie sich erneut an, um fortzufahren.",
   "login.signInAgain": "Erneut anmelden",
+  "login.loop": "Die Anmeldung wiederholt sich: Diese Konsole hat Sie mehrmals hintereinander angemeldet, und der Server lehnt die Sitzung weiterhin ab. Die automatische Anmeldung ist angehalten; versuchen Sie es erneut oder wenden Sie sich an Ihren Administrator.",
   "password.show": "Anzeigen",
   "password.hide": "Verbergen",
   "header.menu": "Menü ein- oder ausblenden",

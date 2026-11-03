@@ -12,6 +12,7 @@
   "login.signedOutTitle": "Sei disconnesso",
   "login.signedOut": "Ti sei disconnesso. Accedi di nuovo per continuare.",
   "login.signInAgain": "Accedi di nuovo",
+  "login.loop": "L’accesso si ripete: questa console ti ha connesso più volte di seguito e il server continua a rifiutare la sessione. L’accesso automatico è interrotto; riprova o contatta il tuo amministratore.",
   "password.show": "Mostra",
   "password.hide": "Nascondi",
   "header.menu": "Mostra o nascondi il menu",

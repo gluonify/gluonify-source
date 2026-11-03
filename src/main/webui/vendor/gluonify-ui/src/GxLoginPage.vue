@@ -15,7 +15,9 @@ import './components.css'
  * (WebAuthn, TOTP) cannot be bypassed: there is deliberately no field to paste an access token. Without Charm configured, the page
  * says so instead of offering the button. The logic stays in the console: it listens to `charm` (start the redirect) and drives
  * `charmEnabled`, `denied` (account refused by the console), `failed`, `checking` (sign-in running), `signedOut` (right after an
- * explicit sign-out: « You are signed out » and « Sign in again », so that the sign-out is not undone by the automatic redirect).
+ * explicit sign-out: « You are signed out » and « Sign in again », so that the sign-out is not undone by the automatic redirect),
+ * `looping` (`auth.loopDetected`: the console signed in several times in a row and the server still refused the session; the
+ * automatic sign-in is stopped and the page says so, the button remains for a deliberate attempt).
  * The console only shows this page when `auth.autoLogin()` did not send the browser to Charm.
  * Slot `local` (0.6.1): a console whose server has no identity provider (gDown on its own) may offer its own sign-in with a local account there; it is
  * rendered only when Charm is not configured, in place of the « not configured » note, so that it can never bypass Charm's MFA.
@@ -27,6 +29,7 @@ const props = defineProps({
   failed: { type: Boolean, default: false },
   checking: { type: Boolean, default: false },
   signedOut: { type: Boolean, default: false },
+  looping: { type: Boolean, default: false },
   name: { type: [String, Object], default: undefined },
   locale: { type: String, default: undefined },
 })
@@ -51,6 +54,7 @@ onBeforeUnmount(() => { document.title = previousTitle })
         <p v-if="checking" class="gx-muted" data-gx="checking"><output>{{ gx.t('login.checking') }}</output></p>
         <p v-if="denied" class="gx-error" role="alert">{{ gx.t('login.rejected') }}</p>
         <p v-if="failed" class="gx-error" role="alert">{{ gx.t('login.failed') }}</p>
+        <p v-if="looping" class="gx-error" role="alert" data-gx="loop">{{ gx.t('login.loop') }}</p>
         <GxButton v-if="charmEnabled" :label="gx.t(signedOut && !denied && !failed ? 'login.signInAgain' : 'login.charm')" icon="signIn" @click="emit('charm')" />
         <slot v-else-if="$slots.local" name="local" />
         <p v-else class="gx-muted" role="note" data-gx="unavailable">{{ gx.t('login.unavailable') }}</p>
