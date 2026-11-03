@@ -2,6 +2,8 @@
 # This is what Gluonify runs: a single file, no JVM. Usage:
 #   docker build --target out --output type=local,dest=dist -f Dockerfile.build .      ->  dist/gluonify-source
 # STANDALONE project: no extra context (unlike Gluonify's internal components, which receive the parent POM of gluonify-plasma).
+# Native toolchain: Mandrel 25 on purpose. This is a customer application template, built like Bup builds the customers' applications: Oracle GraalVM
+#   (the chain of Gluonify's own components since 2026-11-03, with the G1 collector) never builds a customer's application (GFTC licence; gluonify-codex/provenance.md, § 11 quater).
 # The Vue UI (Quinoa) is built with the system Node (the one Quinoa would download is linked to glibc, not to this image) and embedded in the executable.
 # Native toolchain: Mandrel 25 (Red Hat's JDK 25 + native-image, ubi9: glibc 2.34), pinned by digest; Maven and Node copied from their official images.
 FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS maven
