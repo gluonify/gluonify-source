@@ -6,9 +6,10 @@
 #   (the chain of Gluonify's own components since 2026-11-03, with the G1 collector) never builds a customer's application (GFTC licence; gluonify-codex/provenance.md, § 11 quater).
 # The Vue UI (Quinoa) is built with the system Node (the one Quinoa would download is linked to glibc, not to this image) and embedded in the executable.
 # Native toolchain: Mandrel 25 (Red Hat's JDK 25 + native-image, ubi9: glibc 2.34), pinned by digest; Maven and Node copied from their official images.
+ARG NATIVE_BUILDER_IMAGE=quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25@sha256:c0c1c74529e053b272bd5dcb16c646a9dd7546c5c6e76f5c6141c0d72a9126e0
 FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS maven
 FROM node:24.11.1-bookworm-slim@sha256:48abc13a19400ca3985071e287bd405a1d99306770eb81d61202fb6b65cf0b57 AS node
-FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25@sha256:c0c1c74529e053b272bd5dcb16c646a9dd7546c5c6e76f5c6141c0d72a9126e0 AS build
+FROM ${NATIVE_BUILDER_IMAGE} AS build
 USER root
 COPY --from=maven /usr/share/maven /opt/maven
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
@@ -22,6 +23,9 @@ COPY src src
 #   --build-arg MAVEN_OPTS=-Djdk.lang.Process.launchMechanism=VFORK
 ARG MAVEN_OPTS=
 ENV MAVEN_OPTS=${MAVEN_OPTS}
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests -Pnative -Dquarkus.quinoa.package-manager-install=false -Dquarkus.quinoa.run-tests=false package
+# Native toolchain: oracle (Oracle GraalVM: G1 on amd64, serial on arm64) or mandrel (serial): the parent pom's profiles append the collector and its heap
+# policy to the native-image options; MAVEN_OPTS may add -Dgluonify.native.x86-level=v2|v3 (amd64) and -Dgluonify.native.extra.list=,<options>.
+ARG NATIVE_TOOLCHAIN=mandrel
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests -Pnative -Dgluonify.native.toolchain=$NATIVE_TOOLCHAIN -Dquarkus.quinoa.package-manager-install=false -Dquarkus.quinoa.run-tests=false package
 FROM scratch AS out
 COPY --from=build /src/target/*-runner /gluonify-source
