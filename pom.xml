@@ -28,7 +28,7 @@
     <gluonify.native.extra.list></gluonify.native.extra.list>
     <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.platform.version>4.0.0.Beta2</quarkus.platform.version>
+    <quarkus.platform.version>4.0.0.Beta3</quarkus.platform.version>
     <quinoa.version>2.9.2</quinoa.version>
     <surefire.version>3.5.2</surefire.version>
     <!-- Gluonify SDK. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
