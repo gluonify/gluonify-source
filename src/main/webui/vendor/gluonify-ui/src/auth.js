@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { appBase } from './base.js'
 import { rolesFromToken, roleMatches } from './roles.js'
 
 /**
@@ -10,7 +11,7 @@ import { rolesFromToken, roleMatches } from './roles.js'
  *
  * Options: storagePrefix (sessionStorage keys `<prefix>-token`, `-pkce`, `-idtoken`, `-refresh`, `-expiry`, `-silent`, `-logins`, `-loop`),
  * getConfig (async () => OidcConfig | null; by default GET <base>/public/auth/config), baseUrl (string or function; by default
- * Vite's BASE_URL, read at call time), clientId and scope (override what the server config says), silentRetryMs (30 000),
+ * `appBase()`: the `<base href>` the server wrote, else Vite's BASE_URL, read at call time), clientId and scope (override what the server config says), silentRetryMs (30 000),
  * loopMaxLogins (3) and loopWindowMs (60 000): more than loopMaxLogins completed sign-ins within loopWindowMs stop the automatic
  * sign-in (`loopDetected`) until a deliberate `startLogin` or a sign-out, logoutChannel ('gluonify-logout'), appName (announced on
  * the channel; the prefix by default).
@@ -73,10 +74,6 @@ export function scopeOf(cfg, scope) {
   return (scopes.includes('offline_access') ? scopes : [...scopes, 'offline_access']).join(' ')
 }
 
-function defaultBase() {
-  return import.meta.env?.BASE_URL || '/'
-}
-
 export function createAuth(options = {}) {
   const prefix = options.storagePrefix
   if (!prefix) throw new Error('createAuth: storagePrefix is required')
@@ -91,9 +88,9 @@ export function createAuth(options = {}) {
   const channelName = options.logoutChannel ?? LOGOUT_CHANNEL
   const appName = options.appName ?? prefix
 
-  // --- application base path (Vite `base`: `/` or `/fermion/`), read at call time so a test can change it
+  // --- application base path (`<base href>` written by the server, else Vite `base`: `/` or `/fermion/`), read at call time so a test can change it
   const baseUrl = () => {
-    const raw = typeof options.baseUrl === 'function' ? options.baseUrl() : (options.baseUrl ?? defaultBase())
+    const raw = typeof options.baseUrl === 'function' ? options.baseUrl() : (options.baseUrl ?? appBase())
     const b = raw || '/'
     return (b.startsWith('/') ? b : `/${b}`).replace(/\/?$/, '/')
   }

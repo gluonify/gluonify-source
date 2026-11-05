@@ -33,10 +33,8 @@ export function setLanguage(code) {
   const c = supported(code) || DEFAULT_LANGUAGE
   locale.value = c
   try { localStorage.setItem(KEY, c) } catch { /* storage unavailable: the choice lasts for this page only */ }
-  if (typeof document !== 'undefined') {
-    document.documentElement.lang = c
-    document.title = MESSAGES[c].pageTitle
-  }
+  document.documentElement.lang = c
+  document.title = MESSAGES[c].pageTitle
 }
 
 export function initLanguage() { setLanguage(detectLanguage()) }

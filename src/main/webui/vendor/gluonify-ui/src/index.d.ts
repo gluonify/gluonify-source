@@ -62,12 +62,16 @@ export const metrics: Readonly<Record<string, number>>
 export const HEADER_ORDER: readonly string[]
 export function loginTitle(signIn: string, product: string): string
 
+/** Where the console is served, with a trailing slash (`/`, `/fermion/`): the `<base href>` the server wrote, else Vite's BASE_URL when it is a path, else the root. */
+export function appBase(): string
+/** `appBase()` without its trailing slash: `''` at the root, `/fermion` under a prefix. */
+export function appPrefix(): string
 export interface OidcConfig { clientId: string; authorizationUrl: string; tokenUrl: string; logoutUrl?: string; accountUrl?: string; issuer?: string; scope?: string }
 export interface Claims { sub?: string; name?: string; preferred_username?: string; exp?: number; roles?: string[]; [key: string]: unknown }
 export interface AuthOptions {
   storagePrefix: string
   getConfig?: () => Promise<OidcConfig | null>
-  baseUrl?: string | (() => string)
+  baseUrl?: string | (() => string) // default: appBase()
   clientId?: string
   scope?: string
   silentRetryMs?: number

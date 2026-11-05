@@ -249,6 +249,19 @@ describe('documents (Crystallon)', () => {
     expect(button(w).attributes('disabled')).toBeUndefined()
   })
 
+  it('frees the address of the downloaded PDF ten seconds later', async () => {
+    const timer = vi.spyOn(globalThis, 'setTimeout')
+    mockApi({ ...notes, 'POST /api/documents/invoice': { status: 200, pdf: '%PDF-1.4 fake' } })
+    const w = mount(App)
+    await flushPromises()
+    await button(w).trigger('click')
+    await flushPromises()
+    const free = timer.mock.calls.find((call) => call[1] === 10000)[0]
+    free()
+    expect(globalThis.URL.revokeObjectURL).toHaveBeenCalled()
+    timer.mockRestore()
+  })
+
   it('401: the session has ended, the sign-in is shown again and nothing is downloaded', async () => {
     mockApi({ ...notes, 'POST /api/documents/invoice': { status: 401, body: {} } })
     const w = mount(App)
