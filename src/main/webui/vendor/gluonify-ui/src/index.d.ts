@@ -66,6 +66,12 @@ export function loginTitle(signIn: string, product: string): string
 export function appBase(): string
 /** `appBase()` without its trailing slash: `''` at the root, `/fermion` under a prefix. */
 export function appPrefix(): string
+/** A `Date`, milliseconds since the epoch, or a string `Date` parses (an ISO 8601 timestamp; `2027-11-03` is a calendar day). */
+export type Instant = Date | number | string | null | undefined
+/** `2027-11-03` in the local time zone; `''` when absent or invalid. */
+export function formatDate(instant: Instant): string
+/** `2027-11-03 14:30` (or `14:30:00` with `seconds`) in the local time zone; `''` when absent or invalid. */
+export function formatDateTime(instant: Instant, options?: { seconds?: boolean }): string
 export interface OidcConfig { clientId: string; authorizationUrl: string; tokenUrl: string; logoutUrl?: string; accountUrl?: string; issuer?: string; scope?: string }
 export interface Claims { sub?: string; name?: string; preferred_username?: string; exp?: number; roles?: string[]; [key: string]: unknown }
 export interface AuthOptions {
