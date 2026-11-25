@@ -1,6 +1,7 @@
 package io.gluonify.source.platform;
 
 import io.gluonify.plasma.services.GluonifyServicesException;
+import io.gluonify.plasma.services.GluonifyTls;
 import io.gluonify.source.SourceConfig;
 import io.gluonify.source.documents.Documents;
 import io.gluonify.source.notes.NoteStore;
@@ -116,7 +117,7 @@ public class PlatformResource {
     private HttpClient client() {
         HttpClient h = http.get();
         if (h == null) {
-            h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).followRedirects(HttpClient.Redirect.NEVER).build(); // on first use (native)
+            h = GluonifyTls.httpClient(Duration.ofSeconds(3), HttpClient.Redirect.NEVER); // on first use (native); trusts the cluster's internal root
             http.set(h);
         }
         return h;

@@ -96,7 +96,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 la interfaz Vue 3 (Vite + vitest), construida por Quinoa
   src/auth.js                   inicio de sesión con Charm (código de autorización + PKCE) mediante el kit @gluonify/ui
   vendor/gluonify-ui/           copia incluida del kit (gluonify-ui/scripts/sync-vendor.sh, nunca se edita a mano)
-src/test/java/…                 125 pruebas Java; src/main/webui/src/*.test.js: 53 pruebas de interfaz
+src/test/java/…                 128 pruebas Java; src/main/webui/src/*.test.js: 53 pruebas de interfaz
 deploy/                         ejemplos: AppSpec, dominio, webhook de Photon, base Gdown
 scripts/rename.py               renombra el proyecto
 ```
@@ -374,7 +374,7 @@ Declárela en `"uses"`: la plataforma proporciona `GLUONIFY_SERVICE_<APP>_URL` *
 ## 8. Construir
 
 ```bash
-mvn test                       # pruebas Java (125)
+mvn test                       # pruebas Java (128)
 mvn package                    # JVM: target/quarkus-app/; construye también la interfaz (Quinoa)
 ```
 
@@ -435,7 +435,7 @@ Actualizar: el mismo `PUT` (o un nuevo build); las réplicas se sustituyen **una
 ## 10. Probar
 
 ```bash
-mvn test                                 # 125 pruebas Java
+mvn test                                 # 128 pruebas Java
 cd src/main/webui && npm install && npm test   # 53 pruebas de interfaz
 ```
 
@@ -478,6 +478,7 @@ Una prueba de API se copia de `NotesResourceTest`; una prueba de almacenamiento,
 |---|---|
 | 401 en producción | sin token, token caducado, o **audiencia** distinta de `GLUONIFY_SOURCE_OIDC_AUDIENCE`; o `GLUONIFY_SOURCE_OIDC_ISSUER` no coincide con el `iss` del token |
 | 500 en cada llamada con token, registro `OIDC Server is not available` tras `PKIX path building failed` | Charm se sirve sobre el TLS interno y la aplicación no confía en la raíz del clúster: SDK anterior a 0.7.5 (`gluonify.sdk.version`: `gluonify-plasma-quarkus-tls` no está en el classpath), o falta `GLUONIFY_CA_FILE` en la instancia (§6) |
+| `/q/health/ready` responde 503 con `notes storage` DOWN aunque Gdown funciona y `GLUONIFY_SERVICE_GDOWN_URL` empieza por `https://` | Gdown sirve su API HTTP sobre el TLS interno y el cliente no confía en la raíz del clúster: construir todo `HttpClient` que llame a un servicio de la plataforma con `GluonifyTls.httpClient(...)` del SDK (raíces del sistema más `GLUONIFY_CA_FILE`), como `GraphNoteStore` y `PlatformResource`, nunca con un simple `HttpClient.newBuilder()` |
 | 403 | token válido pero sin el rol (`source:read` / `source:write`) |
 | No hay botón *Iniciar sesión*, la página nombra `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | falta el identificador de cliente, o se desconoce la dirección pública de Charm (`GLUONIFY_SOURCE_OIDC_ISSUER` en `any` y sin `GLUONIFY_SOURCE_CHARM_PUBLIC_URL`) |
 | Charm rechaza el inicio de sesión (`redirect_uri`, `invalid_target`) | la redirección del cliente no es exactamente la dirección de la interfaz (barra final incluida), o sus audiencias no incluyen `gluonify-source` |

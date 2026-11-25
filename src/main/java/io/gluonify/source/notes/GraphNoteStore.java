@@ -1,5 +1,6 @@
 package io.gluonify.source.notes;
 
+import io.gluonify.plasma.services.GluonifyTls;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -25,6 +27,8 @@ import tools.jackson.databind.ObjectMapper;
  *
  * <p>Gdown's address is not hard-coded: the platform provides it through {@code GLUONIFY_SERVICE_GDOWN_URL} if the application is deployed with {@code "uses": ["gdown"]}.
  * The password comes from the vault ({@code APP_GLUONIFY_GDOWN_PASSWORD}), never from the Git repository.
+ * On a cluster whose components serve TLS that address is {@code https://} with a certificate of the cluster's internal authority: the client comes from the
+ * SDK ({@link GluonifyTls}: the system's roots plus {@code GLUONIFY_CA_FILE}), a plain JDK client would refuse it (PKIX).
  *
  * <p>Two native-image pitfalls, already avoided here: the {@link HttpClient} is created on first use (not in a static field: its state would be frozen at compile time),
  * and the JSON is read as a tree ({@link JsonNode}), with no class to register for reflection.
@@ -36,8 +40,15 @@ public class GraphNoteStore implements NoteStore {
     private final String database;
     private final String auth;
     private final AtomicReference<HttpClient> http = new AtomicReference<>();
+    private final Supplier<HttpClient> clients;
 
     public GraphNoteStore(final String url, final String database, final String user, final String password) {
+        this(url, database, user, password, () -> GluonifyTls.httpClient(Duration.ofSeconds(5), HttpClient.Redirect.NEVER));
+    }
+
+    /** For tests: {@code clients} builds the HTTP client on first use (an environment other than the process's). */
+    GraphNoteStore(final String url, final String database, final String user, final String password, final Supplier<HttpClient> clients) {
+        this.clients = clients;
         this.url = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
         this.database = database;
         this.auth = "Basic " + Base64.getEncoder().encodeToString((user + ":" + password).getBytes(StandardCharsets.UTF_8));
@@ -117,7 +128,7 @@ public class GraphNoteStore implements NoteStore {
     private HttpClient client() {
         HttpClient h = http.get();
         if (h == null) {
-            h = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build(); // created on first use (native)
+            h = clients.get(); // created on first use (native)
             http.set(h);
         }
         return h;
