@@ -100,7 +100,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
   src/auth.js                   sign-in with Charm (authorization code + PKCE) through the kit @gluonify/ui
   vendor/gluonify-ui/           embedded copy of the kit (gluonify-ui/scripts/sync-vendor.sh, never edited by hand)
-src/test/java/…                 128 Java tests; src/main/webui/src/*.test.js: 53 interface tests
+src/test/java/…                 150 Java tests; src/main/webui/src/*.test.js: 53 interface tests
 deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
 scripts/rename.py               renames the project
 ```
@@ -203,6 +203,8 @@ Signed out, the page shows only a short explanation and the **Sign in** button: 
 | `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | the Charm client of this interface (for example `source-ui`); empty: no *Sign in* button, the page names the variable; default `GLUONIFY_OIDC_CLIENT_ID` (injected by the platform) |
 | `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | Charm's **public** address, the one the browser reaches; empty: derived from `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Never `GLUONIFY_SERVICE_CHARM_URL`: it is an internal address |
 | `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (the kit adds `offline_access` for the refresh token) |
+
+**Issuer override and organization realm.** The keys that verify the tokens always come from the realm of `quarkus.oidc.auth-server-url` (`GLUONIFY_SOURCE_OIDC_REALM`, else `GLUONIFY_OIDC_REALM`, injected for an application of an organization), while `GLUONIFY_SOURCE_OIDC_ISSUER` replaces the issuer the tokens must carry. When a realm is set and the override is not that realm's issuer (`<Charm's public or internal address>/realms/<realm>`, compared without trailing slash, default port nor case of scheme and host), the application logs **one warning at startup** (`IssuerOverrideCheck`) naming both variables and the realm parts, and still starts with the override: every token of the realm will be refused. Remove the override, or set it to the realm's issuer. Nothing of this reaches a client. Not checked: the override `any` (Quarkus then checks no issuer) and the audience override (the audience, `gluonify-<app>`, does not depend on the realm).
 
 **Outside the platform, or to use another client**, register one yourself (once, by the platform administrator) and set `GLUONIFY_SOURCE_OIDC_CLIENT_ID`: a public client whose only redirect (and post-logout redirect) is the exact address of the interface, trailing slash included, and whose audience is the application's. Charm accepts cross-origin calls to `/token` only from the origins of registered redirects.
 
@@ -378,7 +380,7 @@ Declare it in `"uses"`: the platform provides `GLUONIFY_SERVICE_<APP>_URL` **and
 ## 8. Building
 
 ```bash
-mvn test                       # Java tests (128)
+mvn test                       # Java tests (150)
 mvn package                    # JVM: target/quarkus-app/; also builds the interface (Quinoa)
 ```
 
@@ -439,7 +441,7 @@ To update: same `PUT` (or a new build); replicas are replaced **one by one**. To
 ## 10. Testing
 
 ```bash
-mvn test                                 # 128 Java tests
+mvn test                                 # 150 Java tests
 cd src/main/webui && npm install && npm test   # 53 interface tests
 ```
 
@@ -447,6 +449,7 @@ cd src/main/webui && npm install && npm test   # 53 interface tests
 |---|---|---|
 | `NotesResourceTest` | 7 | 401 without a token, 403 without the right role, full lifecycle, 400 validation, OpenAPI, health, metrics |
 | `AuthConfigResourceTest` / `AuthConfigConfiguredTest` | 2 + 1 | `GET /api/auth-config` is public and empty without a client; Charm's public endpoints derived from the issuer, never from the internal `GLUONIFY_SERVICE_CHARM_URL` |
+| `IssuerOverrideCheckTest` / `IssuerOverrideStartupTest` | 20 + 2 | `GLUONIFY_SOURCE_OIDC_ISSUER` against the realm: one startup warning on a mismatch (variables and realm parts only, no address), none on a match (case, trailing slash, default port, public or internal address), without realm or without override; malformed values warn without throwing; the override still wins and nothing reaches a client |
 | `FileNoteStoreTest` | 6 | new files never renamed, ordering, two replicas on the same folder, unreadable files ignored, identifiers never paths |
 | `GraphNoteStoreTest` | 4 | against a fake Gdown: path, authentication, **parameterized** statement, row reading, failure |
 | `NoteStoresTest` | 3 | storage selection: `auto` gives `gdown` when `GLUONIFY_GDOWN_DATABASE` is provided, `memory` otherwise; an explicit value wins |

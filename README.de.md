@@ -96,7 +96,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 die Vue-3-Oberfläche (Vite + vitest), von Quinoa gebaut
   src/auth.js                   Anmeldung bei Charm (Autorisierungscode + PKCE) über das Kit @gluonify/ui
   vendor/gluonify-ui/           eingebettete Kopie des Kits (gluonify-ui/scripts/sync-vendor.sh, nie von Hand bearbeitet)
-src/test/java/…                 128 Java-Tests; src/main/webui/src/*.test.js: 53 Oberflächentests
+src/test/java/…                 150 Java-Tests; src/main/webui/src/*.test.js: 53 Oberflächentests
 deploy/                         Beispiele: AppSpec, Domain, Photon-Webhook, Gdown-Datenbank
 scripts/rename.py               benennt das Projekt um
 ```
@@ -199,6 +199,8 @@ Abgemeldet zeigt die Seite nur eine kurze Erklärung und die Schaltfläche **Anm
 | `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | der Charm-Client dieser Oberfläche (zum Beispiel `source-ui`); leer: keine Schaltfläche *Anmelden*, die Seite nennt die Variable; Standard `GLUONIFY_OIDC_CLIENT_ID` (von der Plattform gesetzt) |
 | `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | die **öffentliche** Adresse von Charm, die der Browser erreicht; leer: abgeleitet aus `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Nie `GLUONIFY_SERVICE_CHARM_URL`: das ist eine interne Adresse |
 | `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (das Kit ergänzt `offline_access` für das Refresh-Token) |
+
+**Überschriebener Aussteller und Realm der Organisation.** Die Schlüssel, die die Tokens prüfen, kommen immer aus dem Realm von `quarkus.oidc.auth-server-url` (`GLUONIFY_SOURCE_OIDC_REALM`, sonst `GLUONIFY_OIDC_REALM`, für eine Anwendung einer Organisation injiziert), während `GLUONIFY_SOURCE_OIDC_ISSUER` den Aussteller ersetzt, den die Tokens tragen müssen. Ist ein Realm gesetzt und die Überschreibung nicht der Aussteller dieses Realms (`<öffentliche oder interne Adresse von Charm>/realms/<realm>`, verglichen ohne abschließenden Schrägstrich, Standardport und Groß-/Kleinschreibung von Schema und Host), schreibt die Anwendung **beim Start eine Warnung** (`IssuerOverrideCheck`) mit den beiden Variablen und den Realm-Teilen und startet trotzdem mit der Überschreibung: jedes Token des Realms wird abgelehnt. Entfernen Sie die Überschreibung oder setzen Sie sie auf den Aussteller des Realms. Nichts davon erreicht einen Client. Nicht geprüft: die Überschreibung `any` (Quarkus prüft dann keinen Aussteller) und die der Zielgruppe (die Zielgruppe `gluonify-<app>` hängt nicht vom Realm ab).
 
 **Außerhalb der Plattform, oder für einen anderen Client**, ihn selbst registrieren (einmal, durch die Administration der Plattform) und `GLUONIFY_SOURCE_OIDC_CLIENT_ID` setzen: ein öffentlicher Client, dessen einzige Weiterleitung (auch nach der Abmeldung) genau die Adresse der Oberfläche ist, abschließender Schrägstrich inbegriffen, und dessen Audience die der Anwendung ist. Charm nimmt Aufrufe anderer Herkunft an `/token` nur von den Herkünften registrierter Weiterleitungen an.
 
@@ -374,7 +376,7 @@ Deklarieren Sie sie in `"uses"`: Die Plattform stellt `GLUONIFY_SERVICE_<APP>_UR
 ## 8. Bauen
 
 ```bash
-mvn test                       # Java-Tests (128)
+mvn test                       # Java-Tests (150)
 mvn package                    # JVM: target/quarkus-app/; baut auch die Oberfläche (Quinoa)
 ```
 
@@ -435,7 +437,7 @@ Aktualisieren: dasselbe `PUT` (oder ein neuer Build); die Replikate werden **nac
 ## 10. Testen
 
 ```bash
-mvn test                                 # 128 Java-Tests
+mvn test                                 # 150 Java-Tests
 cd src/main/webui && npm install && npm test   # 53 Oberflächentests
 ```
 
@@ -443,6 +445,7 @@ cd src/main/webui && npm install && npm test   # 53 Oberflächentests
 |---|---|---|
 | `NotesResourceTest` | 7 | 401 ohne Token, 403 ohne die passende Rolle, vollständiger Lebenszyklus, Validierung 400, OpenAPI, Gesundheit, Metriken |
 | `AuthConfigResourceTest` / `AuthConfigConfiguredTest` | 2 + 1 | `GET /api/auth-config` ist öffentlich und ohne Client leer; die öffentlichen Adressen von Charm werden aus dem Aussteller abgeleitet, nie aus der internen Adresse `GLUONIFY_SERVICE_CHARM_URL` |
+| `IssuerOverrideCheckTest` / `IssuerOverrideStartupTest` | 20 + 2 | `GLUONIFY_SOURCE_OIDC_ISSUER` gegenüber dem Realm: eine Startwarnung bei Abweichung (nur Variablen und Realm-Teile, keine Adresse), keine bei Übereinstimmung (Schreibweise, abschließender Schrägstrich, Standardport, öffentliche oder interne Adresse), ohne Realm oder ohne Überschreibung; ein fehlerhafter Wert warnt, ohne eine Ausnahme zu werfen; die Überschreibung gilt weiter und nichts erreicht einen Client |
 | `FileNoteStoreTest` | 6 | neue Dateien nie umbenannt, Reihenfolge, zwei Replikate im selben Ordner, unlesbare Dateien ignoriert, Kennungen nie Pfade |
 | `GraphNoteStoreTest` | 4 | gegen ein gefälschtes Gdown: Pfad, Authentifizierung, **parametrisierte** Anweisung, Lesen der Zeilen, Fehlschlag |
 | `NoteStoresTest` | 3 | Wahl des Speichers: `auto` ergibt `gdown`, wenn `GLUONIFY_GDOWN_DATABASE` bereitgestellt wird, sonst `memory`; ein expliziter Wert hat Vorrang |

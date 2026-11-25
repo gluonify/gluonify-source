@@ -96,7 +96,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 la interfaz Vue 3 (Vite + vitest), construida por Quinoa
   src/auth.js                   inicio de sesión con Charm (código de autorización + PKCE) mediante el kit @gluonify/ui
   vendor/gluonify-ui/           copia incluida del kit (gluonify-ui/scripts/sync-vendor.sh, nunca se edita a mano)
-src/test/java/…                 128 pruebas Java; src/main/webui/src/*.test.js: 53 pruebas de interfaz
+src/test/java/…                 150 pruebas Java; src/main/webui/src/*.test.js: 53 pruebas de interfaz
 deploy/                         ejemplos: AppSpec, dominio, webhook de Photon, base Gdown
 scripts/rename.py               renombra el proyecto
 ```
@@ -199,6 +199,8 @@ Sin sesión, la página solo muestra una breve explicación y el botón **Inicia
 | `source.auth.client-id` | `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | el cliente de Charm de esta interfaz (por ejemplo `source-ui`); vacío: sin botón *Iniciar sesión*, la página nombra la variable; por defecto `GLUONIFY_OIDC_CLIENT_ID` (inyectada por la plataforma) |
 | `source.auth.charm-url` | `GLUONIFY_SOURCE_CHARM_PUBLIC_URL` | la dirección **pública** de Charm, la que alcanza el navegador; vacía: se deduce de `GLUONIFY_SOURCE_OIDC_ISSUER` (`https://gluonify.lan/realms/gluonify` → `https://gluonify.lan`). Nunca `GLUONIFY_SERVICE_CHARM_URL`: es una dirección interna |
 | `source.auth.scope` | `SOURCE_AUTH_SCOPE` | `openid profile` (el kit añade `offline_access` para el token de actualización) |
+
+**Sobrescritura del emisor y realm de la organización.** Las claves que verifican los tokens vienen siempre del realm de `quarkus.oidc.auth-server-url` (`GLUONIFY_SOURCE_OIDC_REALM`, si no `GLUONIFY_OIDC_REALM`, inyectado para una aplicación de una organización), mientras que `GLUONIFY_SOURCE_OIDC_ISSUER` sustituye al emisor que deben llevar los tokens. Cuando hay un realm y la sobrescritura no es el emisor de ese realm (`<dirección pública o interna de Charm>/realms/<realm>`, comparada sin barra final, sin puerto por defecto ni mayúsculas en el esquema y el host), la aplicación registra **un aviso al arrancar** (`IssuerOverrideCheck`) que nombra las dos variables y las partes de realm, y arranca igualmente con la sobrescritura: todos los tokens del realm serán rechazados. Quite la sobrescritura o póngale el emisor del realm. Nada de esto llega a un cliente. No se comprueban: la sobrescritura `any` (Quarkus no comprueba entonces ningún emisor) ni la de la audiencia (la audiencia, `gluonify-<app>`, no depende del realm).
 
 **Fuera de la plataforma, o para usar otro cliente**, regístrelo usted mismo (una vez, por el administrador de la plataforma) y defina `GLUONIFY_SOURCE_OIDC_CLIENT_ID`: un cliente público cuya única redirección (y redirección tras cerrar sesión) es la dirección exacta de la interfaz, barra final incluida, y cuya audiencia es la de la aplicación. Charm solo acepta llamadas de otro origen a `/token` desde los orígenes de las redirecciones registradas.
 
@@ -374,7 +376,7 @@ Declárela en `"uses"`: la plataforma proporciona `GLUONIFY_SERVICE_<APP>_URL` *
 ## 8. Construir
 
 ```bash
-mvn test                       # pruebas Java (128)
+mvn test                       # pruebas Java (150)
 mvn package                    # JVM: target/quarkus-app/; construye también la interfaz (Quinoa)
 ```
 
@@ -435,7 +437,7 @@ Actualizar: el mismo `PUT` (o un nuevo build); las réplicas se sustituyen **una
 ## 10. Probar
 
 ```bash
-mvn test                                 # 128 pruebas Java
+mvn test                                 # 150 pruebas Java
 cd src/main/webui && npm install && npm test   # 53 pruebas de interfaz
 ```
 
@@ -443,6 +445,7 @@ cd src/main/webui && npm install && npm test   # 53 pruebas de interfaz
 |---|---|---|
 | `NotesResourceTest` | 7 | 401 sin token, 403 sin el rol adecuado, ciclo de vida completo, validación 400, OpenAPI, salud, métricas |
 | `AuthConfigResourceTest` / `AuthConfigConfiguredTest` | 2 + 1 | `GET /api/auth-config` es público y vacío sin cliente; las direcciones públicas de Charm se deducen del emisor, nunca de la dirección interna `GLUONIFY_SERVICE_CHARM_URL` |
+| `IssuerOverrideCheckTest` / `IssuerOverrideStartupTest` | 20 + 2 | `GLUONIFY_SOURCE_OIDC_ISSUER` frente al realm: un aviso al arrancar si no coinciden (solo variables y partes de realm, ninguna dirección), ninguno si coinciden (mayúsculas, barra final, puerto por defecto, dirección pública o interna), sin realm o sin sobrescritura; un valor mal formado avisa sin lanzar excepción; la sobrescritura sigue ganando y nada llega a un cliente |
 | `FileNoteStoreTest` | 6 | archivos nuevos nunca renombrados, orden, dos réplicas sobre la misma carpeta, archivos ilegibles ignorados, identificadores que nunca son rutas |
 | `GraphNoteStoreTest` | 4 | contra un Gdown falso: ruta, autenticación, instrucción **parametrizada**, lectura de las filas, fallo |
 | `NoteStoresTest` | 3 | elección del almacenamiento: `auto` da `gdown` cuando se proporciona `GLUONIFY_GDOWN_DATABASE`, `memory` si no; un valor explícito manda |
