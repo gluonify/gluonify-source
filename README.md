@@ -100,7 +100,7 @@ src/main/java/io/gluonify/source/
 src/main/webui/                 the Vue 3 interface (Vite + vitest), built by Quinoa
   src/auth.js                   sign-in with Charm (authorization code + PKCE) through the kit @gluonify/ui
   vendor/gluonify-ui/           embedded copy of the kit (gluonify-ui/scripts/sync-vendor.sh, never edited by hand)
-src/test/java/…                 121 Java tests; src/main/webui/src/*.test.js: 53 interface tests
+src/test/java/…                 125 Java tests; src/main/webui/src/*.test.js: 53 interface tests
 deploy/                         examples: AppSpec, domain, Photon webhook, Gdown database
 scripts/rename.py               renames the project
 ```
@@ -171,6 +171,8 @@ The service never **creates** tokens: it **verifies** them (mode `quarkus.oidc.a
 | Audience (`aud`) | `quarkus.oidc.token.audience` | `GLUONIFY_SOURCE_OIDC_AUDIENCE`, by default the project name (`gluonify-source`) |
 | Expiration | automatic | short-lived tokens |
 | Roles | `roles` claim | `source:read` (read), `source:write` (write): see `@RolesAllowed`; the `gluonify:` prefix is reserved for the platform (Charm refuses it for application roles) |
+
+**Charm over the platform's internal TLS**: when Charm's service address (`GLUONIFY_SERVICE_CHARM_URL`) is `https://`, its certificate is signed by the cluster's internal authority, which the JDK does not know. Nothing to configure: the platform gives every instance that authority as a file (`GLUONIFY_CA_FILE`), and the SDK (`gluonify-plasma-quarkus` 0.7.5 or later, through `gluonify-plasma-quarkus-tls`) defines the TLS configuration `gluonify-root` from it and points at it the OIDC tenant whose `quarkus.oidc.auth-server-url` is Charm's service address (`quarkus.oidc.tls.tls-configuration-name=gluonify-root`, unless you set your own). Only that tenant trusts the internal root; any other server keeps the JDK's authorities. Without the file, or with Charm over plain `http://`, nothing changes (`InternalRootTrustTest`).
 
 **Getting a test token** (the platform administrator, with Charm's administration token):
 
@@ -296,7 +298,7 @@ Photon receives your partners' messages (verifies their HMAC signature, converts
 </dependency>
 ```
 
-The SDK is served by the Maven repository of **gluonify-sea** (public read: no account to resolve it), added to Maven Central, not instead of it; this `pom.xml` writes its address as the property `gluonify.sea.maven.url`, so that a mirror or a local copy can replace it (`mvn verify -Dgluonify.sea.maven.url=file:///…`). Gluonify's builder (Bup) declares this repository by itself for the builds it runs. **Version**: the SDK is published at 0.7.4 on gluonify-sea, with `gluonify-plasma-quarkus` and `gluonify-plasma-testing`; `gluonify.sdk.version` is `0.7.4` in `pom.xml` (0.7.4 or later: `GET /q/usage`), nothing to install locally. Since 0.7.1 each client module carries a marker (`META-INF/gluonify/services/crystallon` in `gluonify-plasma-crystallon-client`) from which the builder infers `uses`. With Gradle: the same two artifacts (`implementation` and `testImplementation`), with no repository other than Maven Central and gluonify-sea.
+The SDK is served by the Maven repository of **gluonify-sea** (public read: no account to resolve it), added to Maven Central, not instead of it; this `pom.xml` writes its address as the property `gluonify.sea.maven.url`, so that a mirror or a local copy can replace it (`mvn verify -Dgluonify.sea.maven.url=file:///…`). Gluonify's builder (Bup) declares this repository by itself for the builds it runs. **Version**: the SDK is published on gluonify-sea, with `gluonify-plasma-quarkus` and `gluonify-plasma-testing`; `gluonify.sdk.version` is `0.7.5` in `pom.xml` (0.7.4 or later: `GET /q/usage`; 0.7.5 or later: `gluonify-plasma-quarkus-tls`, the OIDC tenant trusts Charm's internal TLS, §6), nothing to install locally. Since 0.7.1 each client module carries a marker (`META-INF/gluonify/services/crystallon` in `gluonify-plasma-crystallon-client`) from which the builder infers `uses`. With Gradle: the same two artifacts (`implementation` and `testImplementation`), with no repository other than Maven Central and gluonify-sea.
 
 **2. Nothing to declare.** Built by Bup, the application gets `?crystallon` in its `uses` without writing it: Bup reads the marker of `gluonify-plasma-crystallon-client` on the runtime classpath (SDK 0.7.1 and later) and adds the service as optional; [`gluonify.json`](gluonify.json) does not mention it. Deployed by hand (`PUT /apps`: no build, so no inference), the spec declares it: `crystallon` in the `uses` of [`deploy/appspec.json`](deploy/appspec.json). Either way the platform **opens the network** to Crystallon, and to it alone, and provides its address and the application's own token. **There is no property, no URL and no token in this repository**: the producer of `gluonify-plasma-quarkus` gives the code a `CrystallonClient` (the Jackson 3 mapper of the application, the address and the token found by the SDK). [`Documents`](src/main/java/io/gluonify/source/documents/Documents.java) only asks whether Crystallon is available (`GluonifyServices.optional("crystallon")`) and injects the client as an `Instance<CrystallonClient>`. **Without it the feature is off and nothing else changes**: the endpoint answers 404 and says why, `GET /api/platform` says `"documents": false`, the interface hides the section, the application starts and every other test runs without Crystallon. Where the application runs decides how the SDK finds Crystallon:
 
@@ -376,7 +378,7 @@ Declare it in `"uses"`: the platform provides `GLUONIFY_SERVICE_<APP>_URL` **and
 ## 8. Building
 
 ```bash
-mvn test                       # Java tests (121)
+mvn test                       # Java tests (125)
 mvn package                    # JVM: target/quarkus-app/; also builds the interface (Quinoa)
 ```
 
@@ -437,7 +439,7 @@ To update: same `PUT` (or a new build); replicas are replaced **one by one**. To
 ## 10. Testing
 
 ```bash
-mvn test                                 # 121 Java tests
+mvn test                                 # 125 Java tests
 cd src/main/webui && npm install && npm test   # 53 interface tests
 ```
 
@@ -479,6 +481,7 @@ An API test is copied from `NotesResourceTest`; a storage test from `FileNoteSto
 | Symptom | Probable cause |
 |---|---|
 | 401 in production | no token, expired token, or **audience** different from `GLUONIFY_SOURCE_OIDC_AUDIENCE`; or `GLUONIFY_SOURCE_OIDC_ISSUER` does not match the token's `iss` |
+| 500 on every call with a token, log `OIDC Server is not available` after `PKIX path building failed` | Charm is served over the internal TLS and the application does not trust the cluster's root: SDK older than 0.7.5 (`gluonify.sdk.version`: `gluonify-plasma-quarkus-tls` is not on the classpath), or no `GLUONIFY_CA_FILE` in the instance (§6) |
 | 403 | valid token but without the role (`source:read` / `source:write`) |
 | No *Sign in* button, the page names `GLUONIFY_SOURCE_OIDC_CLIENT_ID` | the client id is not set, or Charm's public address is unknown (`GLUONIFY_SOURCE_OIDC_ISSUER` left at `any` and no `GLUONIFY_SOURCE_CHARM_PUBLIC_URL`) |
 | Charm refuses the sign-in (`redirect_uri`, `invalid_target`) | the client's redirect is not exactly the address of the interface (trailing slash included), or its audiences do not include `gluonify-source` |

@@ -33,9 +33,11 @@
     <quinoa.version>2.9.2</quinoa.version>
     <surefire.version>3.5.2</surefire.version>
     <!-- Gluonify SDK, published on gluonify-sea. The version is the platform's (the "Code" tab of Crystallon's editor shows the one of your installation).
-         0.7.4 or later: GET /q/usage (the SDK's UsageResource and its UsageContractTests) is not in 0.7.2. To build against unpublished SDK sources,
+         0.7.4 or later: GET /q/usage (the SDK's UsageResource and its UsageContractTests) is not in 0.7.2. 0.7.5 or later: gluonify-plasma-quarkus brings
+         gluonify-plasma-quarkus-tls, whose InternalRootConfigSourceFactory makes the OIDC tenant trust the cluster's internal root when Charm's service address is
+         https:// (without it every token check fails with "OIDC Server is not available", PKIX; InternalRootTrustTest). To build against unpublished SDK sources,
          run "mvn install" in gluonify-plasma and set this to its SNAPSHOT version. -->
-    <gluonify.sdk.version>0.7.4</gluonify.sdk.version>
+    <gluonify.sdk.version>0.7.5</gluonify.sdk.version>
     <!-- Maven repository of the Gluonify SDK, served by gluonify-sea (public read, nothing to configure but this declaration).
          A property so that a mirror or a local copy can replace it: mvn verify -Dgluonify.sea.maven.url=file:///path/to/repository -->
     <gluonify.sea.maven.url>https://images.gluonify.io/maven</gluonify.sea.maven.url>
