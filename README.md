@@ -391,7 +391,7 @@ docker build --target out --output type=local,dest=dist -f Dockerfile.build .
 ./dist/gluonify-source         # runs on this Linux, port 8080
 ```
 
-The `dist/gluonify-source` file is a **glibc** Linux executable for your Docker's architecture (arm64 on Apple Silicon, amd64 on x86_64). For the other architecture: `docker build --platform linux/amd64 …` (slow: emulation; see the comments in `Dockerfile.build`).
+The `dist/gluonify-source` file is a **glibc** Linux executable for your Docker's architecture (arm64 on Apple Silicon, amd64 on x86_64). For the other architecture: `docker build --platform linux/amd64 …` (slow: emulation; see the comments in `Dockerfile.build`). The build stage sets `LANG=C.UTF-8` so that the native accepts non-ASCII file names.
 
 Without Docker: `mvn package -Dnative` requires a GraalVM 25 distribution with native-image installed (Mandrel 25, the toolchain of the Docker build and of the platform builder, or GraalVM CE 25).
 

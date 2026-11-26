@@ -10,6 +10,8 @@ ARG NATIVE_BUILDER_IMAGE=quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-
 FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS maven
 FROM node:24.11.1-bookworm-slim@sha256:48abc13a19400ca3985071e287bd405a1d99306770eb81d61202fb6b65cf0b57 AS node
 FROM ${NATIVE_BUILDER_IMAGE} AS build
+# UTF-8 file names in the native: GraalVM fixes sun.jnu.encoding at build time from this locale (lab, 2026-11-26)
+ENV LANG=C.UTF-8
 USER root
 COPY --from=maven /usr/share/maven /opt/maven
 COPY --from=node /usr/local/bin/node /usr/local/bin/node

@@ -1,6 +1,7 @@
 # plan.md: gluonify-source
 
 ## Done recently
+- [x] **Native build locale** (2026-11-26, lab finding): `Dockerfile.build` sets `LANG=C.UTF-8` in its build stage: a GraalVM native fixes its file-name encoding at build time; without it the native refused non-ASCII file names (InvalidPathException, seen in gluonify-rup on atom). Left: rebuild the native.
 - [x] **Quality gates in the build** (2026-10-19): `mvn verify` checks the coverage ratchet (line 1.00, branch 1.00, reached 2026-10-20) and the PMD ruleset of gluonify-plasma (baseline empty since 2026-10-20). Sonar: S1192, field injection, `final` parameters, unnamed catch patterns and the front-end findings fixed on 2026-10-20.
 - [x] **Interface quality gates** (2026-10-19): `npm test` runs ESLint (sonarjs, typescript-eslint strict; 4 suppressed existing violations) and Vitest coverage thresholds (lines 96 %, branches 80 %). **Left**: empty `eslint-suppressions.json`, coverage to 95 %.
 
