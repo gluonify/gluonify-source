@@ -47,6 +47,9 @@ Apra <http://localhost:8080>: l'interfaccia (aggiungere, elencare, eliminare not
 |---|---|
 | `/` | l'interfaccia Vue |
 | `/api/notes` | l'API REST (JSON) |
+| `GET /api/notes/{id}` | una nota (ruolo `source:read`); 404 se sconosciuta |
+| `DELETE /api/notes/{id}` | elimina una nota (ruolo `source:write`); 204, o 404 se sconosciuta |
+| `GET /api/platform/ping/{app}` | interroga `/q/health/ready` di un'altra applicazione dichiarata in `uses` (ruolo `source:read`); risponde il nome dell'applicazione e il suo stato HTTP, 400 se il nome non è valido, 404 se l'applicazione non è dichiarata, 502 se non raggiungibile |
 | `/api/documents/invoice` | `POST`: una fattura in PDF, prodotta da Crystallon quando è configurato (vedere [§7](#documenti-crystallon)) |
 | `/q/swagger-ui` | la documentazione dell'API (interattiva in dev e test, in sola lettura in produzione: né Authorize né Try it out) |
 | `/q/openapi` | il contratto OpenAPI (JSON o YAML) |

@@ -47,6 +47,9 @@ mvn quarkus:dev
 |---|---|
 | `/` | die Vue-Oberfläche |
 | `/api/notes` | die REST-API (JSON) |
+| `GET /api/notes/{id}` | eine Notiz (Rolle `source:read`); 404, wenn unbekannt |
+| `DELETE /api/notes/{id}` | löscht eine Notiz (Rolle `source:write`); 204 oder 404, wenn unbekannt |
+| `GET /api/platform/ping/{app}` | fragt `/q/health/ready` einer anderen, in `uses` deklarierten Anwendung ab (Rolle `source:read`); antwortet mit dem Anwendungsnamen und ihrem HTTP-Status, 400 bei ungültigem Namen, 404 wenn die Anwendung nicht deklariert ist, 502 wenn nicht erreichbar |
 | `/api/documents/invoice` | `POST`: eine Rechnung als PDF, von Crystallon erzeugt, wenn es konfiguriert ist (siehe [§7](#dokumente-crystallon)) |
 | `/q/swagger-ui` | die Dokumentation der API (interaktiv in Dev und Test, in Produktion nur lesbar: weder Authorize noch Try it out) |
 | `/q/openapi` | der OpenAPI-Vertrag (JSON oder YAML) |

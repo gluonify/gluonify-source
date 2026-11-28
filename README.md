@@ -51,6 +51,9 @@ Open <http://localhost:8080>: the interface (add, list, delete notes). Also:
 |---|---|
 | `/` | the Vue interface (shows the Source logo on a transparent background, "Source · role" and the particle line in the header, "© year Gluonify" at the bottom, `BrandLogo.vue` and `public/favicon.svg`: replace both with your own logo) |
 | `/api/notes` | the REST API (JSON) |
+| `GET /api/notes/{id}` | one note (role `source:read`); 404 when unknown |
+| `DELETE /api/notes/{id}` | deletes a note (role `source:write`); 204, or 404 when unknown |
+| `GET /api/platform/ping/{app}` | queries `/q/health/ready` of another application declared in `uses` (role `source:read`); answers the application name and its HTTP status, 400 for an invalid name, 404 when the application is not declared, 502 when unreachable |
 | `/api/documents/invoice` | `POST`: an invoice as a PDF, produced by Crystallon when it is configured (see [§7](#documents-crystallon)) |
 | `/q/swagger-ui` | the API documentation (interactive in dev and test, read-only in production: no Authorize, no Try it out) |
 | `/q/openapi` | the OpenAPI contract (JSON or YAML) |

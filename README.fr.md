@@ -47,6 +47,9 @@ Ouvrez <http://localhost:8080> : l'interface (ajouter, lister, supprimer des not
 |---|---|
 | `/` | l'interface Vue |
 | `/api/notes` | l'API REST (JSON) |
+| `GET /api/notes/{id}` | une note (rôle `source:read`) ; 404 si elle est inconnue |
+| `DELETE /api/notes/{id}` | supprime une note (rôle `source:write`) ; 204, ou 404 si elle est inconnue |
+| `GET /api/platform/ping/{app}` | interroge `/q/health/ready` d'une autre application déclarée dans `uses` (rôle `source:read`) ; répond le nom de l'application et son statut HTTP, 400 si le nom est invalide, 404 si l'application n'est pas déclarée, 502 si elle est injoignable |
 | `/api/documents/invoice` | `POST` : une facture en PDF, produite par Crystallon quand il est configuré (voir [§7](#documents-crystallon)) |
 | `/q/swagger-ui` | la documentation de l'API (interactive en dev et en test, en lecture seule en production : ni Authorize ni Try it out) |
 | `/q/openapi` | le contrat OpenAPI (JSON ou YAML) |
